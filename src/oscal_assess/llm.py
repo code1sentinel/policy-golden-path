@@ -76,32 +76,33 @@ class ClaudeAssessor:
             f"{statement.text or '(empty)'}\n</implementation>"
         )
 
-    def assess(self, statement: Statement, threshold: float) -> Assessment:
+    def _call(self, system: str, prompt: str, schema: dict) -> tuple[dict | None, str, str]:
+        """Return (verdict, engine name, failure reason). A failure always means verdict is None."""
         response = self.client.beta.messages.create(
             model=self.model,
             max_tokens=16000,
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
             thinking={"type": "adaptive"},
-            output_config={"effort": self.effort, "format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": self.prompt(statement)}],
+            output_config={"effort": self.effort, "format": {"type": "json_schema", "schema": schema}},
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
         )
         engine = f"claude:{response.model}"
-
         if response.stop_reason == "refusal":
-            return Assessment(statement, 0.0, threshold, engine,
-                              rationale="The model declined to assess this statement; review it manually.")
+            return None, engine, "The model declined to assess this; review it manually."
         if response.stop_reason == "max_tokens":
-            return Assessment(statement, 0.0, threshold, engine,
-                              rationale="The response was truncated before a verdict; review it manually.")
-
+            return None, engine, "The response was truncated before a verdict; review it manually."
         text = next((b.text for b in response.content if b.type == "text"), "")
         try:
-            verdict = json.loads(text)
+            return json.loads(text), engine, ""
         except json.JSONDecodeError:
-            return Assessment(statement, 0.0, threshold, engine,
-                              rationale="The model returned an unreadable verdict; review it manually.")
+            return None, engine, "The model returned an unreadable verdict; review it manually."
+
+    def assess(self, statement: Statement, threshold: float) -> Assessment:
+        verdict, engine, failure = self._call(SYSTEM_PROMPT, self.prompt(statement), OUTPUT_SCHEMA)
+        if verdict is None:
+            return Assessment(statement, 0.0, threshold, engine, rationale=failure)
 
         weight = 1.0 / len(CRITERIA)
         criteria = [
@@ -117,3 +118,82 @@ class ClaudeAssessor:
             list(verdict.get("gaps", [])),
             verdict.get("rationale", ""),
         )
+
+    def risk_prompt(self, risk, by_control: dict[str, list[Statement]]) -> str:
+        lines = [f"<risk id=\"{risk.id}\">", f"Title: {risk.title}"]
+        for label, value in (("Description", risk.description), ("Asset", risk.asset),
+                             ("Threat community", risk.threat_community), ("Threat event", risk.threat_event),
+                             ("Effect", risk.effect)):
+            if value:
+                lines.append(f"{label}: {value}")
+        lines.append("</risk>")
+        for cid, factor in risk.controls.items():
+            expected = f" expected-factor=\"{factor}\"" if factor else ""
+            stmts = by_control.get(cid, [])
+            body = "\n\n".join(f"[{s.key}] {s.text}" for s in stmts) or "(no implementation statement)"
+            lines.append(f"\n<control id=\"{cid}\"{expected}>\n{body}\n</control>")
+        return "\n".join(lines)
+
+    def assess_risk(self, risk, by_control: dict[str, list[Statement]]):
+        from .risk import ControlAlignment
+
+        verdict, engine, failure = self._call(RISK_SYSTEM_PROMPT, self.risk_prompt(risk, by_control),
+                                              RISK_OUTPUT_SCHEMA)
+        if verdict is None:
+            return 0.0, [], [failure], failure, engine
+        by_id = {c["control_id"].lower(): c for c in verdict.get("controls", [])}
+        controls = []
+        for cid, expected in risk.controls.items():
+            c = by_id.get(cid, {})
+            score = _clamp(c.get("score", 0))
+            controls.append(ControlAlignment(
+                cid, expected, list(c.get("factors", [])), score,
+                1.0 if (not expected or expected in c.get("factors", [])) else 0.0, score, score,
+                [s.key for s in by_control.get(cid, [])], c.get("note", ""),
+            ))
+        return (round(_clamp(verdict["confidence"]), 4), controls, list(verdict.get("gaps", [])),
+                verdict.get("rationale", ""), engine)
+
+
+RISK_SYSTEM_PROMPT = """You are an experienced risk analyst who uses the FAIR (Factor Analysis of \
+Information Risk) model. You are given a loss scenario and the implementation statements of the \
+controls meant to treat it.
+
+Decide how confident you are that the statements, as written, address this specific risk. For each \
+control, identify which FAIR factors its statement credibly reduces:
+- tef: threat event frequency, by avoidance or deterrence (the threat cannot reach or is discouraged).
+- vulnerability: resistance strength, so a threat event is less likely to become a loss event.
+- loss_magnitude: detection, response and containment that limit primary or secondary loss.
+
+Score each control from 0 to 100 on how well its statement addresses this scenario: it must be about \
+the asset and threat in question, and do what the expected factor (when given) says it should. A \
+control with no statement scores 0. Then give an overall confidence from 0 to 100 that the controls \
+together address the risk. Missing factors lower confidence: a scenario treated only by prevention, \
+with nothing to detect or contain a loss, is not fully addressed. List concrete gaps and give a two or \
+three sentence rationale. Judge only what the statements say."""
+
+RISK_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "confidence": {"type": "integer"},
+        "controls": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "control_id": {"type": "string"},
+                    "factors": {"type": "array", "items": {"type": "string",
+                                                           "enum": ["tef", "vulnerability", "loss_magnitude"]}},
+                    "score": {"type": "integer"},
+                    "note": {"type": "string"},
+                },
+                "required": ["control_id", "factors", "score", "note"],
+                "additionalProperties": False,
+            },
+        },
+        "gaps": {"type": "array", "items": {"type": "string"}},
+        "rationale": {"type": "string"},
+    },
+    "required": ["confidence", "controls", "gaps", "rationale"],
+    "additionalProperties": False,
+}

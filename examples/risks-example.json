@@ -1,0 +1,154 @@
+{
+  "currency": "SGD",
+  "appetite": 500000,
+  "risks": [
+    {
+      "id": "R-001",
+      "title": "Account takeover of workforce SSO leads to payments data breach",
+      "asset": "workforce user accounts and customer payment data",
+      "threat_community": "external cybercriminals",
+      "threat_event": "credential stuffing and phishing to take over user accounts",
+      "effect": "confidentiality",
+      "controls": {
+        "ia-2": "vulnerability",
+        "au-6": "loss_magnitude"
+      },
+      "inherent": {
+        "contact_frequency": {
+          "min": 4,
+          "most_likely": 12,
+          "max": 40
+        },
+        "probability_of_action": {
+          "min": 0.3,
+          "most_likely": 0.5,
+          "max": 0.8
+        },
+        "threat_capability": {
+          "min": 40,
+          "most_likely": 70,
+          "max": 95
+        },
+        "resistance_strength": {
+          "min": 30,
+          "most_likely": 50,
+          "max": 70
+        },
+        "primary_loss": {
+          "min": 20000,
+          "most_likely": 60000,
+          "max": 250000
+        },
+        "secondary_lef": 0.2,
+        "secondary_loss": {
+          "min": 100000,
+          "most_likely": 400000,
+          "max": 2000000
+        }
+      },
+      "residual": {
+        "contact_frequency": {
+          "min": 4,
+          "most_likely": 12,
+          "max": 40
+        },
+        "probability_of_action": {
+          "min": 0.3,
+          "most_likely": 0.5,
+          "max": 0.8
+        },
+        "threat_capability": {
+          "min": 40,
+          "most_likely": 70,
+          "max": 95
+        },
+        "resistance_strength": {
+          "min": 70,
+          "most_likely": 85,
+          "max": 97
+        },
+        "primary_loss": {
+          "min": 10000,
+          "most_likely": 30000,
+          "max": 120000
+        },
+        "secondary_lef": 0.1,
+        "secondary_loss": {
+          "min": 100000,
+          "most_likely": 400000,
+          "max": 2000000
+        }
+      }
+    },
+    {
+      "id": "R-002",
+      "title": "Orphaned accounts of departed staff used to approve fraudulent payments",
+      "asset": "payment approval accounts",
+      "threat_community": "former employees and contractors",
+      "threat_event": "log in with an account that was never disabled and approve payments",
+      "effect": "integrity",
+      "controls": {
+        "ac-2": "vulnerability",
+        "au-6": "loss_magnitude"
+      },
+      "inherent": {
+        "tef": {
+          "min": 0.5,
+          "most_likely": 1,
+          "max": 4
+        },
+        "vulnerability": {
+          "min": 0.2,
+          "most_likely": 0.4,
+          "max": 0.7
+        },
+        "primary_loss": {
+          "min": 50000,
+          "most_likely": 200000,
+          "max": 1500000
+        }
+      },
+      "residual": {
+        "tef": {
+          "min": 0.5,
+          "most_likely": 1,
+          "max": 4
+        },
+        "vulnerability": {
+          "min": 0.02,
+          "most_likely": 0.05,
+          "max": 0.1
+        },
+        "primary_loss": {
+          "min": 50000,
+          "most_likely": 200000,
+          "max": 1500000
+        }
+      }
+    },
+    {
+      "id": "R-003",
+      "title": "Ransomware encrypts payment processing servers",
+      "asset": "payment processing servers",
+      "threat_community": "ransomware operators",
+      "threat_event": "deploy ransomware and encrypt servers",
+      "effect": "availability",
+      "controls": {
+        "cp-9": "loss_magnitude",
+        "si-3": "vulnerability"
+      },
+      "inherent": {
+        "lef": {
+          "min": 0.05,
+          "most_likely": 0.2,
+          "max": 0.5
+        },
+        "lm": {
+          "min": 300000,
+          "most_likely": 1200000,
+          "max": 6000000
+        }
+      }
+    }
+  ]
+}
