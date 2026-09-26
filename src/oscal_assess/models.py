@@ -14,6 +14,8 @@ class Statement:
     statement_id: str | None = None
     component: str | None = None
     requirement: str | None = None  # control text from the catalog, when one is supplied
+    policy_intent: str | None = None  # what the organization's policy says this control must achieve
+    policy_ids: list[str] = field(default_factory=list)
 
     @property
     def key(self) -> str:
@@ -51,6 +53,7 @@ class Assessment:
             "component": s.component,
             "uuid": s.uuid,
             "source": s.source,
+            "policies": s.policy_ids,
             "engine": self.engine,
             "confidence": round(self.confidence, 4),
             "threshold": self.threshold,

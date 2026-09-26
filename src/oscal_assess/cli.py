@@ -8,6 +8,7 @@ from pathlib import Path
 from . import DEFAULT_THRESHOLD, heuristic, report
 from .catalog import Catalog
 from .loader import load_statements
+from .policy import Policy, attach_intents, load_policies
 
 
 def _threshold(value: str) -> float:
@@ -25,6 +26,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("document", help="OSCAL SSP or component definition (JSON)")
     p.add_argument("-c", "--catalog", help="OSCAL catalog (JSON) supplying control requirement text")
+    p.add_argument("-p", "--policy", metavar="PATH",
+                   help="policy file (JSON) giving the policy intent each control must meet")
+    p.add_argument("-i", "--intent", metavar="TEXT",
+                   help="a policy intent to apply to every statement (in addition to --policy)")
     p.add_argument("-t", "--threshold", type=_threshold, default=DEFAULT_THRESHOLD,
                    help="confidence needed to pass, e.g. 0.8 or 80%% (default: 0.8)")
     p.add_argument("-e", "--engine", choices=["heuristic", "claude"], default="heuristic",
@@ -46,6 +51,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         catalog = Catalog.load(args.catalog) if args.catalog else None
         statements = load_statements(args.document, catalog)
+        policies = load_policies(args.policy) if args.policy else []
+        if args.intent:
+            policies.append(Policy("--intent", args.intent.strip()))
+        attach_intents(statements, policies)
     except (OSError, ValueError, KeyError) as exc:
         print(f"oscal-assess: {exc}", file=sys.stderr)
         return 2

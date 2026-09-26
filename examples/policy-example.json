@@ -1,0 +1,28 @@
+{
+  "policies": [
+    {
+      "id": "ISP-05.1",
+      "title": "Access Control Policy: user access reviews",
+      "intent": "Managers review every user account and its access at least quarterly, and access that is no longer needed is removed within 5 business days. Review records are retained for at least 12 months.",
+      "controls": ["ac-2_smt.j"]
+    },
+    {
+      "id": "ISP-05.2",
+      "title": "Access Control Policy: account provisioning",
+      "intent": "No account is created without documented approval from the requester's line manager and the system owner.",
+      "controls": ["ac-2_smt.e"]
+    },
+    {
+      "id": "ISP-06",
+      "title": "Authentication Policy",
+      "intent": "All workforce users authenticate with a unique identity and phishing-resistant multi-factor authentication through the corporate identity provider. Authentication logs are retained for at least 12 months.",
+      "controls": ["ia-2"]
+    },
+    {
+      "id": "ISP-09",
+      "title": "Logging and Monitoring Policy",
+      "intent": "Security events are reviewed daily by the Security Operations team, and confirmed incidents are escalated to the CISO within 24 hours. Audit logs are retained for at least 3 years.",
+      "controls": ["au-6"]
+    }
+  ]
+}

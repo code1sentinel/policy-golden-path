@@ -68,3 +68,30 @@ def test_refusal_and_bad_output_fail_closed():
         client, _ = fake_client(stop_reason=stop_reason, payload=payload)
         a = ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
         assert a.confidence == 0.0 and not a.passed and "manually" in a.rationale
+
+
+def test_policy_intent_is_sent_and_enforced():
+    stmt = Statement("ac-2", "Accounts are reviewed annually.", "ssp", statement_id="ac-2_smt.j",
+                     policy_intent="Accounts are reviewed at least quarterly.", policy_ids=["ISP-05.1"])
+    payload = {
+        "confidence": 90,
+        "criteria": [{"name": "policy_intent", "score": 20, "note": "annual, not quarterly"}],
+        "gaps": ["Review quarterly."],
+        "rationale": "Good but annual.",
+    }
+    client, messages = fake_client(payload=payload)
+    a = ClaudeAssessor(client=client).assess(stmt, 0.8)
+
+    call = messages.calls[0]
+    assert '<policy-intent policies="ISP-05.1">' in call["messages"][0]["content"]
+    enum = call["output_config"]["format"]["schema"]["properties"]["criteria"]["items"]["properties"]["name"]["enum"]
+    assert "policy_intent" in enum
+    assert a.confidence == 0.5 and not a.passed and "policy intent" in a.rationale
+
+
+def test_no_policy_criterion_without_intent():
+    client, messages = fake_client(payload={"confidence": 50, "criteria": [], "gaps": [], "rationale": ""})
+    ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
+    call = messages.calls[0]
+    enum = call["output_config"]["format"]["schema"]["properties"]["criteria"]["items"]["properties"]["name"]["enum"]
+    assert "policy_intent" not in enum and "<policy-intent" not in call["messages"][0]["content"]

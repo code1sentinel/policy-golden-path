@@ -5,6 +5,10 @@ component definition, and passes each one that reaches **80% confidence**
 (configurable). Anything below the threshold fails, with a list of the gaps an
 author should close.
 
+Statements are judged against the control requirement (from an OSCAL catalog)
+and, optionally, against the **policy intent** your own policies set for each
+control: see [Policy intent](#policy-intent).
+
 ```
 $ oscal-assess examples/ssp-example.json --catalog examples/catalog-excerpt.json
 Statement                       Confidence  Result
@@ -50,6 +54,65 @@ coverage is not scored and its weight is spread over the other criteria.
 
 Only JSON is supported. Convert XML or YAML with the NIST OSCAL CLI first.
 
+## Policy intent
+
+OSCAL has no field for what your organization's policy requires, so it is a
+separate input. Give it as a policy file, an inline intent, or both:
+
+```
+oscal-assess ssp.json -c catalog.json --policy policies.json
+oscal-assess ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
+```
+
+```json
+{
+  "policies": [
+    {
+      "id": "ISP-05.1",
+      "title": "Access Control Policy: user access reviews",
+      "intent": "Managers review every user account and its access at least quarterly, and access that is no longer needed is removed within 5 business days. Review records are retained for at least 12 months.",
+      "controls": ["ac-2_smt.j"]
+    }
+  ]
+}
+```
+
+`controls` lists control ids (`ac-2`, matching every statement of the
+control) or statement ids (`ac-2_smt.j`, matching that part only). A policy
+without `controls` applies to every statement, as does `--intent`. When more
+than one policy matches a statement, it must meet all of them.
+
+A statement meets the policy intent when it:
+
+1. **Speaks to the intent**: shares the intent's key terms, such as who, what
+   and which systems.
+2. **Keeps its measurable commitments**. These are read from the intent and
+   compared with the statement:
+
+   | Commitment | Intent says | Met by | Falls short |
+   | --- | --- | --- | --- |
+   | How often | `at least quarterly`, `every 30 days`, `once a year` | the same or more often (`every 90 days`, `monthly`) | `annually` |
+   | Time limit | `within 5 business days`, `within 24 hours` | the same or faster | `within 30 days` |
+   | Retention | `retained for at least 12 months`, `3-year retention` | the same or longer | `kept for 6 months` |
+
+Meeting the policy intent is required to pass, not just one more score:
+
+- A statement that **falls short** of a commitment (`annually` against `at
+  least quarterly`) is capped at **50%**.
+- A statement that **does not mention** a commitment (no retention period when
+  the policy sets one) is capped at **75%**.
+
+With the default 80% threshold neither can pass. In the example, AU-6 passes
+at 100% against the control alone, but fails at 75% against the logging policy
+because it never says how long logs are kept:
+
+```
+$ oscal-assess examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
+...
+au-6 [Splunk]  (75%)
+  - Policy requires "retained for at least 3 years"; the statement does not say how long records are kept.
+```
+
 ## Engines
 
 ### `heuristic` (default)
@@ -58,18 +121,23 @@ Offline and deterministic. Each statement is scored 0 to 1 on:
 
 | Criterion | Weight | Looks for |
 | --- | --- | --- |
-| coverage | 25% | Share of the control requirement's key terms the statement addresses (full marks at 40%) |
-| substance | 15% | Enough words to describe an implementation |
-| responsibility | 15% | A named role or team |
-| mechanism | 15% | Concrete tools, configurations or procedures |
-| frequency | 15% | How often, or on what trigger, it operates |
-| evidence | 15% | Logs, tickets, records or other artefacts an assessor can inspect |
+| coverage | 20% | Share of the control requirement's key terms the statement addresses (full marks at 40%) |
+| policy_intent | 20% | 40% the intent's key terms (full marks at 50%), 60% its measurable commitments met |
+| substance | 12% | Enough words to describe an implementation |
+| responsibility | 12% | A named role or team |
+| mechanism | 12% | Concrete tools, configurations or procedures |
+| frequency | 12% | How often, or on what trigger, it operates |
+| evidence | 12% | Logs, tickets, records or other artefacts an assessor can inspect |
+
+`coverage` needs `--catalog` and `policy_intent` needs a policy intent. When
+either is missing, the remaining weights are scaled up to sum to 100%.
 
 The weighted sum is then adjusted:
 
 - Hedging (`as needed`, `periodically`, `should`, `may`, ...) takes off 8% per distinct phrase, at most 40%.
 - Planned work (`will be implemented`, `planned for`, `roadmap`, ...) is capped at 50%.
 - Placeholders (`TBD`, `N/A`, `[insert ...]`, empty text) are capped at 20%.
+- Falling short of a policy commitment caps at 50%; leaving one out caps at 75%.
 
 It is a quality screen, not a verdict: it rewards statements written the way
 an assessor needs them, but cannot tell whether what they say is true.
@@ -78,7 +146,9 @@ an assessor needs them, but cannot tell whether what they say is true.
 
 Uses Claude as an assessor. Each statement is sent with its control text, and
 the model returns a 0 to 100 confidence, per-criterion scores, gaps and a
-rationale as schema-constrained JSON.
+rationale as schema-constrained JSON. When a statement has a policy intent,
+it is sent too and scored as a `policy_intent` criterion; if that scores
+below 50, the confidence is capped at 50%, as with the heuristic engine.
 
 ```
 export ANTHROPIC_API_KEY=...
@@ -109,6 +179,9 @@ tool never passes a statement it could not assess.
 ## Options
 
 ```
+-c, --catalog    OSCAL catalog (JSON) for control requirement text
+-p, --policy     Policy file (JSON) with the policy intent for each control
+-i, --intent     A policy intent applied to every statement
 -t, --threshold  Confidence needed to pass: 0.8 or 80% (default 0.8)
 --no-fail        Exit 0 even when statements fail
 ```
@@ -140,9 +213,10 @@ src/oscal_assess/
   cli.py        argument parsing, exit codes
   loader.py     statements out of SSPs and component definitions
   catalog.py    control and statement-part text out of catalogs
+  policy.py     policy intents and which statements they apply to
   heuristic.py  offline rubric scorer
   llm.py        Claude assessor
   report.py     table, JSON, Markdown and OSCAL assessment-results output
-examples/       NIST SP 800-53 excerpt, example SSP and component definition
+examples/       NIST SP 800-53 excerpt, example SSP, component definition and policies
 tests/
 ```

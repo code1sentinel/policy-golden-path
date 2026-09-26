@@ -36,3 +36,28 @@ def test_bad_input_exits_2(tmp_path, capsys):
     bad.write_text('{"catalog": {}}')
     assert main([str(bad)]) == 2
     assert main([str(tmp_path / "missing.json")]) == 2
+
+
+def test_policy_intent_is_applied(examples, capsys):
+    doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
+    main([doc, "-c", cat, "-f", "json"])
+    before = {a["control_id"]: a for a in json.loads(capsys.readouterr().out)["assessments"]}
+    assert before["au-6"]["result"] == "pass"
+
+    main([doc, "-c", cat, "-p", str(examples / "policy-example.json"), "-f", "json"])
+    after = {a["control_id"]: a for a in json.loads(capsys.readouterr().out)["assessments"]}
+    assert after["au-6"]["result"] == "fail"
+    assert after["au-6"]["policies"] == ["ISP-09"]
+    assert any("retained for at least 3 years" in g for g in after["au-6"]["gaps"])
+
+
+def test_inline_intent_applies_to_every_statement(examples, capsys):
+    main([str(examples / "ssp-example.json"), "-i", "Reviewed at least weekly.", "-f", "json"])
+    data = json.loads(capsys.readouterr().out)
+    assert all(a["policies"] == ["--intent"] for a in data["assessments"])
+
+
+def test_bad_policy_file_exits_2(examples, tmp_path):
+    bad = tmp_path / "p.json"
+    bad.write_text('{"policies": [{"id": "P"}]}')
+    assert main([str(examples / "ssp-example.json"), "-p", str(bad)]) == 2

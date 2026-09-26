@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 
+from .heuristic import POLICY_CONFLICT_CAP
 from .models import Assessment, CriterionResult, Statement
 
 DEFAULT_MODEL = "claude-opus-5"
 CRITERIA = ("coverage", "specificity", "responsibility", "frequency", "evidence", "implemented")
+POLICY_CRITERION = "policy_intent"
 
 SYSTEM_PROMPT = """You are an experienced security control assessor reviewing implementation \
 statements from OSCAL system security plans and component definitions.
@@ -23,10 +25,22 @@ Score each criterion from 0 to 100:
 - frequency: states when or how often the control operates, or what triggers it.
 - evidence: identifies the records, logs or artefacts an assessor could inspect.
 - implemented: describes what operates today rather than plans, intentions or hedged language.
+- policy_intent: only when a <policy-intent> is given. The statement meets what the organization's \
+own policy requires: its objective, and any specific commitments such as frequencies, time limits, \
+retention periods, approvers or technologies. A statement that falls short of a commitment (for \
+example annual reviews where the policy requires quarterly) contradicts the policy.
 
-Then give an overall confidence from 0 to 100 that the statement satisfies the control. Coverage \
-matters most: a statement that is specific but misses part of the requirement should not score \
-highly. List the concrete gaps an author should fix, and a two or three sentence rationale."""
+Then give an overall confidence from 0 to 100 that the statement satisfies the control and, when \
+given, the policy intent. Coverage matters most: a statement that is specific but misses part of the \
+requirement should not score highly. A statement that contradicts the policy intent must score below \
+50. List the concrete gaps an author should fix, and a two or three sentence rationale."""
+
+def output_schema(with_policy: bool) -> dict:
+    schema = json.loads(json.dumps(OUTPUT_SCHEMA))
+    names = list(CRITERIA) + ([POLICY_CRITERION] if with_policy else [])
+    schema["properties"]["criteria"]["items"]["properties"]["name"]["enum"] = names
+    return schema
+
 
 OUTPUT_SCHEMA = {
     "type": "object",
@@ -70,8 +84,13 @@ class ClaudeAssessor:
     def prompt(self, statement: Statement) -> str:
         requirement = statement.requirement or "(No catalog supplied. Use your knowledge of this control id.)"
         target = statement.statement_id or statement.control_id
+        policy = ""
+        if statement.policy_intent:
+            ids = ", ".join(statement.policy_ids)
+            policy = f"<policy-intent policies=\"{ids}\">\n{statement.policy_intent}\n</policy-intent>\n\n"
         return (
             f"<control id=\"{statement.control_id}\" part=\"{target}\">\n{requirement}\n</control>\n\n"
+            f"{policy}"
             f"<implementation component=\"{statement.component or 'unspecified'}\">\n"
             f"{statement.text or '(empty)'}\n</implementation>"
         )
@@ -83,7 +102,10 @@ class ClaudeAssessor:
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
             thinking={"type": "adaptive"},
-            output_config={"effort": self.effort, "format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
+            output_config={
+                "effort": self.effort,
+                "format": {"type": "json_schema", "schema": output_schema(bool(statement.policy_intent))},
+            },
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": self.prompt(statement)}],
         )
@@ -103,17 +125,24 @@ class ClaudeAssessor:
             return Assessment(statement, 0.0, threshold, engine,
                               rationale="The model returned an unreadable verdict; review it manually.")
 
-        weight = 1.0 / len(CRITERIA)
+        weight = 1.0 / len(CRITERIA) if not statement.policy_intent else 1.0 / (len(CRITERIA) + 1)
         criteria = [
             CriterionResult(c["name"], _clamp(c["score"]), weight, c.get("note", ""))
             for c in verdict.get("criteria", [])
         ]
+        confidence = _clamp(verdict["confidence"])
+        rationale = verdict.get("rationale", "")
+        # Match the heuristic engine: a statement that falls short of the policy cannot pass.
+        intent = next((c for c in criteria if c.name == POLICY_CRITERION), None)
+        if intent is not None and intent.score < 0.5 and confidence > POLICY_CONFLICT_CAP:
+            confidence = POLICY_CONFLICT_CAP
+            rationale += f" Capped at {POLICY_CONFLICT_CAP:.0%} because it does not meet the policy intent."
         return Assessment(
             statement,
-            round(_clamp(verdict["confidence"]), 4),
+            round(confidence, 4),
             threshold,
             engine,
             criteria,
             list(verdict.get("gaps", [])),
-            verdict.get("rationale", ""),
+            rationale.strip(),
         )
