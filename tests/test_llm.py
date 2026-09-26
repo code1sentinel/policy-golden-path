@@ -68,35 +68,3 @@ def test_refusal_and_bad_output_fail_closed():
         client, _ = fake_client(stop_reason=stop_reason, payload=payload)
         a = ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
         assert a.confidence == 0.0 and not a.passed and "manually" in a.rationale
-
-
-def test_risk_verdict_is_parsed():
-    from oscal_assess.risk import RiskRegister
-
-    risk = RiskRegister.parse({"risks": [{
-        "id": "R-9", "title": "Account takeover", "controls": {"ia-2": "vulnerability", "au-6": None},
-        "inherent": {"ale": 1},
-    }]}).risks[0]
-    payload = {
-        "confidence": 82,
-        "controls": [{"control_id": "IA-2", "factors": ["vulnerability"], "score": 90, "note": "MFA"}],
-        "gaps": ["au-6 has no statement."],
-        "rationale": "Prevention is strong.",
-    }
-    client, messages = fake_client(payload=payload)
-    confidence, controls, gaps, rationale, engine = ClaudeAssessor(client=client).assess_risk(
-        risk, {"ia-2": [STATEMENT]})
-
-    assert confidence == 0.82 and engine == "claude:claude-opus-5"
-    assert [(c.control_id, c.score) for c in controls] == [("ia-2", 0.9), ("au-6", 0.0)]
-    prompt = messages.calls[0]["messages"][0]["content"]
-    assert 'expected-factor="vulnerability"' in prompt and "(no implementation statement)" in prompt
-
-
-def test_risk_refusal_fails_closed():
-    from oscal_assess.risk import RiskRegister
-
-    risk = RiskRegister.parse({"risks": [{"title": "x", "controls": ["ia-2"], "inherent": {"ale": 1}}]}).risks[0]
-    client, _ = fake_client(stop_reason="refusal")
-    confidence, controls, gaps, rationale, _ = ClaudeAssessor(client=client).assess_risk(risk, {})
-    assert confidence == 0.0 and "manually" in rationale

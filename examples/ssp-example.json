@@ -52,7 +52,7 @@
             {
               "uuid": "b0000000-0000-4000-8000-000000000002",
               "component-uuid": "c0000000-0000-4000-8000-000000000003",
-              "description": "The Security Operations team reviews and analyzes audit records in Splunk daily for indications of inappropriate or unusual activity, such as account takeover, privilege escalation, impossible travel and mass export of payment data, and assesses the potential impact of each alert. Correlation searches raise alerts in real time and each review is recorded in a ServiceNow ticket. Findings are reported to the CISO and the system owner weekly, and within 24 hours for high severity incidents. The SOC manager adjusts the level of audit review and analysis when threat intelligence or law enforcement information indicates a change in risk, and records the change in the detection backlog.",
+              "description": "The Security Operations team reviews and analyzes audit records in Splunk daily for indications of inappropriate or unusual activity, such as privilege escalation, impossible travel and mass data export, and assesses the potential impact of each alert. Correlation searches raise alerts in real time and each review is recorded in a ServiceNow ticket. Findings are reported to the CISO and the system owner weekly, and within 24 hours for high severity incidents. The SOC manager adjusts the level of audit review and analysis when threat intelligence or law enforcement information indicates a change in risk, and records the change in the detection backlog.",
               "implementation-status": { "state": "implemented" }
             }
           ]
