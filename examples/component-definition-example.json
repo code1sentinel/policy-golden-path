@@ -1,0 +1,45 @@
+{
+  "component-definition": {
+    "uuid": "e0000000-0000-4000-8000-000000000001",
+    "metadata": {
+      "title": "Example component definition",
+      "last-modified": "2026-09-26T00:00:00Z",
+      "version": "1.0",
+      "oscal-version": "1.1.2"
+    },
+    "components": [
+      {
+        "uuid": "e0000000-0000-4000-8000-000000000002",
+        "type": "service",
+        "title": "Identity Platform",
+        "description": "Central workforce identity service.",
+        "control-implementations": [
+          {
+            "uuid": "e0000000-0000-4000-8000-000000000003",
+            "source": "catalog-excerpt.json",
+            "description": "Identity controls provided by the platform.",
+            "implemented-requirements": [
+              {
+                "uuid": "e0000000-0000-4000-8000-000000000004",
+                "control-id": "ac-2",
+                "description": "Account management for the Identity Platform.",
+                "statements": [
+                  {
+                    "statement-id": "ac-2_smt.e",
+                    "uuid": "e0000000-0000-4000-8000-000000000005",
+                    "description": "Requests to create accounts are raised as ServiceNow tickets and require approval by the requester's line manager and the system owner before the IAM team provisions the account in Okta. The provisioning workflow is automated and blocks account creation until both approvals are recorded on the ticket, which is retained for three years as evidence."
+                  },
+                  {
+                    "statement-id": "ac-2_smt.j",
+                    "uuid": "e0000000-0000-4000-8000-000000000006",
+                    "description": "Automated access reviews will be implemented in the next release of the identity governance tool."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
