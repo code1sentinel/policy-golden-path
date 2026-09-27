@@ -397,3 +397,7 @@ tests/
 
 Started in the [GRC Engineering Club Singapore Chapter](https://github.com/code1sentinel/grcengineeringclub-singapore)
 repository and moved here with its history.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
