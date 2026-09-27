@@ -68,3 +68,22 @@ def test_placeholder_control_titles_are_left_out():
     ]}})
     assert catalog.requirement("ism-1997") == "The board defines roles."
     assert catalog.requirement("AS-1") == "Input Validation: Validate all inputs."
+
+
+def test_resolved_profile_param_values_replace_placeholders():
+    # Resolved baselines (e.g. the CCCS profiles) set organization-defined values on params.
+    catalog = Catalog({"catalog": {"controls": [
+        {"id": "ac-2", "title": "Account Management",
+         "params": [
+             {"id": "ac-02_odp.06", "label": "time period", "values": ["twenty-four (24) hours"]},
+             {"id": "ac-02_odp.07", "label": "frequency"},
+         ],
+         "parts": [{"id": "ac-2_smt", "name": "statement", "parts": [
+             {"id": "ac-2_smt.h", "name": "item", "props": [{"name": "label", "value": "h."}],
+              "prose": "Notify account managers within {{ insert: param, ac-02_odp.06 }};"},
+             {"id": "ac-2_smt.j", "name": "item", "props": [{"name": "label", "value": "j."}],
+              "prose": "Review accounts {{ insert: param, ac-02_odp.07 }}."},
+         ]}]},
+    ]}})
+    assert catalog.requirement("ac-2", "ac-2_smt.h") == "h. Notify account managers within twenty-four (24) hours;"
+    assert catalog.requirement("ac-2", "ac-2_smt.j") == "j. Review accounts [Assignment: frequency]."

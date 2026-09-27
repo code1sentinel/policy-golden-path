@@ -76,6 +76,11 @@ def _walk_controls(node: dict):
 
 
 def _param_text(param: dict) -> str:
+    # A resolved profile catalog (a baseline, e.g. the CCCS profiles) sets the organization-defined
+    # value; use it, so the requirement reads "within twenty-four (24) hours", not "[Assignment: time period]".
+    values = [v for v in param.get("values", []) if isinstance(v, str) and v.strip()]
+    if values:
+        return ", ".join(values)
     if param.get("select"):
         choices = param["select"].get("choice", [])
         return "[Selection: " + "; ".join(choices) + "]"

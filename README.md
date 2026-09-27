@@ -176,9 +176,14 @@ tested with PolicyGP:
 | [NIST SP 800-53](https://github.com/usnistgov/oscal-content) | NIST, United States | `ac-2`, `ac-2_smt.j` |
 | [Information Security Manual (ISM)](https://github.com/AustralianCyberSecurityCentre/ism-oscal) | ASD, Australia | `ism-1997` |
 | [ICT&SS Policy (IM8) Reform](https://github.com/GovTechSG/tech-standards) | GovTech, Singapore | `as-1` |
+| [CCCS profiles (unofficial samples)](https://github.com/aws-samples/cccs-oscal-samples) | AWS samples, based on Canada's ITSG-33 | `ac-2`, `ac-2_smt.h` |
 
-The ISM's resolved profile catalogs (for example the Essential Eight maturity
-levels) are catalogs too, so they work the same way.
+Resolved profile catalogs (the ISM's Essential Eight maturity levels, the
+CCCS Cloud Medium profile) are catalogs too, so they work the same way. Where
+a baseline sets an organization-defined value, the requirement uses it: CCCS
+Cloud Medium's AC-2 h reads "within twenty-four (24) hours" rather than
+"[Assignment: time period]", so the statement is checked against the actual
+commitment.
 
 Only JSON OSCAL is supported. Convert XML or YAML with the NIST OSCAL CLI
 first.
