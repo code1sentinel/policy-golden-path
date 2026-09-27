@@ -70,6 +70,7 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 ## Install
 
 ```
+git clone https://github.com/code1sentinel/policy-golden-path.git
 cd policy-golden-path
 pip install -e .            # heuristic engine, no dependencies
 pip install -e ".[claude]"  # adds the Claude engine
@@ -354,12 +355,15 @@ the item scores 0 with a note to review it manually.
 ## Use in GitHub Actions
 
 ```yaml
-- run: pip install ./policy-golden-path
+- run: pip install git+https://github.com/code1sentinel/policy-golden-path.git
 - run: policy-path ssp.json -c catalog.json -p policies.json -f markdown -o report.md
 - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
 ## Development
+
+CI runs the tests on Python 3.10, 3.12 and 3.13 on every push and pull request
+(`.github/workflows/ci.yml`).
 
 ```
 pip install -e ".[dev]"
@@ -388,3 +392,8 @@ src/policy_golden_path/
 examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies and assessment results
 tests/
 ```
+
+## Origin
+
+Started in the [GRC Engineering Club Singapore Chapter](https://github.com/code1sentinel/grcengineeringclub-singapore)
+repository and moved here with its history.

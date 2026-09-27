@@ -1,22 +1,20 @@
-name: policy-golden-path
+name: CI
 
 on:
   push:
-    paths: ["policy-golden-path/**", ".github/workflows/policy-golden-path.yml"]
   pull_request:
-    paths: ["policy-golden-path/**", ".github/workflows/policy-golden-path.yml"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: policy-golden-path
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
       - run: pytest -q
       - run: policy-path examples/component-definition-example.json -c examples/catalog-excerpt.json
