@@ -29,22 +29,26 @@ def test_statement_meeting_the_intent_scores_high():
     assert "3/3 policy commitments met" in criterion(a, "policy_intent").note
 
 
-def test_falling_short_of_a_commitment_is_limited():
+def test_falling_short_of_a_commitment_lowers_the_score_without_a_limit():
     a = assess(MEETS.replace("quarterly", "annually"))
-    assert a.confidence <= heuristic.POLICY_CONFLICT_CAP
+    assert assess(MEETS).confidence - a.confidence >= 0.05
+    assert a.confidence > 0.5  # a normal reduction, not a hard limit
+    assert criterion(a, "policy_intent").score < 0.8
+    omitted = assess(MEETS.replace("quarterly", ""))
+    assert criterion(a, "policy_intent").score < criterion(omitted, "policy_intent").score
     assert 'Policy requires "quarterly"; the statement says "annually".' in a.improvements
 
 
 def test_slower_deadline_and_shorter_retention_are_conflicts():
     a = assess(MEETS.replace("within 2 business days", "within 30 days").replace("3 years", "6 months"))
-    assert a.confidence <= heuristic.POLICY_CONFLICT_CAP
+    assert criterion(a, "policy_intent").score < 0.7
     assert any('"within 5 business days"' in g and '"within 30 days"' in g for g in a.improvements)
     assert any('"retained for at least 12 months"' in g and "6 months" in g for g in a.improvements)
 
 
-def test_omitting_a_commitment_is_limited():
+def test_omitting_a_commitment_lowers_the_score():
     a = assess(MEETS.replace(" ServiceNow ticket retained for 3 years as", " ServiceNow ticket as"))
-    assert heuristic.POLICY_CONFLICT_CAP < a.confidence <= heuristic.POLICY_OMISSION_CAP
+    assert a.confidence < assess(MEETS).confidence
     assert any("does not say how long records are kept" in g for g in a.improvements)
 
 
@@ -100,3 +104,46 @@ def test_policy_without_controls_applies_everywhere_and_intents_combine():
 def test_invalid_policy_files(data, message):
     with pytest.raises(ValueError, match=message):
         parse_policies(data)
+
+
+RISK_BASED = ("User access is reviewed at a frequency commensurate with the risk of the access, and access "
+              "that is no longer needed is removed promptly.")
+TIERED = ("Accounts are tiered in the annual access risk assessment owned by the CISO: Tier 1 covers "
+          "privileged and payment access, Tier 2 everything else. Managers review Tier 1 access quarterly "
+          "and Tier 2 access annually in Okta, and unneeded access is removed within 5 business days. "
+          "Tiers are reassessed after major changes. Each review is recorded in a ServiceNow ticket.")
+
+
+def test_risk_based_intent_is_met_by_a_tiered_schedule():
+    a = assess(TIERED, RISK_BASED)
+    c = criterion(a, "policy_intent")
+    assert c.score >= 0.9, c.note
+    assert "risk basis named" in c.note
+    assert not any("risk-based" in i or "tier" in i.lower() for i in a.improvements)
+
+
+def test_based_on_risk_alone_is_not_enough():
+    vague = ("Managers review user access in Okta based on risk, and each review is recorded in a "
+             "ServiceNow ticket.")
+    a = assess(vague, RISK_BASED)
+    text = " ".join(a.improvements)
+    assert "'based on risk' without saying how risk is rated" in text
+    assert "Give each risk tier its own frequency" in text
+    assert "who sets the risk tiers" in text
+    assert criterion(a, "policy_intent").score < criterion(assess(TIERED, RISK_BASED), "policy_intent").score - 0.3
+
+
+def test_risk_based_intent_does_not_demand_fixed_timelines():
+    a = assess(TIERED, RISK_BASED)
+    assert not any("Policy requires" in i for i in a.improvements)
+
+
+def test_policies_apply_to_risk_statements_through_their_targets():
+    from oscal_assess.models import RISK_STATEMENT
+
+    risk = Statement("ac-2_smt.j, au-6", "x", "assessment-results", kind=RISK_STATEMENT)
+    assert risk.targets == [("ac-2", "ac-2_smt.j"), ("au-6", None)]
+    attach_intents([risk], [Policy("A", "Intent A.", controls=["ac-2_smt.j"]),
+                            Policy("B", "Intent B.", controls=["au-6"]),
+                            Policy("C", "Intent C.", controls=["ia-2"])])
+    assert risk.policy_ids == ["A", "B"]

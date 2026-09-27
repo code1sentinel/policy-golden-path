@@ -116,3 +116,26 @@ def test_recommendation_must_address_the_cause():
     on = rec(GOOD_REC)
     assert on.confidence > off.confidence
     assert any("cause identified in the risk statement" in i for i in off.improvements)
+
+
+def test_risk_statement_is_checked_against_catalog_and_policy(examples):
+    from oscal_assess.catalog import Catalog
+    from oscal_assess.policy import attach_intents, load_policies
+
+    items = load_statements(examples / "assessment-results-example.json",
+                            Catalog.load(examples / "catalog-excerpt.json"))
+    attach_intents(items, load_policies(examples / "policy-example.json"))
+    good, weak = items[0], items[2]
+    assert good.requirement.startswith("j. Review accounts") and good.policy_ids == ["ISP-05.1"]
+    assert weak.requirement.startswith("Audit Record Review") and weak.policy_ids == ["ISP-09"]
+
+    by = {c.name: c for c in heuristic.assess(good).criteria}
+    assert by["criteria"].score >= 0.9 and "control and policy terms" in by["criteria"].note
+    weak_a = heuristic.assess(weak)
+    assert any("Describe the condition against what the control and policy require" in i
+               for i in weak_a.improvements)
+
+
+def test_criteria_without_catalog_only_checks_a_requirement_is_named():
+    a = risk(GOOD_RISK, likelihood="high", impact="high")
+    assert {c.name: c for c in a.criteria}["criteria"].note == "ac-2"

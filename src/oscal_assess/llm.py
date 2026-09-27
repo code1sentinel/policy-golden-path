@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-from .heuristic import POLICY_CONFLICT_CAP
 from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
 
 DEFAULT_MODEL = "claude-opus-5"
@@ -32,10 +31,13 @@ statement says where the full set is defined.
 - policy_intent: only when a <policy-intent> is given. The statement meets what the organization's \
 own policy requires: its objective, and any specific commitments such as frequencies, time limits, \
 retention periods, approvers or technologies. A statement that falls short of a commitment (for \
-example annual reviews where the policy requires quarterly) contradicts the policy.
+example annual reviews where the policy requires quarterly) scores low. When the policy is \
+risk-based (for example "commensurate with risk") rather than fixed, the statement must say how \
+risk is rated (tiers, classification or criticality), give each tier a concrete frequency or time \
+limit, and say who sets the tiers and when they are revisited; "based on risk" alone scores low.
 
 Coverage matters most: a statement that is specific but misses part of the requirement should not \
-score highly. A statement that contradicts the policy intent must score below 50.
+score highly.
 
 """ + _COMMON
 
@@ -45,7 +47,8 @@ understand what is wrong, why, and what it could cost.
 
 Criteria:
 - condition: what is wrong, stated as fact with the evidence found (samples, counts, observations).
-- criteria: the control or policy requirement that is not met.
+- criteria: the control or policy requirement that is not met, described in its terms. When a \
+<requirement> or <policy-intent> is given, the condition should be stated against it.
 - cause: why the condition exists, specific enough for a recommendation to address it.
 - threat: who or what could exploit the weakness, and how likely that is.
 - impact: the effect on this system's confidentiality, integrity, availability or operations, and \
@@ -148,7 +151,14 @@ class ClaudeAssessor:
         header = (f"<risk title=\"{risk_title or ''}\" controls=\"{s.control_id or 'unspecified'}\">\n"
                   f"Ratings: {ratings}\n")
         if s.kind == RISK_STATEMENT:
-            return header + f"</risk>\n\n<risk-statement>\n{s.text or '(empty)'}\n</risk-statement>"
+            context = ""
+            if s.requirement:
+                context += f"<requirement>\n{s.requirement}\n</requirement>\n\n"
+            if s.policy_intent:
+                context += (f"<policy-intent policies=\"{', '.join(s.policy_ids)}\">\n{s.policy_intent}\n"
+                            "</policy-intent>\n\n")
+            return (header + f"</risk>\n\n{context}"
+                    f"<risk-statement>\n{s.text or '(empty)'}\n</risk-statement>")
         return (header + f"Risk statement: {s.risk_statement or '(none)'}\n</risk>\n\n"
                 f"<recommendation owner=\"{s.owner or 'not recorded'}\" deadline=\"{s.deadline or 'not recorded'}\">\n"
                 f"{s.text or '(empty)'}\n</recommendation>")
@@ -188,10 +198,5 @@ class ClaudeAssessor:
                     for c in verdict.get("criteria", [])]
         confidence = _clamp(verdict["confidence"])
         rationale = verdict.get("rationale", "")
-        # Match the heuristic engine: a statement that falls short of the policy is limited to 50%.
-        intent = next((c for c in criteria if c.name == POLICY_CRITERION), None)
-        if intent is not None and intent.score < 0.5 and confidence > POLICY_CONFLICT_CAP:
-            confidence = POLICY_CONFLICT_CAP
-            rationale += f" Limited to {POLICY_CONFLICT_CAP:.0%} because it does not meet the policy intent."
         return Assessment(statement, round(confidence, 4), engine, criteria,
                           list(verdict.get("improvements", [])), rationale.strip())

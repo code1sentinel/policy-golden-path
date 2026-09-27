@@ -21,7 +21,7 @@ def test_example_ssp_ranks_strong_above_weak(examples):
     )}
     strong = min(results["ia-2 [Okta]"].confidence, results["au-6 [Splunk]"].confidence)
     weak = max(results["ac-2_smt.j [Payments Platform]"].confidence, results["ac-2_smt.e [Okta]"].confidence)
-    assert strong >= 0.9 and weak <= 0.3
+    assert strong >= 0.9 and weak <= 0.35
     assert results["ia-2 [Okta]"].improvements == []
     assert results["ac-2_smt.e [Okta]"].confidence <= heuristic.PLACEHOLDER_CAP
 

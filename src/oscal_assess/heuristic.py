@@ -5,8 +5,8 @@ implementation statement: who does it, with what, how often, what evidence it
 leaves, whether it answers what the control actually requires, and whether it
 meets the intent of the organization's policy. The weighted sum is the
 confidence, reduced by wording that does not belong in a statement of fact
-(hedges, obligations, open-ended examples) and capped hard when the statement
-is a placeholder, describes planned work, or contradicts the policy.
+(hedges, obligations, open-ended examples) and limited when the statement is a
+placeholder or describes planned work.
 """
 
 from __future__ import annotations
@@ -29,8 +29,6 @@ WEIGHTS = {
 
 PLACEHOLDER_CAP = 0.20
 PLANNED_CAP = 0.50
-POLICY_CONFLICT_CAP = 0.50  # statement falls short of a policy commitment ("annually" vs "quarterly")
-POLICY_OMISSION_CAP = 0.75  # statement does not mention a commitment the policy makes
 TOLERANCE = 1.05  # "every 90 days" meets "quarterly"
 
 _PLACEHOLDER = re.compile(
@@ -112,7 +110,7 @@ _STOPWORDS = set(
     then there they not only more most must shall will can may using used use based including include
     includes organization organizational organizations defined assignment selection one following
     every least longer needed within days hours weeks months years business minimum
-    should could would might always regularly more less risk""".split()
+    should could would might always regularly more less risk often frequency""".split()
 )
 _WORD = re.compile(r"[a-z][a-z-]+")
 
@@ -205,26 +203,68 @@ _OMITTED = {
 }
 
 
-def _policy_intent(intent: str, text: str) -> tuple[float, str, list[str], list[str], list[str]]:
-    """Score how far the statement meets the policy intent.
+# A risk-based policy sets a principle ("reviewed at a frequency commensurate with risk") and leaves
+# the organization to decide the values. The statement must then show how risk becomes a schedule.
+_RISK_BASED = re.compile(
+    r"\b(risk[- ]based|based on (the )?(assessed )?(risk|criticality|classification|sensitivity)|"
+    r"commensurate with (the )?(assessed )?risk|proportionate to (the )?risk|in proportion to (the )?risk|"
+    r"according to (the )?(assessed )?risk|in line with (the )?risk|risk (tier|tiering|rating|level)s?|"
+    r"determined by (the )?risk)\b",
+    re.I,
+)
+_RISK_BASIS = re.compile(
+    r"\b(tier(s|ed|ing)? ?\d?|classif(y|ies|ied|ication)|criticality|critical|sensitivity|"
+    r"risk (rating|level|assessment|score|tier)s?|high[- ]risk|low[- ]risk|medium[- ]risk|"
+    r"privileged|impact level|data classification)\b",
+    re.I,
+)
+_REASSESS = re.compile(
+    r"\b(revisit(s|ed)?|reassess(es|ed|ment)?|re-?evaluat(e|es|ed|ion)|re-?tier(s|ed)?|recalibrat(e|es|ed)|"
+    r"(tiers?|tiering|ratings?|classifications?) (is|are) (reviewed|updated)|updated (after|when|annually|each))\b",
+    re.I,
+)
 
-    Returns (score, note, tips, conflicts, omissions): conflicts are commitments the
-    statement falls short of, omissions are commitments it does not mention.
+
+def _risk_based(text: str) -> tuple[float, str, list[str]]:
+    """How far the statement turns a risk-based policy into a concrete schedule. Returns (score, note, tips)."""
+    tips: list[str] = []
+    basis = _distinct(_RISK_BASIS, text)
+    schedule = sum(len(v) for v in commitments(text).values()) + len(_distinct(_FREQUENCY, text) - {"upon"})
+    mapped = 1.0 if basis and schedule >= 2 else 0.5 if (basis and schedule) or schedule >= 2 else 0.0
+    owner = 0.5 * bool(_ROLES.search(text)) + 0.5 * bool(_REASSESS.search(text))
+    if not basis:
+        vague = _distinct(_RISK_BASED, text)
+        said = f"'{sorted(vague)[0]}' without saying how risk is rated; " if vague else ""
+        tips.append(f"The policy is risk-based: {said}say how items are rated (tiers, classification or "
+                    "criticality).")
+    if mapped < 1:
+        tips.append("Give each risk tier its own frequency or time limit.")
+    if owner < 1:
+        tips.append("Say who sets the risk tiers and when they are revisited.")
+    score = (bool(basis) + mapped + owner) / 3
+    return score, f"risk basis {'named' if basis else 'missing'}, schedule per tier {mapped:.0%}, " \
+                  f"tier ownership {owner:.0%}", tips
+
+
+def _policy_intent(intent: str, text: str) -> tuple[float, str, list[str]]:
+    """Score how far the statement meets the policy intent. Returns (score, note, improvements).
+
+    Fixed commitments in the intent (how often, time limits, retention) must be
+    kept; a risk-based intent must be turned into a concrete schedule by risk.
     """
     required, found = commitments(intent), commitments(text)
     # Words inside a commitment ("retained for 3 years") are scored as commitments, not terms.
     phrases = " ".join(p for kind in required.values() for _, p in kind)
-    intent_words = {k: w for k, w in _term_words(intent).items() if k not in _terms(phrases)}
+    intent_words = {k: w for k, w in _term_words(intent).items()
+                    if k not in _terms(phrases) and k not in _terms(" ".join(_distinct(_RISK_BASED, intent)))}
     matched = set(intent_words) & _terms(text)
     term_score = min(1.0, (len(matched) / len(intent_words)) / 0.5) if intent_words else 1.0
     tips: list[str] = []
-    conflicts: list[str] = []
-    omissions: list[str] = []
     if term_score < 0.6:
         tips.append("Show how the statement meets the policy intent (missing terms: "
                     + _missing(intent_words, matched) + ").")
 
-    met = total = 0
+    met = total = short = 0
     for kind, wants in required.items():
         have = found[kind]
         for want, phrase in wants:
@@ -236,17 +276,25 @@ def _policy_intent(intent: str, text: str) -> tuple[float, str, list[str], list[
             if ok:
                 met += 1
             elif have:
+                short += 1
                 pick = max if kind == "retention" else min
-                closest = pick(have)[1]
-                conflicts.append(f'Policy requires "{phrase}"; the statement says "{closest}".')
+                tips.insert(0, f'Policy requires "{phrase}"; the statement says "{pick(have)[1]}".')
             else:
-                omissions.append(f'Policy requires "{phrase}"; the statement {_OMITTED[kind]}.')
+                tips.insert(0, f'Policy requires "{phrase}"; the statement {_OMITTED[kind]}.')
 
-    score = 0.4 * term_score + 0.6 * (met / total) if total else term_score
-    note = f"{len(matched)}/{len(intent_words)} intent terms"
+    parts = []  # (score, weight) of each thing the intent asks for beyond its terms
+    notes = [f"{len(matched)}/{len(intent_words)} intent terms"]
     if total:
-        note += f", {met}/{total} policy commitments met"
-    return score, note, tips, conflicts, omissions
+        # Falling short of a commitment counts against the statement; leaving one out only earns nothing.
+        parts.append(max(0.0, (met - 0.5 * short) / total))
+        notes.append(f"{met}/{total} policy commitments met" + (f", {short} fallen short of" if short else ""))
+    if _RISK_BASED.search(intent):
+        rb_score, rb_note, rb_tips = _risk_based(text)
+        parts.append(rb_score)
+        notes.append(rb_note)
+        tips += rb_tips
+    score = 0.4 * term_score + 0.6 * (sum(parts) / len(parts)) if parts else term_score
+    return score, ", ".join(notes), tips
 
 
 def _open_examples(text: str) -> list[str]:
@@ -374,13 +422,9 @@ def assess_implementation(statement: Statement) -> Assessment:
 
     caps: list[tuple[float, str]] = []
     if statement.policy_intent:
-        score, note, intent_tips, conflicts, omissions = _policy_intent(statement.policy_intent, text)
+        score, note, intent_tips = _policy_intent(statement.policy_intent, text)
         criteria.append(CriterionResult("policy_intent", score, WEIGHTS["policy_intent"], note))
-        improvements += conflicts + omissions + intent_tips
-        if conflicts:
-            caps.append((POLICY_CONFLICT_CAP, "falls short of a policy commitment"))
-        elif omissions:
-            caps.append((POLICY_OMISSION_CAP, "does not show a policy commitment is met"))
+        improvements += intent_tips
     if _PLANNED.search(text):
         caps.append((PLANNED_CAP, "describes planned rather than implemented work"))
         improvements.append("Describe what is implemented today, not what is planned.")
@@ -450,6 +494,31 @@ _REMEDY = re.compile(
 _LOW = re.compile(r"^\s*(very[- ]?low|low|minimal|negligible|1|2)\s*$", re.I)
 
 
+def _criteria_met(statement: Statement, weight: float, improvements: list[str]) -> CriterionResult:
+    """Does the risk statement name the requirement it fails, and describe it in the control's or policy's terms?"""
+    text = statement.text
+    named = _distinct(_CRITERIA_REF, text)
+    reference = " ".join(t for t in (statement.requirement, statement.policy_intent) if t)
+    if not reference:
+        if not named:
+            improvements.append("Name the control or policy requirement that is not met.")
+        return CriterionResult("criteria", float(bool(named)), weight, ", ".join(sorted(named)) or "none found")
+
+    words = _term_words(reference)
+    matched = set(words) & _terms(text)
+    overlap = min(1.0, (len(matched) / len(words) if words else 1.0) / 0.25)
+    score = 0.5 * bool(named) + 0.5 * overlap
+    sources = " and ".join(n for n, t in (("control", statement.requirement), ("policy", statement.policy_intent)) if t)
+    if not named:
+        improvements.append("Name the control or policy requirement that is not met.")
+    if overlap < 0.6:
+        verb = "require" if " and " in sources else "requires"
+        improvements.append(f"Describe the condition against what the {sources} {verb} "
+                            f"(missing terms: {_missing(words, matched)}).")
+    note = (", ".join(sorted(named)) or "no requirement named") + f"; {len(matched)}/{len(words)} {sources} terms"
+    return CriterionResult("criteria", score, weight, note)
+
+
 def assess_risk_statement(statement: Statement) -> Assessment:
     """Does the risk statement say what is wrong, why, who could exploit it, and what it would cost?"""
     text = statement.text.strip()
@@ -457,7 +526,7 @@ def assess_risk_statement(statement: Statement) -> Assessment:
     improvements: list[str] = []
     criteria = [
         _signal("condition", _CONDITION, text, 2, w["condition"]),
-        _signal("criteria", _CRITERIA_REF, text, 1, w["criteria"]),
+        _criteria_met(statement, w["criteria"], improvements),
         _signal("cause", _CAUSE, text, 1, w["cause"]),
     ]
     threat = _distinct(_THREAT, text)
@@ -472,7 +541,6 @@ def assess_risk_statement(statement: Statement) -> Assessment:
     tips = {
         "condition": "State the condition as fact, with the evidence found (for example '14 of 60 sampled "
                      "accounts belonged to leavers').",
-        "criteria": "Name the control or policy requirement that is not met.",
         "cause": "Explain the cause, so the recommendation can address it.",
         "impact": "Describe the impact on this system: which data or service, and the effect on "
                   "confidentiality, integrity, availability or the business.",

@@ -16,7 +16,8 @@ A policy file maps policy statements to the controls that implement them:
 `controls` may name control ids (matching every statement of that control) or
 statement ids (matching only that part). A policy without `controls` applies
 to every statement. When several policies match a statement, all of their
-intents apply.
+intents apply. Policies apply to risk statements through the controls their
+findings target, as well as to implementation statements.
 """
 
 from __future__ import annotations
@@ -38,9 +39,11 @@ class Policy:
     def applies_to(self, statement: Statement) -> bool:
         if not self.controls:
             return True
-        ids = {statement.control_id.lower()}
-        if statement.statement_id:
-            ids.add(statement.statement_id.lower())
+        ids = set()
+        for control, part in statement.targets:
+            ids.add(control.lower())
+            if part:
+                ids.add(part.lower())
         return bool(ids & set(self.controls))
 
 

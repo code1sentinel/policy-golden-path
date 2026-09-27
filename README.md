@@ -75,7 +75,9 @@ oscal-assess DOCUMENT [options]
 | `plan-of-action-and-milestones` | The same, from the top-level `risks`. |
 
 For risks, the control comes from the findings that reference the risk
-(`related-risks`) and their `target.target-id`. Ratings come from the
+(`related-risks`) and their `target.target-id`. `--catalog` and `--policy`
+apply to risk statements through those controls, as they do to
+implementation statements. Ratings come from the
 `characterizations` facets named `likelihood`, `impact`, `risk`, `severity` or
 `priority`. A recommendation's date comes from its tasks' `timing`, or else the
 risk's `deadline`; its owner from its tasks' `responsible-roles` or its
@@ -112,7 +114,8 @@ or empty text (`TBD`, `N/A`, `[insert ...]`) is limited to 20%.
 
 When there is no catalog or no policy intent, the other weights scale up to
 100%. Describing planned work (`will be implemented`, `roadmap`) limits the
-score to 50%.
+score to 50%. Nothing about the policy limits the score: falling short of it
+lowers the `policy_intent` criterion like any other.
 
 ### Risk statements
 
@@ -123,7 +126,7 @@ score to 50%.
 | cause | 15% | Why did it happen, specifically enough to fix? |
 | threat | 15% | Who or what could exploit it, and how likely is that? |
 | scope | 10% | Which systems, accounts or components, and how many? |
-| criteria | 10% | Which control or policy requirement is not met? |
+| criteria | 10% | Which control or policy requirement is not met? With `--catalog` or `--policy`, the condition should also be described in that requirement's terms. |
 | rating | 10% | Are likelihood and impact recorded in `characterizations`, and consistent with the text? A `low` rating on a statement about fraudulent payments is flagged. |
 
 Remediation advice inside a risk statement ("the team should...") is flagged
@@ -169,8 +172,13 @@ control) or statement ids (`ac-2_smt.j`, matching that part only). A policy
 without `controls` applies to every statement, as does `--intent`. When more
 than one policy matches a statement, all of them apply.
 
-The statement is scored on whether it speaks to the intent (its key terms) and
-keeps the intent's measurable commitments:
+The `policy_intent` criterion is 40% whether the statement speaks to the
+intent (its key terms) and 60% what the intent asks for, which depends on the
+kind of policy.
+
+### Fixed commitments
+
+When the intent states measurable commitments, the statement must keep them:
 
 | Commitment | Intent says | Kept by | Falls short |
 | --- | --- | --- | --- |
@@ -178,9 +186,33 @@ keeps the intent's measurable commitments:
 | Time limit | `within 5 business days`, `within 24 hours` | the same or faster | `within 30 days` |
 | Retention | `retained for at least 12 months`, `3-year retention` | the same or longer | `kept for 6 months` |
 
-Falling short of a commitment limits the score to 50%; not mentioning one
-limits it to 75%. A risk-based intent with no fixed timelines is scored on its
-key terms only.
+A commitment the statement leaves out earns nothing; one it falls short of
+counts against it, so falling short scores lower than leaving it out.
+
+### Risk-based intent
+
+A risk-based intent sets a principle and leaves the values to you:
+"reviewed at a frequency commensurate with the risk of the access". It is
+recognised by wording such as `risk-based`, `commensurate with risk`,
+`based on criticality` or `risk tier`, and needs no fixed timeline. Instead the
+statement must show how risk becomes a schedule:
+
+| Check | Looks for |
+| --- | --- |
+| Risk basis | How items are rated: tiers, classification, criticality, privileged or high-risk |
+| Schedule per tier | A concrete frequency or time limit for each tier |
+| Ownership | Who sets the tiers, and when they are revisited or reassessed |
+
+"Managers review access based on risk" scores low on all three. This scores
+full marks:
+
+> Accounts are tiered in the annual access risk assessment owned by the CISO:
+> Tier 1 covers privileged and payment access, Tier 2 everything else.
+> Managers review Tier 1 access quarterly and Tier 2 access annually in Okta.
+> Tiers are reassessed after major changes.
+
+An intent can mix both, for example risk-based review frequency with a fixed
+5-day removal time; each part is checked.
 
 ## Engines
 

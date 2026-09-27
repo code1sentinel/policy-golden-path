@@ -20,8 +20,8 @@ def load_statements(path: str | Path, catalog: Catalog | None = None) -> list[St
     statements = extract_statements(data)
     if catalog is not None:
         for s in statements:
-            if s.kind == "implementation":
-                s.requirement = catalog.requirement(s.control_id, s.statement_id)
+            texts = [catalog.requirement(cid, sid) for cid, sid in s.targets]
+            s.requirement = " ".join(t for t in texts if t) or None
     return statements
 
 

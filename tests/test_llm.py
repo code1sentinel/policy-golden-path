@@ -71,7 +71,7 @@ def schema_names(call):
     return call["output_config"]["format"]["schema"]["properties"]["criteria"]["items"]["properties"]["name"]["enum"]
 
 
-def test_policy_intent_is_sent_and_enforced():
+def test_policy_intent_is_sent_and_scored_without_a_limit():
     stmt = Statement("ac-2", "Accounts are reviewed annually.", "ssp", statement_id="ac-2_smt.j",
                      policy_intent="Accounts are reviewed at least quarterly.", policy_ids=["ISP-05.1"])
     payload = {
@@ -86,7 +86,8 @@ def test_policy_intent_is_sent_and_enforced():
     call = messages.calls[0]
     assert '<policy-intent policies="ISP-05.1">' in call["messages"][0]["content"]
     assert "policy_intent" in schema_names(call)
-    assert a.confidence == 0.5 and "policy intent" in a.rationale
+    assert a.confidence == 0.9 and a.criteria[0].score == 0.2
+    assert "risk-based" in call["system"]
 
 
 def test_no_policy_criterion_without_intent():
@@ -109,6 +110,14 @@ def test_risk_statement_and_recommendation_prompts():
     assert set(schema_names(call)) == {"condition", "criteria", "cause", "threat", "impact", "scope", "rating",
                                        "clarity"}
     assert "Ratings: likelihood: high" in call["messages"][0]["content"]
+    assert "<requirement>" not in call["messages"][0]["content"]
+
+    risk.requirement = "j. Review accounts for compliance."
+    risk.policy_intent, risk.policy_ids = "Access is reviewed quarterly.", ["ISP-05.1"]
+    client, messages = fake_client(payload=empty)
+    ClaudeAssessor(client=client).assess(risk)
+    content = messages.calls[0]["messages"][0]["content"]
+    assert "<requirement>\nj. Review accounts" in content and '<policy-intent policies="ISP-05.1">' in content
 
     rec = Statement("ac-2_smt.j", "Disable the accounts.", "assessment-results", kind=RECOMMENDATION,
                     title="Disable leavers", risk_title="Leaver accounts", risk_statement=risk.text,

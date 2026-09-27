@@ -40,6 +40,21 @@ class Statement:
     owner: str | None = None  # responsible roles or parties recorded on the remediation
 
     @property
+    def targets(self) -> list[tuple[str, str | None]]:
+        """The (control id, statement id) pairs this text is about.
+
+        A risk can be linked to several controls or statement parts, joined as
+        "ac-2_smt.j, au-6"; each part id's control is the text before the "_".
+        """
+        if self.kind == IMPLEMENTATION:
+            return [(self.control_id, self.statement_id)] if self.control_id else []
+        out = []
+        for target in filter(None, (t.strip() for t in self.control_id.split(","))):
+            control, _, part = target.partition("_")
+            out.append((control, target if part else None))
+        return out
+
+    @property
     def key(self) -> str:
         if self.kind != IMPLEMENTATION:
             label = self.title or self.uuid or "untitled"
