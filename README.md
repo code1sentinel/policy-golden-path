@@ -51,7 +51,47 @@ pip install -e ".[claude]"  # adds the Claude engine
 
 Python 3.10 or later.
 
-## Usage
+## Web app
+
+```
+oscal-assess-web --open
+```
+
+Opens the assessor at http://localhost:8765/ with two modes:
+
+- **Single input**: choose implementation statement, risk statement or
+  recommendation, paste the text, and optionally add context: the control
+  requirement and policy intent; likelihood and impact for a risk; the risk
+  statement, rating, owner and target date for a recommendation. **Load
+  example** fills in a weak example of each kind.
+- **Batch upload**: drop several OSCAL JSON files (SSP, component definition,
+  assessment results, POA&M) or CSV files at once, with an optional catalog and
+  policy file. Results show the average confidence per kind, then every item,
+  which you can filter by kind, search, sort by confidence or number of
+  improvements, and expand for its criteria and areas for improvement.
+  Download them as CSV, JSON or Markdown. A file that cannot be read is listed
+  with the reason and the rest are still assessed.
+
+Confidence bars use one colour throughout: the page shows scores, not pass or
+fail.
+
+The engine selector offers Claude when the `anthropic` package is installed
+and credentials are set in the environment that runs the server. A Claude run
+is limited to 200 items, to bound cost.
+
+| Option | Default | |
+| --- | --- | --- |
+| `--host` | `127.0.0.1` | Interface to bind |
+| `--port` | `8765` | Port |
+| `--open` | off | Open the page in a browser |
+
+The server uses only the Python standard library. It has **no
+authentication**, so it listens on this machine only by default; binding
+another interface prints a warning. It refuses cross-site requests, limits
+requests to 20 MB, keeps nothing on disk, and renders uploaded text as text,
+never markup.
+
+## Command line
 
 ```
 oscal-assess DOCUMENT [options]
@@ -73,6 +113,7 @@ oscal-assess DOCUMENT [options]
 | `component-definition` | Each `statements[].description` under an implemented requirement. When a requirement has no statements, its own `description` is read instead. |
 | `assessment-results` | For each risk in each result: its `statement` as a risk statement, and each `remediations[]` entry with `lifecycle: recommendation` as a recommendation. |
 | `plan-of-action-and-milestones` | The same, from the top-level `risks`. |
+| CSV (`.csv`) | One item per row: see below. |
 
 For risks, the control comes from the findings that reference the risk
 (`related-risks`) and their `target.target-id`. `--catalog` and `--policy`
@@ -83,7 +124,26 @@ implementation statements. Ratings come from the
 risk's `deadline`; its owner from its tasks' `responsible-roles` or its
 `origins`.
 
-Only JSON is supported. Convert XML or YAML with the NIST OSCAL CLI first.
+Only JSON OSCAL is supported. Convert XML or YAML with the NIST OSCAL CLI
+first.
+
+### CSV
+
+For statements that are not in OSCAL yet, such as a spreadsheet of draft
+statements. Download the template from the web app, or see
+`src/oscal_assess/tabular.py`. Only `text` is required:
+
+| Column | |
+| --- | --- |
+| `kind` | `implementation` (default), `risk-statement` or `recommendation` |
+| `control_id`, `statement_id`, `component`, `title` | Identify the item |
+| `text` | The statement, risk statement or recommendation |
+| `requirement`, `policy_intent` | Context for this row, when no catalog or policy file is given |
+| `risk_statement` | For a recommendation: the risk it responds to |
+| `likelihood`, `impact`, `risk` | Ratings |
+| `owner`, `deadline` | For a recommendation |
+
+Headers are case-insensitive, and spaces or hyphens count as underscores.
 
 ## Criteria
 
@@ -276,7 +336,11 @@ The Claude engine's tests use a stub client, so they run offline.
 
 ```
 src/oscal_assess/
-  cli.py        argument parsing
+  cli.py        command line
+  webapp.py     web app server (oscal-assess-web)
+  static/       web app page, styles and script
+  service.py    the pipeline both share
+  tabular.py    CSV input and template
   loader.py     reads each supported OSCAL document
   findings.py   risk statements and recommendations out of assessment results and POA&Ms
   catalog.py    control and statement-part text out of catalogs

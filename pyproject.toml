@@ -17,9 +17,13 @@ dev = ["pytest>=8"]
 
 [project.scripts]
 oscal-assess = "oscal_assess.cli:main"
+oscal-assess-web = "oscal_assess.webapp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+oscal_assess = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

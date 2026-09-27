@@ -84,6 +84,7 @@ class Assessment:
         s = self.statement
         out = {
             "kind": s.kind,
+            "item": s.key,
             "control_id": s.control_id or None,
             "uuid": s.uuid,
             "source": s.source,

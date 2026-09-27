@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import argparse
 import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import heuristic, report
+from . import report
 from .catalog import Catalog
-from .loader import load_statements
-from .policy import Policy, attach_intents, load_policies
+from .policy import Policy, load_policies
+from .service import assess_all, parse_document, prepare
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -17,7 +16,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="Score OSCAL implementation statements, risk statements and recommendations, "
                     "and list areas for improvement.",
     )
-    p.add_argument("document", help="OSCAL SSP, component definition, assessment results or POA&M (JSON)")
+    p.add_argument("document", help="OSCAL SSP, component definition, assessment results or POA&M (JSON), "
+                                    "or a CSV of statements")
     p.add_argument("-c", "--catalog", help="OSCAL catalog (JSON) supplying control requirement text")
     p.add_argument("-p", "--policy", metavar="PATH",
                    help="policy file (JSON) giving the policy intent each control must meet")
@@ -40,23 +40,16 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         catalog = Catalog.load(args.catalog) if args.catalog else None
-        statements = load_statements(args.document, catalog)
+        statements = parse_document(args.document, Path(args.document).read_text(encoding="utf-8"))
         policies = load_policies(args.policy) if args.policy else []
         if args.intent:
             policies.append(Policy("--intent", args.intent.strip()))
-        attach_intents(statements, policies)
+        prepare(statements, catalog, policies)
     except (OSError, ValueError, KeyError) as exc:
         print(f"oscal-assess: {exc}", file=sys.stderr)
         return 2
 
-    if args.engine == "claude":
-        from .llm import DEFAULT_MODEL, ClaudeAssessor
-
-        assessor = ClaudeAssessor(model=args.model or DEFAULT_MODEL, effort=args.effort)
-        with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
-            assessments = list(pool.map(lambda s: assessor.assess(s), statements))
-    else:
-        assessments = [heuristic.assess(s) for s in statements]
+    assessments = assess_all(statements, args.engine, args.model, args.effort, args.workers)
 
     rendered = {"table": report.to_table, "json": report.to_json, "markdown": report.to_markdown}[args.format](
         assessments

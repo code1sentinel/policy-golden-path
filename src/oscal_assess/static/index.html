@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OSCAL Assess</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F1F1F'/%3E%3Cpath d='M0 0h32L0 32z' fill='%23E8650A'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap top__row">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <div>
+          <h1 class="brand__name">OSCAL Assess</h1>
+          <p class="brand__tag">Scores implementation statements, risk statements and recommendations, and lists areas for improvement.</p>
+        </div>
+      </div>
+      <label class="engine">
+        <span>Engine</span>
+        <select id="engine">
+          <option value="heuristic">Heuristic (offline)</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <div class="tabs" role="tablist" aria-label="Assessment mode">
+      <button class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single input</button>
+      <button class="tab" role="tab" id="tab-batch" aria-controls="panel-batch" aria-selected="false" tabindex="-1">Batch upload</button>
+    </div>
+
+    <div id="error" class="error" role="alert" hidden></div>
+
+    <!-- Single input -->
+    <section id="panel-single" class="panel" role="tabpanel" aria-labelledby="tab-single">
+      <div class="split">
+        <form id="single-form" class="card" novalidate>
+          <fieldset class="kinds">
+            <legend>What are you assessing?</legend>
+            <label class="kind"><input type="radio" name="kind" value="implementation" checked><span>Implementation statement</span></label>
+            <label class="kind"><input type="radio" name="kind" value="risk-statement"><span>Risk statement</span></label>
+            <label class="kind"><input type="radio" name="kind" value="recommendation"><span>Recommendation</span></label>
+          </fieldset>
+
+          <div class="row">
+            <label class="field">
+              <span>Control ID</span>
+              <input name="control_id" placeholder="ac-2" autocomplete="off">
+            </label>
+            <label class="field" data-for="implementation">
+              <span>Statement part <em>optional</em></span>
+              <input name="statement_id" placeholder="ac-2_smt.j" autocomplete="off">
+            </label>
+            <label class="field" data-for="risk-statement recommendation">
+              <span>Title <em>optional</em></span>
+              <input name="title" autocomplete="off">
+            </label>
+          </div>
+
+          <label class="field">
+            <span id="text-label">Implementation statement</span>
+            <textarea name="text" rows="7" required></textarea>
+          </label>
+
+          <details class="context" open>
+            <summary>Context <em>optional, improves the assessment</em></summary>
+
+            <label class="field" data-for="implementation risk-statement">
+              <span>Control requirement</span>
+              <textarea name="requirement" rows="3" placeholder="The control text from the catalog"></textarea>
+            </label>
+            <label class="field" data-for="implementation risk-statement">
+              <span>Policy intent</span>
+              <textarea name="policy_intent" rows="3" placeholder="What your policy says this control must achieve"></textarea>
+            </label>
+
+            <div class="row" data-for="risk-statement">
+              <label class="field">
+                <span>Likelihood</span>
+                <select name="likelihood">
+                  <option value="">Not rated</option><option>very low</option><option>low</option><option>moderate</option><option>high</option><option>very high</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Impact</span>
+                <select name="impact">
+                  <option value="">Not rated</option><option>very low</option><option>low</option><option>moderate</option><option>high</option><option>very high</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="field" data-for="recommendation">
+              <span>Risk statement it responds to</span>
+              <textarea name="risk_statement" rows="3"></textarea>
+            </label>
+            <div class="row" data-for="recommendation">
+              <label class="field">
+                <span>Risk rating</span>
+                <select name="risk">
+                  <option value="">Not rated</option><option>very low</option><option>low</option><option>moderate</option><option>high</option><option>very high</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Owner</span>
+                <input name="owner" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Target date</span>
+                <input name="deadline" type="date">
+              </label>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button type="submit" class="btn btn--primary" id="single-submit">Assess</button>
+            <button type="button" class="btn" id="single-example">Load example</button>
+            <button type="reset" class="btn btn--quiet">Clear</button>
+          </div>
+        </form>
+
+        <div id="single-result" class="card result-card" aria-live="polite">
+          <p class="placeholder">Enter a statement and select <strong>Assess</strong>. The result shows a confidence score and the areas for improvement. It does not pass or fail anything: your review process decides that.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Batch upload -->
+    <section id="panel-batch" class="panel" role="tabpanel" aria-labelledby="tab-batch" hidden>
+      <div class="card">
+        <label class="drop" id="drop">
+          <input type="file" id="batch-files" multiple accept=".json,.csv,application/json,text/csv">
+          <span class="drop__title">Drop files here, or <u>browse</u></span>
+          <span class="drop__hint">OSCAL JSON (SSP, component definition, assessment results, POA&amp;M) or CSV. Several files at once.</span>
+        </label>
+
+        <ul id="file-list" class="files"></ul>
+
+        <div class="row row--context">
+          <label class="field">
+            <span>Catalog <em>optional, JSON</em></span>
+            <input type="file" id="batch-catalog" accept=".json,application/json">
+          </label>
+          <label class="field">
+            <span>Policy file <em>optional, JSON</em></span>
+            <input type="file" id="batch-policy" accept=".json,application/json">
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="batch-submit" disabled>Assess</button>
+          <a class="btn btn--quiet" href="/api/template.csv" download>Download CSV template</a>
+        </div>
+      </div>
+
+      <div id="batch-results" hidden>
+        <ul id="file-status" class="file-status"></ul>
+        <div id="tiles" class="tiles"></div>
+
+        <div class="toolbar">
+          <label class="field field--inline">
+            <span>Show</span>
+            <select id="filter-kind"><option value="">All kinds</option></select>
+          </label>
+          <label class="field field--inline field--grow">
+            <span>Search</span>
+            <input id="filter-text" type="search" placeholder="Control, title or text">
+          </label>
+          <label class="field field--inline">
+            <span>Sort</span>
+            <select id="sort">
+              <option value="doc">Document order</option>
+              <option value="low">Lowest confidence first</option>
+              <option value="high">Highest confidence first</option>
+              <option value="most">Most improvements first</option>
+            </select>
+          </label>
+          <div class="downloads">
+            <span>Download</span>
+            <button type="button" class="btn btn--small" data-download="csv">CSV</button>
+            <button type="button" class="btn btn--small" data-download="json">JSON</button>
+            <button type="button" class="btn btn--small" data-download="md">Markdown</button>
+          </div>
+        </div>
+
+        <p id="shown" class="shown"></p>
+        <div id="results" class="results"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Scores reflect how a statement is written, not whether it is true. <span id="version"></span></p>
+  </footer>
+
+  <template id="result-tpl">
+    <details class="result">
+      <summary class="result__row">
+        <span class="badge"></span>
+        <span class="result__item"><span class="result__title"></span><span class="result__file"></span></span>
+        <span class="score"><span class="bar"><span class="bar__fill"></span></span><span class="score__pct"></span></span>
+        <span class="result__count"></span>
+      </summary>
+      <div class="result__body"></div>
+    </details>
+  </template>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
