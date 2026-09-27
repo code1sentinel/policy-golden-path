@@ -69,6 +69,7 @@ class CriterionResult:
     score: float  # 0.0 to 1.0
     weight: float
     note: str = ""
+    issues: list[str] = field(default_factory=list)  # areas for improvement that belong to this practice
 
 
 @dataclass
@@ -87,7 +88,7 @@ class Assessment:
 
         counts = {"adopted": 0, "partly": 0, "not-yet": 0}
         for c in self.criteria:
-            counts[practice_status(c.score)] += 1
+            counts[practice_status(c.score, bool(c.issues))] += 1
         return {**counts, "total": len(self.criteria)}
 
     def to_dict(self) -> dict:
@@ -113,8 +114,8 @@ class Assessment:
             "practices": self.practices,
             "criteria": [
                 {"name": c.name, "practice": (practice(s.kind, c.name) or {}).get("title", c.name),
-                 "status": practice_status(c.score), "score": round(c.score, 4), "weight": round(c.weight, 4),
-                 "note": c.note}
+                 "status": practice_status(c.score, bool(c.issues)), "score": round(c.score, 4),
+                 "weight": round(c.weight, 4), "note": c.note, "issues": c.issues}
                 for c in self.criteria
             ],
             "improvements": self.improvements,

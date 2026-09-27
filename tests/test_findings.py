@@ -62,7 +62,8 @@ GOOD_RISK = ("14 of 60 sampled Okta accounts belonged to leavers, which does not
 def test_risk_statement_criteria():
     a = risk(GOOD_RISK, likelihood="high", impact="high")
     assert {c.name: c.score for c in a.criteria} == {
-        "condition": 1.0, "criteria": 1.0, "cause": 1.0, "threat": 1.0, "impact": 1.0, "scope": 1.0, "rating": 1.0}
+        "condition": 1.0, "criteria": 1.0, "cause": 1.0, "threat": 1.0, "impact": 1.0, "scope": 1.0, "rating": 1.0,
+        "clarity": 1.0}
     assert a.improvements == []
 
 

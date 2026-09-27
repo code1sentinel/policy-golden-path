@@ -15,9 +15,12 @@ ADOPTED = 0.8
 PARTLY = 0.4
 
 
-def practice_status(score: float) -> str:
-    if score >= ADOPTED:
+def practice_status(score: float, has_issues: bool = False) -> str:
+    """Adopted needs a high score and no outstanding improvement; an open improvement caps it at partly."""
+    if score >= ADOPTED and not has_issues:
         return "adopted"
+    if score >= ADOPTED:
+        return "partly"
     if score >= PARTLY:
         return "partly"
     return "not-yet"

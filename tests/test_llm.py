@@ -34,7 +34,7 @@ def test_verdict_is_parsed():
     payload = {
         "confidence": 85,
         "criteria": [{"name": "coverage", "score": 90, "note": "ok"}],
-        "improvements": ["Name the evidence."],
+        "improvements": [{"practice": "coverage", "text": "Name the evidence."}],
         "rationale": "Mostly complete.",
     }
     client, messages = fake_client(payload=payload)
@@ -42,6 +42,11 @@ def test_verdict_is_parsed():
 
     assert a.confidence == 0.85
     assert a.improvements == ["Name the evidence."]
+    # coverage scored 90 but has an open improvement, so it is partly adopted, not adopted
+    [coverage] = [c for c in a.to_dict()["criteria"] if c["name"] == "coverage"]
+    assert coverage["issues"] == ["Name the evidence."] and coverage["status"] == "partly"
+    schema = messages.calls[0]["output_config"]["format"]["schema"]
+    assert schema["properties"]["improvements"]["items"]["required"] == ["practice", "text"]
     assert a.engine == "claude:claude-opus-5"
     call = messages.calls[0]
     assert call["model"] == "claude-opus-5"

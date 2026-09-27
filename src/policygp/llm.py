@@ -11,8 +11,8 @@ POLICY_CRITERION = "policy_intent"
 
 _COMMON = """Judge only what the text says; do not give credit for things it implies but does not \
 state. Score each criterion from 0 to 100 and give an overall confidence from 0 to 100 that the text \
-does its job. Then list the areas for improvement, each a concrete change the author can make, and \
-give a two or three sentence rationale. Do not decide whether the text passes or fails."""
+does its job. Then list the areas for improvement, each a concrete change the author can make, tagged \
+with the criterion it would improve, and give a two or three sentence rationale. Do not decide whether the text passes or fails."""
 
 _IMPLEMENTATION = """You are an experienced security control assessor reviewing an implementation \
 statement from an OSCAL system security plan or component definition: it should show how the control \
@@ -104,7 +104,18 @@ def output_schema(criteria: tuple[str, ...]) -> dict:
                     "additionalProperties": False,
                 },
             },
-            "improvements": {"type": "array", "items": {"type": "string"}},
+            "improvements": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "practice": {"type": "string", "enum": list(criteria)},
+                        "text": {"type": "string"},
+                    },
+                    "required": ["practice", "text"],
+                    "additionalProperties": False,
+                },
+            },
             "rationale": {"type": "string"},
         },
         "required": ["confidence", "criteria", "improvements", "rationale"],
@@ -198,5 +209,14 @@ class ClaudeAssessor:
                     for c in verdict.get("criteria", [])]
         confidence = _clamp(verdict["confidence"])
         rationale = verdict.get("rationale", "")
-        return Assessment(statement, round(confidence, 4), engine, criteria,
-                          list(verdict.get("improvements", [])), rationale.strip())
+        # Attach each improvement to its practice, so a practice with an open improvement is never "adopted".
+        improvements = []
+        by_name = {c.name: c for c in criteria}
+        for item in verdict.get("improvements", []):
+            practice, text = (item.get("practice"), item.get("text", "")) if isinstance(item, dict) else (None, item)
+            if not text:
+                continue
+            improvements.append(text)
+            if practice in by_name:
+                by_name[practice].issues.append(text)
+        return Assessment(statement, round(confidence, 4), engine, criteria, improvements, rationale.strip())

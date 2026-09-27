@@ -42,13 +42,13 @@ of Singapore; it borrows IHP's approach, not its content.
 $ policygp examples/assessment-results-example.json
 Kind            Item                                               Confidence  Practices adopted  Improvements
 --------------  -------------------------------------------------  ----------  -----------------  ------------
-Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                7/7             0
-Recommendation  Automate leaver deprovisioning [ac-2_smt.j]               98%                6/6             0
-Risk statement  Audit review gaps [au-6]                                   5%                0/7             9
-Recommendation  Improve log review [au-6]                                 11%                0/6             8
+Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                8/8             0
+Recommendation  Automate leaver deprovisioning [ac-2_smt.j]               98%                7/7             0
+Risk statement  Audit review gaps [au-6]                                   5%                0/8             9
+Recommendation  Improve log review [au-6]                                 11%                0/7             8
 
-2 risk statements: average confidence 52%, 7 of 14 best practices adopted, 1 with areas for improvement.
-2 recommendations: average confidence 55%, 6 of 12 best practices adopted, 1 with areas for improvement.
+2 risk statements: average confidence 52%, 8 of 16 best practices adopted, 1 with areas for improvement.
+2 recommendations: average confidence 55%, 7 of 14 best practices adopted, 1 with areas for improvement.
 
 Areas for improvement
 ---------------------
@@ -180,8 +180,16 @@ Headers are case-insensitive, and spaces or hyphens count as underscores.
 ## Best practices
 
 Each criterion below is a best practice. A practice is **adopted** when it
-scores 80% or more, **partly adopted** from 40%, and **not yet adopted**
-below that. The guides for every practice are in
+scores 80% or more and has no outstanding area for improvement, **partly
+adopted** from 40% (or when a high score still has an improvement open), and
+**not yet adopted** below that. Every area for improvement belongs to one
+practice, so the counts and the list always agree.
+
+Wording issues (hedges, open-ended examples, obligations, placeholders and
+planned work) count against a practice of their own: **State facts about
+today** for implementation statements, **Keep it factual** for risk
+statements, **Keep it firm** for recommendations. It has no weight, because
+wording already reduces the score directly. The guides for every practice are in
 `src/policygp/guides.py`, shown in the web app's Guides section.
 
 All three kinds share the same wording rules, adjusted to what each is for:

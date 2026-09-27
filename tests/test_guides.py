@@ -45,5 +45,50 @@ def test_summary_counts_practices(examples):
 
     items = [heuristic.assess(s) for s in load_statements(examples / "assessment-results-example.json")]
     s = report.summary(items)["by_kind"]["risk-statement"]
-    assert s["practices_total"] == 14 and s["practices_adopted"] == 7
-    assert "7 of 14 best practices adopted" in report.to_table(items)
+    assert s["practices_total"] == 16 and s["practices_adopted"] == 8
+    assert "8 of 16 best practices adopted" in report.to_table(items)
+
+
+def _all_assessments(examples):
+    from policygp.catalog import Catalog
+    from policygp.loader import load_statements
+    from policygp.policy import attach_intents, load_policies
+
+    catalog = Catalog.load(examples / "catalog-excerpt.json")
+    policies = load_policies(examples / "policy-example.json")
+    out = []
+    for name in ("ssp-example.json", "component-definition-example.json", "assessment-results-example.json"):
+        items = load_statements(examples / name, catalog)
+        attach_intents(items, policies)
+        out += [heuristic.assess(s) for s in items]
+    return out
+
+
+def test_every_improvement_belongs_to_a_practice(examples):
+    for a in _all_assessments(examples):
+        attached = [i for c in a.criteria for i in c.issues]
+        assert sorted(attached) == sorted(a.improvements), a.statement.key
+
+
+def test_no_adopted_practice_has_an_open_improvement(examples):
+    for a in _all_assessments(examples):
+        for c in a.to_dict()["criteria"]:
+            if c["status"] == "adopted":
+                assert c["issues"] == [], (a.statement.key, c["name"])
+        if a.improvements:
+            assert a.practices["adopted"] < a.practices["total"], a.statement.key
+
+
+def test_open_improvement_caps_a_high_score_at_partly():
+    assert practice_status(0.95, has_issues=True) == "partly"
+    assert practice_status(0.95, has_issues=False) == "adopted"
+    assert practice_status(0.2, has_issues=True) == "not-yet"
+
+
+def test_wording_practice_carries_no_weight():
+    text = ("The SOC team reviews alerts daily in Splunk for unusual activity such as privilege escalation, "
+            "and each review is recorded in a ServiceNow ticket.")
+    a = heuristic.assess(Statement("au-6", text, "ssp"))
+    implemented = next(c for c in a.criteria if c.name == "implemented")
+    assert implemented.weight == 0 and implemented.issues
+    assert abs(sum(c.weight for c in a.criteria) - 1.0) < 1e-9
