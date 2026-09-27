@@ -17,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "and list areas for improvement.",
     )
     p.add_argument("document", help="OSCAL SSP, component definition, assessment results or POA&M (JSON), "
-                                    "or a CSV of statements")
+                                    "a CSV or an Excel workbook (.xlsx) with one row per policy")
     p.add_argument("-c", "--catalog", help="OSCAL catalog (JSON) supplying control requirement text")
     p.add_argument("-p", "--policy", metavar="PATH",
                    help="policy file (JSON) giving the policy intent each control must meet")
@@ -40,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         catalog = Catalog.load(args.catalog) if args.catalog else None
-        statements = parse_document(args.document, Path(args.document).read_text(encoding="utf-8"))
+        statements = parse_document(args.document, Path(args.document).read_bytes())
         policies = load_policies(args.policy) if args.policy else []
         if args.intent:
             policies.append(Policy("--intent", args.intent.strip()))

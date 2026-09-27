@@ -157,13 +157,13 @@
     <section id="panel-batch" class="panel" role="tabpanel" aria-labelledby="tab-batch" hidden>
       <div class="card">
         <label class="drop" id="drop">
-          <input type="file" id="batch-files" multiple accept=".json,.csv,application/json,text/csv">
+          <input type="file" id="batch-files" multiple accept=".csv,.xlsx,.json,text/csv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
           <span class="drop__title">Drop files here, or <u>browse</u></span>
-          <span class="drop__hint">A CSV with one row per policy (columns below), or OSCAL JSON (SSP, component definition, assessment results, POA&amp;M). Several files at once.</span>
+          <span class="drop__hint">A CSV or Excel (.xlsx) file with one row per policy (columns below), or OSCAL JSON (SSP, component definition, assessment results, POA&amp;M). Several files at once.</span>
         </label>
 
         <details class="columns" open>
-          <summary>CSV columns</summary>
+          <summary>CSV and Excel columns</summary>
           <p class="columns__lead">One row per policy, followed down the golden path. Your file needs these four columns; a cell can be left empty if a row has nothing for it.</p>
           <table class="columns__table">
             <thead>
@@ -178,7 +178,7 @@
               </tr>
             </tbody>
           </table>
-          <p class="columns__optional"><strong>Optional:</strong> control id, control requirement, title, likelihood, impact, owner, target date. Column names are not case-sensitive, and comma, semicolon or tab separated files all work, so you can save a spreadsheet as CSV and upload it.</p>
+          <p class="columns__optional"><strong>Optional:</strong> control id, control requirement, title, likelihood, impact, owner, target date. Column names are not case-sensitive. Upload an Excel workbook as it is (the sheet with these columns is used), or a comma, semicolon or tab separated CSV.</p>
         </details>
 
         <ul id="file-list" class="files"></ul>
@@ -196,7 +196,10 @@
 
         <div class="actions">
           <button type="button" class="btn btn--primary" id="batch-submit" disabled>Run health check</button>
-          <a class="btn btn--quiet" href="/api/template.csv" download>Download CSV template (with examples)</a>
+          <span class="templates">Template with examples:
+            <a class="btn btn--quiet btn--small" href="/api/template.xlsx" download>Excel</a>
+            <a class="btn btn--quiet btn--small" href="/api/template.csv" download>CSV</a>
+          </span>
         </div>
       </div>
 

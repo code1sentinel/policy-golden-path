@@ -10,12 +10,22 @@ from .catalog import Catalog
 from .loader import extract_statements
 from .models import Assessment, Statement
 from .policy import Policy, attach_intents
-from .tabular import parse_csv
+from .tabular import parse_csv, parse_xlsx
 
 
-def parse_document(name: str, content: str) -> list[Statement]:
-    """Statements from one uploaded file: OSCAL JSON, or CSV when the name ends in .csv."""
-    if name.lower().endswith(".csv"):
+def parse_document(name: str, content: str | bytes) -> list[Statement]:
+    """Statements from one file: OSCAL JSON, a CSV (.csv) or an Excel workbook (.xlsx)."""
+    lower = name.lower()
+    if lower.endswith((".xlsx", ".xls")):
+        if isinstance(content, str):
+            raise ValueError("an Excel workbook must be read as bytes")
+        return parse_xlsx(content, source=name)
+    if isinstance(content, bytes):
+        try:
+            content = content.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            raise ValueError("file is not UTF-8 text; save it as UTF-8 CSV or as .xlsx") from None
+    if lower.endswith(".csv"):
         return parse_csv(content, source=name)
     try:
         data = json.loads(content)

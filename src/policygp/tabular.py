@@ -21,14 +21,16 @@ Optional columns add context:
     owner, target date  the recommendation's owner and date
 
 Header names are case-insensitive; spaces, hyphens and underscores are
-interchangeable. Comma, semicolon and tab separated files all work, so a
-spreadsheet saved as CSV can be uploaded as it is.
+interchangeable. Comma, semicolon and tab separated files all work, and an
+Excel workbook (.xlsx) can be read directly with parse_xlsx.
 """
 
 from __future__ import annotations
 
 import csv
 import io
+import re
+from datetime import date, timedelta
 
 from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
 
@@ -93,6 +95,15 @@ def template() -> str:
     return out.getvalue()
 
 
+def template_xlsx() -> bytes:
+    """The same template as an Excel workbook."""
+    from .xlsx import write_rows
+
+    rows = [[LABELS[c] for c in COLUMNS]] + [[row.get(c, "") for c in COLUMNS] for row in EXAMPLE_ROWS]
+    widths = [45, 60, 60, 50, 12, 40, 18, 11, 11, 16, 12]
+    return write_rows(rows, sheet_name="Policies", widths=widths)
+
+
 def _normalise(header: str) -> str:
     key = "_".join(header.strip().lower().replace("-", " ").replace("_", " ").split())
     return _ALIASES.get(key, key)
@@ -105,6 +116,37 @@ def _reader(content: str) -> csv.DictReader:
     except csv.Error:
         dialect = csv.excel
     return csv.DictReader(io.StringIO(content), dialect=dialect)
+
+
+_EXCEL_SERIAL = re.compile(r"^\d{5}(\.\d+)?$")
+
+
+def _excel_date(value: str) -> str:
+    """Excel stores dates as days since 1899-12-30; turn a serial like 46356 into 2026-11-30."""
+    if _EXCEL_SERIAL.match(value):
+        return (date(1899, 12, 30) + timedelta(days=int(float(value)))).isoformat()
+    return value
+
+
+def parse_xlsx(data: bytes, source: str = "xlsx") -> list[Statement]:
+    """Statements from an Excel workbook laid out like the CSV: one row per policy."""
+    from .xlsx import read_rows
+
+    sheet, rows = read_rows(data, wanted_header=REQUIRED)
+    if not rows:
+        raise ValueError(f"worksheet '{sheet}' is empty")
+    header = [_normalise(h) for h in rows[0]]
+    if "target_date" in header:
+        col = header.index("target_date")
+        for row in rows[1:]:
+            if len(row) > col:
+                row[col] = _excel_date(row[col].strip())
+    out = io.StringIO()
+    csv.writer(out).writerows(rows)
+    try:
+        return parse_csv(out.getvalue(), source=source)
+    except ValueError as exc:
+        raise ValueError(f"worksheet '{sheet}': {exc}") from None
 
 
 def parse_csv(content: str, source: str = "csv") -> list[Statement]:

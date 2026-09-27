@@ -49,6 +49,8 @@ def test_serves_page_assets_and_config(server):
     guides = json.loads(get(server + "/api/guides")[2])
     assert set(guides["guides"]) == {"implementation", "risk-statement", "recommendation"}
     assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
+    status, headers, body = get(server + "/api/template.xlsx")
+    assert body[:2] == b"PK" and "policygp-template.xlsx" in headers["Content-Disposition"]
     status, headers, body = get(server + "/api/template.csv")
     assert body.decode() == template() and "attachment" in headers["Content-Disposition"]
 
@@ -109,6 +111,7 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
 
 
 @pytest.mark.parametrize("body, status, message", [
+    ({"mode": "batch", "documents": [{"name": "a.xlsx", "content_base64": "not base64!"}]}, 400, "not valid base64"),
     ({"mode": "single", "item": {"text": ""}}, 400, "enter the text"),
     ({"mode": "single", "item": {"kind": "finding", "text": "x"}}, 400, "unknown kind"),
     ({"mode": "batch", "documents": []}, 400, "at least one file"),
@@ -160,6 +163,26 @@ def test_claude_engine_uses_injected_assessor_and_caps_batch_size(examples, monk
     finally:
         srv.shutdown()
         srv.server_close()
+
+
+def test_batch_reports_unreadable_workbook(server):
+    import base64
+
+    doc = {"name": "old.xls", "content_base64": base64.b64encode(b"\xd0\xcf\x11\xe0" + b"\0" * 50).decode()}
+    code, data = post(server, {"mode": "batch", "documents": [doc,
+                                                              {"name": "rows.csv", "content": template()}]})
+    assert code == 200
+    assert "old-style .xls" in data["files"][0]["error"] and data["files"][1]["count"] == 6
+
+
+def test_cli_accepts_xlsx(tmp_path, capsys):
+    from policygp.cli import main
+    from policygp.tabular import template_xlsx
+
+    path = tmp_path / "policies.xlsx"
+    path.write_bytes(template_xlsx())
+    assert main([str(path), "-f", "json"]) == 0
+    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 6
 
 
 def test_cli_accepts_csv(tmp_path, capsys):

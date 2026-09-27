@@ -262,7 +262,20 @@ function initSingle() {
 
 // ---------------------------------------------------------------- batch upload
 
+const WORKBOOK = /\.xlsx$/i;
+
+function toBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+// Text files are sent as text; an Excel workbook is binary, so it is sent base64-encoded.
 async function readFile(file) {
+  if (WORKBOOK.test(file.name)) {
+    return { name: file.name, size: file.size, content_base64: toBase64(await file.arrayBuffer()) };
+  }
   return { name: file.name, size: file.size, content: await file.text() };
 }
 
@@ -288,7 +301,7 @@ function renderFileList() {
 }
 
 async function addFiles(fileList) {
-  const accepted = Array.from(fileList).filter((f) => /\.(json|csv)$/i.test(f.name));
+  const accepted = Array.from(fileList).filter((f) => /\.(json|csv|xlsx)$/i.test(f.name));
   const skipped = fileList.length - accepted.length;
   for (const f of accepted) {
     const existing = state.files.findIndex((x) => x.name === f.name);
@@ -296,7 +309,7 @@ async function addFiles(fileList) {
     if (existing >= 0) state.files[existing] = read; else state.files.push(read);
   }
   renderFileList();
-  showError(skipped ? `${plural(skipped, "file")} skipped: only .json and .csv files can be assessed.` : "");
+  showError(skipped ? `${plural(skipped, "file")} skipped: only .csv, .xlsx and .json files can be assessed (save an old .xls workbook as .xlsx).` : "");
 }
 
 function renderTiles(summary) {
@@ -453,7 +466,9 @@ function initBatch() {
 
   $("#batch-submit").addEventListener("click", (e) => {
     busy(e.currentTarget, "Checking…", async () => {
-      const strip = (f) => f && { name: f.name, content: f.content };
+      const strip = (f) => f && (f.content_base64 !== undefined
+        ? { name: f.name, content_base64: f.content_base64 }
+        : { name: f.name, content: f.content });
       const data = await post({
         mode: "batch",
         documents: state.files.map(strip),

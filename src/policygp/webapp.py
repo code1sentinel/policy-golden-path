@@ -7,6 +7,8 @@ no authentication, so only expose it on a network you trust.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import importlib.util
 import json
 import sys
@@ -23,7 +25,7 @@ from .guides import ADOPTED, GUIDES, PARTLY, STATUS_LABELS
 from .models import KIND_LABELS, RECOMMENDATION, RISK_STATEMENT, Statement
 from .policy import parse_policies
 from .service import assess_all, parse_document, prepare
-from .tabular import template
+from .tabular import template, template_xlsx
 
 MAX_BODY = 20 * 1024 * 1024  # bytes per request
 MAX_CLAUDE_ITEMS = 200  # items per request with the Claude engine, to bound cost
@@ -78,12 +80,21 @@ def single_statement(item: dict) -> Statement:
     )
 
 
-def _upload(value, name: str) -> tuple[str, str] | None:
+def _upload(value, name: str) -> tuple[str, str | bytes] | None:
+    """(file name, content): text as sent, or bytes for a base64-encoded binary file such as .xlsx."""
     if value in (None, ""):
         return None
-    if not isinstance(value, dict) or not isinstance(value.get("content"), str):
+    if not isinstance(value, dict):
         raise BadRequest(f"'{name}' must be an object with 'name' and 'content'")
-    return str(value.get("name") or name), value["content"]
+    filename = str(value.get("name") or name)
+    if isinstance(value.get("content_base64"), str):
+        try:
+            return filename, base64.b64decode(value["content_base64"], validate=True)
+        except (binascii.Error, ValueError):
+            raise BadRequest(f"{filename}: content_base64 is not valid base64") from None
+    if not isinstance(value.get("content"), str):
+        raise BadRequest(f"'{name}' must be an object with 'name' and 'content'")
+    return filename, value["content"]
 
 
 def batch_statements(body: dict) -> tuple[list[Statement], list[dict], list[str]]:
@@ -171,6 +182,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(HTTPStatus.OK, {
                 "guides": GUIDES, "statuses": STATUS_LABELS, "adopted": ADOPTED, "partly": PARTLY,
             })
+        if path == "/api/template.xlsx":
+            return self._send(HTTPStatus.OK, template_xlsx(),
+                              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                              {"Content-Disposition": 'attachment; filename="policygp-template.xlsx"'})
         if path == "/api/template.csv":
             return self._send(HTTPStatus.OK, template().encode(), "text/csv; charset=utf-8",
                               {"Content-Disposition": 'attachment; filename="policygp-template.csv"'})

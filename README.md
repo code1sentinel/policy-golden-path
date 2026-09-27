@@ -95,9 +95,9 @@ Opens the portal at http://localhost:8765/ with three sections:
   shows the confidence, how many best practices are adopted, the areas for
   improvement, and each practice with how to adopt it. **Load example** fills
   in a weak example of each kind.
-- **Batch health check**: drop a CSV with one row per policy (columns
-  `policy intent`, `control statement`, `risk statement`, `recommendation`;
-  the page shows them and offers a template), or OSCAL JSON files (SSP,
+- **Batch health check**: drop an Excel workbook or CSV with one row per
+  policy (columns `policy intent`, `control statement`, `risk statement`,
+  `recommendation`; the page shows them and offers Excel and CSV templates), or OSCAL JSON files (SSP,
   component definition, assessment results, POA&M), several at once, with an
   optional catalog and policy file. Results show the average confidence and
   practices adopted per kind, a **by file** table, then every item,
@@ -147,7 +147,7 @@ policygp DOCUMENT [options]
 | `component-definition` | Each `statements[].description` under an implemented requirement. When a requirement has no statements, its own `description` is read instead. |
 | `assessment-results` | For each risk in each result: its `statement` as a risk statement, and each `remediations[]` entry with `lifecycle: recommendation` as a recommendation. |
 | `plan-of-action-and-milestones` | The same, from the top-level `risks`. |
-| CSV (`.csv`) | One row per policy: policy intent, control statement, risk statement, recommendation. See below. |
+| CSV (`.csv`) or Excel (`.xlsx`) | One row per policy: policy intent, control statement, risk statement, recommendation. See below. |
 
 For risks, the control comes from the findings that reference the risk
 (`related-risks`) and their `target.target-id`. `--catalog` and `--policy`
@@ -161,7 +161,7 @@ risk's `deadline`; its owner from its tasks' `responsible-roles` or its
 Only JSON OSCAL is supported. Convert XML or YAML with the NIST OSCAL CLI
 first.
 
-### CSV
+### CSV and Excel
 
 The easiest way to start, for example from a spreadsheet. **One row per
 policy**, followed down the golden path. These four columns are required; a
@@ -183,10 +183,20 @@ recommendation), `likelihood`, `impact`, `owner` and `target date`.
 
 Column names are not case-sensitive; spaces, hyphens and underscores are
 interchangeable, and common alternatives work too (`implementation
-statement`, `remediation`, `deadline`). Comma, semicolon and tab separated
-files are all read, so a spreadsheet saved as CSV can be uploaded as it is.
-Download the template, with a strong and a weak example row, from the web app
-or the `/api/template.csv` link.
+statement`, `remediation`, `deadline`).
+
+- **Excel workbooks (`.xlsx`)** are read directly. The first sheet whose header
+  row has the four columns is used, so a workbook can keep instructions or
+  other tabs; formulas are read as their last calculated value and date cells
+  as dates. Old `.xls` workbooks need saving as `.xlsx` first.
+- **CSV** files may be comma, semicolon or tab separated, in UTF-8.
+
+Download a template with a strong and a weak example row from the web app, as
+Excel (`/api/template.xlsx`) or CSV (`/api/template.csv`).
+
+Workbooks are read with the Python standard library, so there is still
+nothing extra to install. Because they are untrusted input, oversized files
+(zip bombs) and XML with a DOCTYPE are refused.
 
 ## Best practices
 
@@ -400,7 +410,8 @@ src/policygp/
   guides.py     best-practice guides and adoption status
   static/       web app page, styles and script
   service.py    the pipeline both share
-  tabular.py    CSV input and template
+  tabular.py    CSV and Excel input, and the templates
+  xlsx.py       reads and writes .xlsx workbooks with the standard library
   loader.py     reads each supported OSCAL document
   findings.py   risk statements and recommendations out of assessment results and POA&Ms
   catalog.py    control and statement-part text out of catalogs
