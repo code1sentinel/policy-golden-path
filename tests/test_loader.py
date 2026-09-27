@@ -55,3 +55,16 @@ def test_catalog_substitutes_params_and_indexes_parts(examples):
     assert catalog.requirement("au-6").startswith("Audit Record Review, Analysis, and Reporting: a. Review")
     assert catalog.requirement("zz-9") is None
     assert "ia-2" in catalog
+
+
+def test_placeholder_control_titles_are_left_out():
+    from policygp.catalog import Catalog
+
+    catalog = Catalog({"catalog": {"controls": [
+        {"id": "ism-1997", "title": "Control: ism-1997",
+         "parts": [{"id": "ism-1997_smt", "name": "statement", "prose": "The board defines roles."}]},
+        {"id": "as-1", "title": "Input Validation",
+         "parts": [{"id": "as-1_smt", "name": "statement", "prose": "Validate all inputs."}]},
+    ]}})
+    assert catalog.requirement("ism-1997") == "The board defines roles."
+    assert catalog.requirement("AS-1") == "Input Validation: Validate all inputs."

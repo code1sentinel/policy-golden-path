@@ -168,6 +168,18 @@ implementation statements. Ratings come from the
 risk's `deadline`; its owner from its tasks' `responsible-roles` or its
 `origins`.
 
+Any OSCAL catalog in JSON works as the `--catalog`, including published ones
+tested with PolicyGP:
+
+| Catalog | Publisher | Control ids |
+| --- | --- | --- |
+| [NIST SP 800-53](https://github.com/usnistgov/oscal-content) | NIST, United States | `ac-2`, `ac-2_smt.j` |
+| [Information Security Manual (ISM)](https://github.com/AustralianCyberSecurityCentre/ism-oscal) | ASD, Australia | `ism-1997` |
+| [ICT&SS Policy (IM8) Reform](https://github.com/GovTechSG/tech-standards) | GovTech, Singapore | `as-1` |
+
+The ISM's resolved profile catalogs (for example the Essential Eight maturity
+levels) are catalogs too, so they work the same way.
+
 Only JSON OSCAL is supported. Convert XML or YAML with the NIST OSCAL CLI
 first.
 

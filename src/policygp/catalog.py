@@ -42,7 +42,10 @@ class Catalog:
         if text is None:
             return None
         title = self._titles.get(control_id.lower())
-        return f"{title}: {text}" if title else text
+        # Some catalogs (the ASD ISM) title every control "Control: ism-1234"; that says nothing, so skip it.
+        if not title or control_id.lower() in title.lower():
+            return text
+        return f"{title}: {text}"
 
     def __contains__(self, control_id: str) -> bool:
         return control_id.lower() in self._controls
