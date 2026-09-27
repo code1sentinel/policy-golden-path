@@ -1,8 +1,8 @@
 import pytest
 
-from policy_golden_path import heuristic
-from policy_golden_path.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
-from policy_golden_path.tabular import parse_csv, template
+from policygp import heuristic
+from policygp.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from policygp.tabular import parse_csv, template
 
 
 def test_template_parses_to_one_of_each_kind():

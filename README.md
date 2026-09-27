@@ -1,10 +1,10 @@
-# Policy Golden Path
+# PolicyGP
 
-**The golden path for policy engineering.**
+**Policy Golden Path: the golden path for policy development.**
 
 Policy development follows one path, from what the organization commits to,
 through how it is done, to where it falls short and how to fix it. Each stage
-has to carry the intent of the one before it. Policy Golden Path follows that path
+has to carry the intent of the one before it. PolicyGP follows that path
 through your OSCAL documents and checks each stage, and the links between
 them:
 
@@ -24,7 +24,7 @@ The portal around those checks follows the three A's of CSA's
 [Internet Hygiene Portal](https://ihp.csa.gov.sg/) (IHP), which checks websites
 and email against internet best practices:
 
-| | IHP | Policy Golden Path |
+| | IHP | PolicyGP |
 | --- | --- | --- |
 | **Awareness** | Guides on internet hygiene standards | **Guides**: each best practice with why it matters, how to adopt it, and a weak and a strong example |
 | **Assessment** | Self-service health checks for website, email and connectivity | **Health check** for one statement, **batch health check** for OSCAL or CSV files |
@@ -32,14 +32,14 @@ and email against internet best practices:
 
 Each item gets a **confidence score** (0 to 100%), a count of **best
 practices adopted**, and its **areas for improvement**. Unlike IHP's rating,
-Policy Golden Path does not pass or fail anything: use the results in your own review
+PolicyGP does not pass or fail anything: use the results in your own review
 process to decide that.
 
 This project is not affiliated with or endorsed by the Cyber Security Agency
 of Singapore; it borrows IHP's approach, not its content.
 
 ```
-$ policy-path examples/assessment-results-example.json
+$ policygp examples/assessment-results-example.json
 Kind            Item                                               Confidence  Practices adopted  Improvements
 --------------  -------------------------------------------------  ----------  -----------------  ------------
 Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                7/7             0
@@ -72,7 +72,7 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 ```
 git clone https://github.com/code1sentinel/policy-golden-path.git
 cd policy-golden-path
-pip install -e .            # heuristic engine, no dependencies
+pip install -e .            # installs the policygp and policygp-web commands
 pip install -e ".[claude]"  # adds the Claude engine
 ```
 
@@ -81,7 +81,7 @@ Python 3.10 or later.
 ## Web app
 
 ```
-policy-path-web --open
+policygp-web --open
 ```
 
 Opens the portal at http://localhost:8765/ with three sections:
@@ -126,7 +126,7 @@ never markup.
 ## Command line
 
 ```
-policy-path DOCUMENT [options]
+policygp DOCUMENT [options]
 
 -c, --catalog PATH          OSCAL catalog (JSON) for control requirement text
 -p, --policy PATH           policy file (JSON) with the policy intent for each control
@@ -163,7 +163,7 @@ first.
 
 For statements that are not in OSCAL yet, such as a spreadsheet of draft
 statements. Download the template from the web app, or see
-`src/policy_golden_path/tabular.py`. Only `text` is required:
+`src/policygp/tabular.py`. Only `text` is required:
 
 | Column | |
 | --- | --- |
@@ -182,7 +182,7 @@ Headers are case-insensitive, and spaces or hyphens count as underscores.
 Each criterion below is a best practice. A practice is **adopted** when it
 scores 80% or more, **partly adopted** from 40%, and **not yet adopted**
 below that. The guides for every practice are in
-`src/policy_golden_path/guides.py`, shown in the web app's Guides section.
+`src/policygp/guides.py`, shown in the web app's Guides section.
 
 All three kinds share the same wording rules, adjusted to what each is for:
 
@@ -247,8 +247,8 @@ separate input for implementation statements. Give it as a policy file, an
 inline intent, or both:
 
 ```
-policy-path ssp.json -c catalog.json --policy policies.json
-policy-path ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
+policygp ssp.json -c catalog.json --policy policies.json
+policygp ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
 ```
 
 ```json
@@ -330,7 +330,7 @@ schema-constrained JSON.
 
 ```
 export ANTHROPIC_API_KEY=...
-policy-path ssp.json -c catalog.json --engine claude
+policygp ssp.json -c catalog.json --engine claude
 ```
 
 | Option | Default | |
@@ -356,7 +356,7 @@ the item scores 0 with a note to review it manually.
 
 ```yaml
 - run: pip install git+https://github.com/code1sentinel/policy-golden-path.git
-- run: policy-path ssp.json -c catalog.json -p policies.json -f markdown -o report.md
+- run: policygp ssp.json -c catalog.json -p policies.json -f markdown -o report.md
 - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
@@ -375,9 +375,9 @@ The Claude engine's tests use a stub client, so they run offline.
 ## Layout
 
 ```
-src/policy_golden_path/
-  cli.py        command line (policy-path)
-  webapp.py     web app server (policy-path-web)
+src/policygp/
+  cli.py        command line (policygp)
+  webapp.py     web app server (policygp-web)
   guides.py     best-practice guides and adoption status
   static/       web app page, styles and script
   service.py    the pipeline both share

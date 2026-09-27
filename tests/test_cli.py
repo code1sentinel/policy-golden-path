@@ -1,6 +1,6 @@
 import json
 
-from policy_golden_path.cli import main
+from policygp.cli import main
 
 
 def test_reports_results_and_exits_zero(examples, capsys):

@@ -17,6 +17,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
       - run: pytest -q
-      - run: policy-path examples/component-definition-example.json -c examples/catalog-excerpt.json
-      - run: policy-path examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
-      - run: policy-path examples/assessment-results-example.json
+      - run: policygp examples/component-definition-example.json -c examples/catalog-excerpt.json
+      - run: policygp examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
+      - run: policygp examples/assessment-results-example.json

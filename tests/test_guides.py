@@ -1,9 +1,9 @@
 import pytest
 
-from policy_golden_path import heuristic
-from policy_golden_path.guides import ADOPTED, PARTLY, practice, practice_status
-from policy_golden_path.llm import KINDS, POLICY_CRITERION
-from policy_golden_path.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
+from policygp import heuristic
+from policygp.guides import ADOPTED, PARTLY, practice, practice_status
+from policygp.llm import KINDS, POLICY_CRITERION
+from policygp.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
 
 
 def rich(kind):
@@ -40,8 +40,8 @@ def test_assessment_reports_practices_adopted():
 
 
 def test_summary_counts_practices(examples):
-    from policy_golden_path import report
-    from policy_golden_path.loader import load_statements
+    from policygp import report
+    from policygp.loader import load_statements
 
     items = [heuristic.assess(s) for s in load_statements(examples / "assessment-results-example.json")]
     s = report.summary(items)["by_kind"]["risk-statement"]

@@ -1,7 +1,7 @@
 import pytest
 
-from policy_golden_path.catalog import Catalog
-from policy_golden_path.loader import extract_statements, load_statements
+from policygp.catalog import Catalog
+from policygp.loader import extract_statements, load_statements
 
 
 def test_ssp_statements_resolve_components_and_requirements(examples):

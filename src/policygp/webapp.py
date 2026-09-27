@@ -1,4 +1,4 @@
-"""policy-path-web: the Policy Golden Path, a local web app for guides, single and batch health checks.
+"""policygp-web: PolicyGP as a local web app for guides, single and batch health checks.
 
 Runs on the standard library only. It binds to 127.0.0.1 by default and has
 no authentication, so only expose it on a network you trust.
@@ -126,7 +126,7 @@ def batch_statements(body: dict) -> tuple[list[Statement], list[dict], list[str]
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = f"policy-golden-path/{__version__}"
+    server_version = f"policygp/{__version__}"
     assessor = None  # injected in tests
 
     def log_message(self, fmt, *args):  # quieter than the default
@@ -155,7 +155,7 @@ class Handler(BaseHTTPRequestHandler):
             path = "/index.html"
         name = path.lstrip("/")
         if name in STATIC:
-            body = resources.files("policy_golden_path").joinpath("static", name).read_bytes()
+            body = resources.files("policygp").joinpath("static", name).read_bytes()
             return self._send(HTTPStatus.OK, body, f"{STATIC[name]}; charset=utf-8")
         if path == "/api/config":
             from .llm import DEFAULT_MODEL
@@ -173,7 +173,7 @@ class Handler(BaseHTTPRequestHandler):
             })
         if path == "/api/template.csv":
             return self._send(HTTPStatus.OK, template().encode(), "text/csv; charset=utf-8",
-                              {"Content-Disposition": 'attachment; filename="policy-path-template.csv"'})
+                              {"Content-Disposition": 'attachment; filename="policygp-template.csv"'})
         self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_POST(self):
@@ -216,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
         if engine not in ("heuristic", "claude"):
             raise BadRequest(f"unknown engine {engine!r}")
         if engine == "claude" and self.assessor is None and not claude_available():
-            raise BadRequest("the Claude engine needs the anthropic package: pip install 'policy-golden-path[claude]'")
+            raise BadRequest("the Claude engine needs the anthropic package: pip install 'policygp[claude]'")
 
         mode = body.get("mode")
         if mode == "single":
@@ -258,7 +258,7 @@ def make_server(host: str = "127.0.0.1", port: int = 8765, assessor=None, verbos
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="policy-path-web", description="Policy Golden Path web app.")
+    p = argparse.ArgumentParser(prog="policygp-web", description="PolicyGP web app.")
     p.add_argument("--host", default="127.0.0.1", help="interface to bind (default: 127.0.0.1)")
     p.add_argument("--port", type=int, default=8765, help="port (default: 8765)")
     p.add_argument("--open", action="store_true", help="open the page in a browser")
@@ -269,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         print("warning: the app has no authentication; anyone who can reach this address can use it",
               file=sys.stderr)
-    print(f"Policy Golden Path on {url}  (Ctrl+C to stop)")
+    print(f"PolicyGP on {url}  (Ctrl+C to stop)")
     if args.open:
         threading.Timer(0.5, webbrowser.open, args=(url,)).start()
     try:
