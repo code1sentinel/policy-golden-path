@@ -18,6 +18,7 @@
         <span class="brand__mark" aria-hidden="true"></span>
         <div>
           <h1 class="brand__name">PolicyGP</h1>
+          <p class="local-note" data-browser-only hidden>Runs in your browser: your files never leave this device.</p>
           <p class="brand__tag">Policy Golden Path, the golden path for policy development: from policy intent to practice, with health checks for implementation statements, risk statements and recommendations.</p>
         </div>
       </div>
@@ -53,6 +54,7 @@
     </div>
 
     <div id="error" class="error" role="alert" hidden></div>
+    <p id="loading" class="loading" role="status" hidden>Loading PolicyGP in your browser. This takes a few seconds on the first visit only.</p>
 
     <!-- Single input -->
     <section id="panel-single" class="panel" role="tabpanel" aria-labelledby="tab-single">
@@ -191,8 +193,8 @@
         <div class="actions">
           <button type="button" class="btn btn--primary" id="batch-submit" disabled>Run health check</button>
           <span class="templates">Template with examples:
-            <a class="btn btn--quiet btn--small" href="/api/template.xlsx" download>Excel</a>
-            <a class="btn btn--quiet btn--small" href="/api/template.csv" download>CSV</a>
+            <a class="btn btn--quiet btn--small" href="template.xlsx" download="policygp-template.xlsx">Excel</a>
+            <a class="btn btn--quiet btn--small" href="template.csv" download="policygp-template.csv">CSV</a>
           </span>
         </div>
       </div>

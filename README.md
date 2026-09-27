@@ -67,6 +67,22 @@ Recommendation: Improve log review [au-6]  (11%)
 
 The exit code is `0` whenever the document was assessed and `2` on bad input.
 
+## Use it
+
+| Way | For | How |
+| --- | --- | --- |
+| **Online** | Anyone, nothing to install | https://code1sentinel.github.io/policy-golden-path/ |
+| **Local web app** | The same page, run on your machine | `policygp-web --open` |
+| **Command line** | CI pipelines and scripts | `policygp FILE` |
+
+The online version runs entirely in your browser: PolicyGP's Python runs
+there through [Pyodide](https://pyodide.org), served from the site itself.
+Your files are checked on your device and never uploaded, and the site makes
+no requests to any third party. The first visit loads about 13 MB (less over
+the wire, as it is compressed), which the browser then caches; after that each
+check takes a fraction of a second. All three ways run the same code and give
+the same scores.
+
 ## Install
 
 ```
@@ -363,6 +379,23 @@ but they cannot tell whether what the text says is true.
 CI runs the tests on Python 3.10, 3.12 and 3.13 on every push and pull request
 (`.github/workflows/ci.yml`).
 
+### The online site
+
+`.github/workflows/pages.yml` builds and publishes the site to GitHub Pages
+on every push to `main` (enable it once under Settings → Pages → Source:
+GitHub Actions). To build it locally:
+
+```
+npm pack pyodide@314.0.7 && tar xzf pyodide-314.0.7.tgz
+python scripts/build_site.py --pyodide package --out site
+python -m http.server --directory site
+```
+
+The build copies the web app in browser mode, zips the `policygp` package
+(without the server and command-line modules) for Pyodide to import, and
+writes the guides, config and templates as static files. A fork gets its own
+site by enabling Pages the same way.
+
 ```
 pip install -e ".[dev]"
 pytest
@@ -374,8 +407,9 @@ pytest
 src/policygp/
   cli.py        command line (policygp)
   webapp.py     web app server (policygp-web)
+  api.py        request handling, shared by the server and the browser build
   guides.py     best-practice guides and adoption status
-  static/       web app page, styles and script
+  static/       web app page, styles and script (server or browser mode)
   service.py    the pipeline both share
   tabular.py    CSV and Excel input, and the templates
   xlsx.py       reads and writes .xlsx workbooks with the standard library
@@ -385,6 +419,7 @@ src/policygp/
   policy.py     policy intents and which statements they apply to
   heuristic.py  offline rubrics for each kind
   report.py     table, JSON, Markdown and OSCAL output
+scripts/build_site.py   builds the browser-only site for GitHub Pages
 examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies and assessment results
 tests/
 ```

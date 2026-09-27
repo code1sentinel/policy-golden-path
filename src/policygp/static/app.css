@@ -56,6 +56,15 @@ body {
 .top__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 18px; padding-bottom: 18px; flex-wrap: wrap; }
 .brand { display: flex; gap: 14px; align-items: center; min-width: 0; flex: 1 1 480px; }
 .brand__tag { max-width: 70ch; }
+.local-note {
+  display: inline-block; margin: 4px 0 2px; font-size: 12px; font-weight: 600; color: var(--orange-bright);
+  border: 1px solid var(--orange-line); background: var(--orange-dim); border-radius: 999px; padding: 2px 10px;
+}
+.local-note[hidden], .loading[hidden] { display: none; }
+.loading {
+  border: 1px solid var(--orange-line); background: var(--orange-dim); color: var(--text);
+  border-radius: var(--radius); padding: 10px 14px; margin: 0 0 16px; font-size: 14px;
+}
 .brand__mark {
   width: 34px; height: 34px; border-radius: 8px; flex: none;
   background: linear-gradient(135deg, var(--orange) 0 50%, transparent 50%), var(--orange-dim);

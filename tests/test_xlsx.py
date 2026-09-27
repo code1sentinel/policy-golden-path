@@ -104,7 +104,7 @@ def test_template_opens_in_openpyxl():
 
 
 def test_web_upload_accepts_base64_workbooks():
-    from policygp.webapp import batch_statements
+    from policygp.api import batch_statements
 
     doc = {"name": "policies.xlsx", "content_base64": base64.b64encode(_excel_style_workbook()).decode()}
     items, files, names = batch_statements({"documents": [doc]})

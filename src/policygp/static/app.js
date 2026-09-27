@@ -93,16 +93,75 @@ function showError(message) {
   if (message) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
+// ---------------------------------------------------------------- backends
+//
+// The same page runs in two ways. Served by `policygp-web`, it calls the local server.
+// Built for GitHub Pages (data-mode="browser"), it runs PolicyGP's Python in the browser
+// with Pyodide, so files are checked on this device and never uploaded.
+
+const BROWSER = document.documentElement.dataset.mode === "browser";
+
+const serverBackend = {
+  async config() { return (await fetch("api/config")).json(); },
+  async guides() { return (await fetch("api/guides")).json(); },
+  async assess(body) {
+    const res = await fetch("api/assess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    let data = null;
+    try { data = await res.json(); } catch { /* fall through */ }
+    if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
+    return data;
+  },
+};
+
+let python = null;  // a promise of PolicyGP's API running in Pyodide, started once
+
+function startPython() {
+  if (!python) {
+    python = (async () => {
+      const { loadPyodide } = await import("./pyodide/pyodide.mjs");
+      const pyodide = await loadPyodide({ indexURL: new URL("pyodide/", location.href).href });
+      const archive = await (await fetch("policygp.zip")).arrayBuffer();
+      pyodide.unpackArchive(archive, "zip", { extractDir: "/home/pyodide/policygp-src" });
+      pyodide.runPython("import sys; sys.path.insert(0, '/home/pyodide/policygp-src')");
+      return pyodide.pyimport("policygp.api");
+    })();
+    python.catch(() => { python = null; });  // allow a retry after a failed load
+  }
+  return python;
+}
+
+const browserBackend = {
+  async config() { return (await fetch("config.json")).json(); },
+  async guides() { return (await fetch("guides.json")).json(); },
+  async assess(body) {
+    const api = await startPython();
+    pythonReady = true;
+    const data = JSON.parse(api.handle(JSON.stringify(body)));
+    if (data.error) throw new Error(data.error);
+    return data;
+  },
+};
+
+const backend = BROWSER ? browserBackend : serverBackend;
+
+let pythonReady = false;
+
 async function post(body) {
-  const res = await fetch("/api/assess", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  let data = null;
-  try { data = await res.json(); } catch { /* fall through */ }
-  if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
-  return data;
+  if (BROWSER && !pythonReady) setLoading(true);
+  try {
+    return await backend.assess(body);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  const note = $("#loading");
+  if (note) note.hidden = !on;
 }
 
 async function busy(button, label, work) {
@@ -530,7 +589,7 @@ async function initGuides() {
     tab.focus();
   });
   try {
-    state.guides = await (await fetch("/api/guides")).json();
+    state.guides = await backend.guides();
     $("#adopted-at").textContent = pct(state.guides.adopted);
     $("#partly-at").textContent = pct(state.guides.partly);
     renderGuide("implementation");
@@ -539,12 +598,19 @@ async function initGuides() {
 
 async function initConfig() {
   try {
-    const res = await fetch("/api/config");
-    const config = await res.json();
+    const config = await backend.config();
     $("#version").textContent = `Version ${config.version}.`;
   } catch {
-    showError("Could not reach the PolicyGP server. Is policygp-web still running?");
+    showError(BROWSER ? "Could not load PolicyGP. Check your connection and reload the page."
+      : "Could not reach the PolicyGP server. Is policygp-web still running?");
   }
+}
+
+if (BROWSER) {
+  for (const n of $$("[data-browser-only]")) n.hidden = false;
+  // Start loading Python in the background once the page is idle, so the first check is quick.
+  const warm = () => startPython().then(() => { pythonReady = true; }, () => {});
+  if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 2000 }); else setTimeout(warm, 500);
 }
 
 initTabs();

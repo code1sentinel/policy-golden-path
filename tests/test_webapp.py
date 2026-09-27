@@ -49,6 +49,8 @@ def test_serves_page_assets_and_config(server):
     assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
     status, headers, body = get(server + "/api/template.xlsx")
     assert body[:2] == b"PK" and "policygp-template.xlsx" in headers["Content-Disposition"]
+    assert get(server + "/template.xlsx")[2][:2] == b"PK"  # relative links from the page
+    assert get(server + "/template.csv")[2].decode() == template()
     status, headers, body = get(server + "/api/template.csv")
     assert body.decode() == template() and "attachment" in headers["Content-Disposition"]
 
