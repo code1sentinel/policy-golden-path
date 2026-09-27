@@ -1,7 +1,7 @@
 import pytest
 
-from golden_path import heuristic
-from golden_path.models import Statement
+from policy_golden_path import heuristic
+from policy_golden_path.models import Statement
 
 BASE = ("The SOC team reviews alerts daily in Splunk for privilege escalation and impossible travel, "
         "and each review is recorded in a ServiceNow ticket.")

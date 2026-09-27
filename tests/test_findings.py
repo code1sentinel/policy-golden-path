@@ -1,9 +1,9 @@
 import pytest
 
-from golden_path import heuristic
-from golden_path.findings import extract_findings
-from golden_path.loader import load_statements
-from golden_path.models import RECOMMENDATION, RISK_STATEMENT, Statement
+from policy_golden_path import heuristic
+from policy_golden_path.findings import extract_findings
+from policy_golden_path.loader import load_statements
+from policy_golden_path.models import RECOMMENDATION, RISK_STATEMENT, Statement
 
 
 @pytest.fixture
@@ -119,8 +119,8 @@ def test_recommendation_must_address_the_cause():
 
 
 def test_risk_statement_is_checked_against_catalog_and_policy(examples):
-    from golden_path.catalog import Catalog
-    from golden_path.policy import attach_intents, load_policies
+    from policy_golden_path.catalog import Catalog
+    from policy_golden_path.policy import attach_intents, load_policies
 
     items = load_statements(examples / "assessment-results-example.json",
                             Catalog.load(examples / "catalog-excerpt.json"))

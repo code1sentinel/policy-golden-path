@@ -1,17 +1,17 @@
-name: golden-path
+name: policy-golden-path
 
 on:
   push:
-    paths: ["golden-path/**", ".github/workflows/golden-path.yml"]
+    paths: ["policy-golden-path/**", ".github/workflows/policy-golden-path.yml"]
   pull_request:
-    paths: ["golden-path/**", ".github/workflows/golden-path.yml"]
+    paths: ["policy-golden-path/**", ".github/workflows/policy-golden-path.yml"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: golden-path
+        working-directory: policy-golden-path
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,6 +19,6 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -q
-      - run: golden-path examples/component-definition-example.json -c examples/catalog-excerpt.json
-      - run: golden-path examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
-      - run: golden-path examples/assessment-results-example.json
+      - run: policy-path examples/component-definition-example.json -c examples/catalog-excerpt.json
+      - run: policy-path examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
+      - run: policy-path examples/assessment-results-example.json

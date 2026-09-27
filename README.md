@@ -1,8 +1,10 @@
-# Golden Path
+# Policy Golden Path
+
+**The golden path for policy engineering.**
 
 Policy development follows one path, from what the organization commits to,
 through how it is done, to where it falls short and how to fix it. Each stage
-has to carry the intent of the one before it. Golden Path follows that path
+has to carry the intent of the one before it. Policy Golden Path follows that path
 through your OSCAL documents and checks each stage, and the links between
 them:
 
@@ -22,7 +24,7 @@ The portal around those checks follows the three A's of CSA's
 [Internet Hygiene Portal](https://ihp.csa.gov.sg/) (IHP), which checks websites
 and email against internet best practices:
 
-| | IHP | Golden Path |
+| | IHP | Policy Golden Path |
 | --- | --- | --- |
 | **Awareness** | Guides on internet hygiene standards | **Guides**: each best practice with why it matters, how to adopt it, and a weak and a strong example |
 | **Assessment** | Self-service health checks for website, email and connectivity | **Health check** for one statement, **batch health check** for OSCAL or CSV files |
@@ -30,14 +32,14 @@ and email against internet best practices:
 
 Each item gets a **confidence score** (0 to 100%), a count of **best
 practices adopted**, and its **areas for improvement**. Unlike IHP's rating,
-Golden Path does not pass or fail anything: use the results in your own review
+Policy Golden Path does not pass or fail anything: use the results in your own review
 process to decide that.
 
 This project is not affiliated with or endorsed by the Cyber Security Agency
 of Singapore; it borrows IHP's approach, not its content.
 
 ```
-$ golden-path examples/assessment-results-example.json
+$ policy-path examples/assessment-results-example.json
 Kind            Item                                               Confidence  Practices adopted  Improvements
 --------------  -------------------------------------------------  ----------  -----------------  ------------
 Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                7/7             0
@@ -68,7 +70,7 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 ## Install
 
 ```
-cd golden-path
+cd policy-golden-path
 pip install -e .            # heuristic engine, no dependencies
 pip install -e ".[claude]"  # adds the Claude engine
 ```
@@ -78,7 +80,7 @@ Python 3.10 or later.
 ## Web app
 
 ```
-golden-path-web --open
+policy-path-web --open
 ```
 
 Opens the portal at http://localhost:8765/ with three sections:
@@ -123,7 +125,7 @@ never markup.
 ## Command line
 
 ```
-golden-path DOCUMENT [options]
+policy-path DOCUMENT [options]
 
 -c, --catalog PATH          OSCAL catalog (JSON) for control requirement text
 -p, --policy PATH           policy file (JSON) with the policy intent for each control
@@ -160,7 +162,7 @@ first.
 
 For statements that are not in OSCAL yet, such as a spreadsheet of draft
 statements. Download the template from the web app, or see
-`src/golden_path/tabular.py`. Only `text` is required:
+`src/policy_golden_path/tabular.py`. Only `text` is required:
 
 | Column | |
 | --- | --- |
@@ -179,7 +181,7 @@ Headers are case-insensitive, and spaces or hyphens count as underscores.
 Each criterion below is a best practice. A practice is **adopted** when it
 scores 80% or more, **partly adopted** from 40%, and **not yet adopted**
 below that. The guides for every practice are in
-`src/golden_path/guides.py`, shown in the web app's Guides section.
+`src/policy_golden_path/guides.py`, shown in the web app's Guides section.
 
 All three kinds share the same wording rules, adjusted to what each is for:
 
@@ -244,8 +246,8 @@ separate input for implementation statements. Give it as a policy file, an
 inline intent, or both:
 
 ```
-golden-path ssp.json -c catalog.json --policy policies.json
-golden-path ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
+policy-path ssp.json -c catalog.json --policy policies.json
+policy-path ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
 ```
 
 ```json
@@ -327,7 +329,7 @@ schema-constrained JSON.
 
 ```
 export ANTHROPIC_API_KEY=...
-golden-path ssp.json -c catalog.json --engine claude
+policy-path ssp.json -c catalog.json --engine claude
 ```
 
 | Option | Default | |
@@ -352,8 +354,8 @@ the item scores 0 with a note to review it manually.
 ## Use in GitHub Actions
 
 ```yaml
-- run: pip install ./golden-path
-- run: golden-path ssp.json -c catalog.json -p policies.json -f markdown -o report.md
+- run: pip install ./policy-golden-path
+- run: policy-path ssp.json -c catalog.json -p policies.json -f markdown -o report.md
 - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
@@ -369,9 +371,9 @@ The Claude engine's tests use a stub client, so they run offline.
 ## Layout
 
 ```
-src/golden_path/
-  cli.py        command line (golden-path)
-  webapp.py     web app server (golden-path-web)
+src/policy_golden_path/
+  cli.py        command line (policy-path)
+  webapp.py     web app server (policy-path-web)
   guides.py     best-practice guides and adoption status
   static/       web app page, styles and script
   service.py    the pipeline both share
