@@ -11,7 +11,7 @@
     "system-characteristics": {
       "system-ids": [{ "id": "payments-platform" }],
       "system-name": "Payments Platform",
-      "description": "Example system used to demonstrate oscal-assess.",
+      "description": "Example system used to demonstrate the Control Hygiene Portal.",
       "security-sensitivity-level": "moderate",
       "system-information": { "information-types": [] },
       "security-impact-level": {

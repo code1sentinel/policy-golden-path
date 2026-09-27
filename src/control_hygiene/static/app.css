@@ -1,4 +1,4 @@
-/* oscal-assess web app. Tokens match the GRC Engineering Club Singapore site. */
+/* Control Hygiene Portal web app. Tokens match the GRC Engineering Club Singapore site. */
 
 :root {
   --orange: #E8650A;
@@ -193,7 +193,10 @@ h3:first-child { margin-top: 0; }
 
 .criteria { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .criterion { display: grid; grid-template-columns: minmax(110px, 150px) minmax(0, 1fr) 44px; gap: 4px 12px; align-items: center; }
-.criterion__name { font-size: 13px; font-weight: 500; }
+.criterion__name { font-size: 13px; font-weight: 500; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.criterion__how { grid-column: 1 / -1; font-size: 13px; color: #D8D8D8; background: var(--bg); border: 1px solid var(--border-soft); border-radius: 8px; padding: 8px 10px; }
+.criterion__how strong { color: var(--orange-bright); font-weight: 600; }
+.criteria { gap: 14px; }
 .criterion__pct { font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .criterion__note { grid-column: 2 / 4; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 
@@ -202,6 +205,18 @@ h3:first-child { margin-top: 0; }
   margin: 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border-soft);
   white-space: pre-wrap; font-size: 13px; color: #D8D8D8; max-height: 220px; overflow: auto;
 }
+
+/* Adoption status: describes a practice, not a verdict on the item. Shape and text, not red/green. */
+
+.status {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap;
+}
+.status--adopted { background: var(--orange); border-color: var(--orange); color: #0D0D0D; }
+.status--partly { border-color: var(--orange-line); color: var(--orange-bright); background: var(--orange-dim); }
+.status--not-yet { border-style: dashed; color: var(--muted); }
+
+.verdict__practices { margin: -8px 0 4px; color: var(--muted); font-size: 14px; }
 
 /* Bars (single hue: a score, not a verdict) ------------------------------ */
 
@@ -259,7 +274,7 @@ h3:first-child { margin-top: 0; }
 .result { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius); }
 .result[open] { border-color: var(--border); }
 .result__row {
-  display: grid; grid-template-columns: 150px minmax(0, 1fr) 180px 120px; gap: 14px; align-items: center;
+  display: grid; grid-template-columns: 150px minmax(0, 1fr) 180px 190px; gap: 14px; align-items: center;
   padding: 12px 16px; cursor: pointer; list-style: none;
 }
 .result__row::-webkit-details-marker { display: none; }
@@ -293,6 +308,60 @@ h3:first-child { margin-top: 0; }
   .criterion .bar { grid-column: 1 / -1; grid-row: 2; }
   .criterion__note { grid-column: 1 / -1; }
 }
+
+/* Awareness, Assessment, Adoption ----------------------------------------- */
+
+.three-a { list-style: none; margin: 28px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: step; }
+.three-a li { counter-increment: step; }
+.three-a button {
+  appearance: none; width: 100%; height: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-lg); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px; transition: border-color 0.15s var(--ease);
+}
+.three-a button:hover { border-color: var(--orange-line); }
+.three-a__step { font-weight: 700; font-size: 14px; }
+.three-a__step::before { content: counter(step) ". "; color: var(--orange-bright); }
+.three-a__text { color: var(--muted); font-size: 13px; }
+@media (max-width: 700px) { .three-a { grid-template-columns: 1fr; } }
+
+/* Hygiene by file ---------------------------------------------------------- */
+
+.section-title { font-size: 15px; font-weight: 600; margin: 26px 0 12px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border-soft); border-radius: var(--radius-lg); background: var(--surface); }
+.hygiene { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+.hygiene th, .hygiene td { padding: 11px 16px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+.hygiene thead th { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.hygiene tbody tr:last-child > * { border-bottom: 0; }
+.hygiene tbody th { font-weight: 600; }
+.cell-score { display: grid; grid-template-columns: minmax(60px, 120px) auto; gap: 10px; align-items: center; font-variant-numeric: tabular-nums; }
+
+/* Guides ------------------------------------------------------------------- */
+
+.guide-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.kind-btn {
+  appearance: none; font: 500 14px var(--font); color: var(--muted); background: transparent; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px;
+}
+.kind-btn[aria-pressed="true"] { background: var(--orange-dim); border-color: var(--orange); color: var(--text); }
+.guide-summary { color: var(--muted); max-width: 70ch; margin: 0 0 18px; }
+.guide-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.guide { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-lg); padding: 18px; }
+.guide h3 { margin: 0 0 8px; font-size: 15px; }
+.guide__why { color: var(--muted); margin: 0 0 10px; font-size: 14px; }
+.guide__how { margin: 0 0 14px; font-size: 14px; }
+.guide__how strong { color: var(--orange-bright); }
+.guide__examples { display: grid; gap: 8px; }
+.example { margin: 0; border-radius: 8px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border-soft); }
+.example figcaption { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.example--weak figcaption { color: var(--muted); }
+.example--weak { border-style: dashed; }
+.example--strong figcaption { color: var(--orange-bright); }
+.example--strong { border-left: 3px solid var(--orange); }
+.example blockquote { margin: 0; font-size: 13px; color: #D8D8D8; }
+.guide-foot { color: var(--muted); font-size: 13px; margin-top: 18px; max-width: 80ch; }
+@media (max-width: 420px) { .guide-list { grid-template-columns: 1fr; } }
+
+.foot a { color: var(--orange-bright); text-decoration-color: var(--orange-line); }
 
 /* Footer ----------------------------------------------------------------- */
 

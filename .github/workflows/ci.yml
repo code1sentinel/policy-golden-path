@@ -1,17 +1,17 @@
-name: oscal-assess
+name: control-hygiene-portal
 
 on:
   push:
-    paths: ["oscal-assess/**", ".github/workflows/oscal-assess.yml"]
+    paths: ["control-hygiene-portal/**", ".github/workflows/control-hygiene-portal.yml"]
   pull_request:
-    paths: ["oscal-assess/**", ".github/workflows/oscal-assess.yml"]
+    paths: ["control-hygiene-portal/**", ".github/workflows/control-hygiene-portal.yml"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: oscal-assess
+        working-directory: control-hygiene-portal
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,6 +19,6 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -q
-      - run: oscal-assess examples/component-definition-example.json -c examples/catalog-excerpt.json
-      - run: oscal-assess examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
-      - run: oscal-assess examples/assessment-results-example.json
+      - run: chp examples/component-definition-example.json -c examples/catalog-excerpt.json
+      - run: chp examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
+      - run: chp examples/assessment-results-example.json

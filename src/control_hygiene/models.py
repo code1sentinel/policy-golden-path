@@ -80,7 +80,19 @@ class Assessment:
     improvements: list[str] = field(default_factory=list)
     rationale: str = ""
 
+    @property
+    def practices(self) -> dict[str, int]:
+        """How many of the scored best practices are adopted, partly adopted or not yet adopted."""
+        from .guides import practice_status
+
+        counts = {"adopted": 0, "partly": 0, "not-yet": 0}
+        for c in self.criteria:
+            counts[practice_status(c.score)] += 1
+        return {**counts, "total": len(self.criteria)}
+
     def to_dict(self) -> dict:
+        from .guides import practice, practice_status
+
         s = self.statement
         out = {
             "kind": s.kind,
@@ -98,8 +110,11 @@ class Assessment:
         out.update({
             "engine": self.engine,
             "confidence": round(self.confidence, 4),
+            "practices": self.practices,
             "criteria": [
-                {"name": c.name, "score": round(c.score, 4), "weight": round(c.weight, 4), "note": c.note}
+                {"name": c.name, "practice": (practice(s.kind, c.name) or {}).get("title", c.name),
+                 "status": practice_status(c.score), "score": round(c.score, 4), "weight": round(c.weight, 4),
+                 "note": c.note}
                 for c in self.criteria
             ],
             "improvements": self.improvements,

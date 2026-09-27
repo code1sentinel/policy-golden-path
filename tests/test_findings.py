@@ -1,9 +1,9 @@
 import pytest
 
-from oscal_assess import heuristic
-from oscal_assess.findings import extract_findings
-from oscal_assess.loader import load_statements
-from oscal_assess.models import RECOMMENDATION, RISK_STATEMENT, Statement
+from control_hygiene import heuristic
+from control_hygiene.findings import extract_findings
+from control_hygiene.loader import load_statements
+from control_hygiene.models import RECOMMENDATION, RISK_STATEMENT, Statement
 
 
 @pytest.fixture
@@ -119,8 +119,8 @@ def test_recommendation_must_address_the_cause():
 
 
 def test_risk_statement_is_checked_against_catalog_and_policy(examples):
-    from oscal_assess.catalog import Catalog
-    from oscal_assess.policy import attach_intents, load_policies
+    from control_hygiene.catalog import Catalog
+    from control_hygiene.policy import attach_intents, load_policies
 
     items = load_statements(examples / "assessment-results-example.json",
                             Catalog.load(examples / "catalog-excerpt.json"))

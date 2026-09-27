@@ -1,4 +1,4 @@
-"""oscal-assess-web: a local web front end for single and batch assessment.
+"""chp-web: the Control Hygiene Portal, a local web app for guides, single and batch health checks.
 
 Runs on the standard library only. It binds to 127.0.0.1 by default and has
 no authentication, so only expose it on a network you trust.
@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 from . import __version__, report
 from .catalog import Catalog
+from .guides import ADOPTED, GUIDES, PARTLY, STATUS_LABELS
 from .models import KIND_LABELS, RECOMMENDATION, RISK_STATEMENT, Statement
 from .policy import parse_policies
 from .service import assess_all, parse_document, prepare
@@ -125,7 +126,7 @@ def batch_statements(body: dict) -> tuple[list[Statement], list[dict], list[str]
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = f"oscal-assess/{__version__}"
+    server_version = f"control-hygiene-portal/{__version__}"
     assessor = None  # injected in tests
 
     def log_message(self, fmt, *args):  # quieter than the default
@@ -154,7 +155,7 @@ class Handler(BaseHTTPRequestHandler):
             path = "/index.html"
         name = path.lstrip("/")
         if name in STATIC:
-            body = resources.files("oscal_assess").joinpath("static", name).read_bytes()
+            body = resources.files("control_hygiene").joinpath("static", name).read_bytes()
             return self._send(HTTPStatus.OK, body, f"{STATIC[name]}; charset=utf-8")
         if path == "/api/config":
             from .llm import DEFAULT_MODEL
@@ -166,9 +167,13 @@ class Handler(BaseHTTPRequestHandler):
                 "kinds": KIND_LABELS,
                 "max_claude_items": MAX_CLAUDE_ITEMS,
             })
+        if path == "/api/guides":
+            return self._json(HTTPStatus.OK, {
+                "guides": GUIDES, "statuses": STATUS_LABELS, "adopted": ADOPTED, "partly": PARTLY,
+            })
         if path == "/api/template.csv":
             return self._send(HTTPStatus.OK, template().encode(), "text/csv; charset=utf-8",
-                              {"Content-Disposition": 'attachment; filename="oscal-assess-template.csv"'})
+                              {"Content-Disposition": 'attachment; filename="chp-template.csv"'})
         self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_POST(self):
@@ -211,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
         if engine not in ("heuristic", "claude"):
             raise BadRequest(f"unknown engine {engine!r}")
         if engine == "claude" and self.assessor is None and not claude_available():
-            raise BadRequest("the Claude engine needs the anthropic package: pip install 'oscal-assess[claude]'")
+            raise BadRequest("the Claude engine needs the anthropic package: pip install 'control-hygiene-portal[claude]'")
 
         mode = body.get("mode")
         if mode == "single":
@@ -253,7 +258,7 @@ def make_server(host: str = "127.0.0.1", port: int = 8765, assessor=None, verbos
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="oscal-assess-web", description="Web front end for oscal-assess.")
+    p = argparse.ArgumentParser(prog="chp-web", description="Control Hygiene Portal web app.")
     p.add_argument("--host", default="127.0.0.1", help="interface to bind (default: 127.0.0.1)")
     p.add_argument("--port", type=int, default=8765, help="port (default: 8765)")
     p.add_argument("--open", action="store_true", help="open the page in a browser")
@@ -264,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         print("warning: the app has no authentication; anyone who can reach this address can use it",
               file=sys.stderr)
-    print(f"oscal-assess web app on {url}  (Ctrl+C to stop)")
+    print(f"Control Hygiene Portal on {url}  (Ctrl+C to stop)")
     if args.open:
         threading.Timer(0.5, webbrowser.open, args=(url,)).start()
     try:

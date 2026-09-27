@@ -1,7 +1,7 @@
-from oscal_assess import heuristic
-from oscal_assess.catalog import Catalog
-from oscal_assess.loader import load_statements
-from oscal_assess.models import Statement
+from control_hygiene import heuristic
+from control_hygiene.catalog import Catalog
+from control_hygiene.loader import load_statements
+from control_hygiene.models import Statement
 
 STRONG = (
     "The Security Operations team reviews and analyzes audit records in Splunk daily for indications of "

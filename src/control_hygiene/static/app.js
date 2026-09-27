@@ -52,7 +52,10 @@ const state = {
   catalog: null,    // {name, content}
   policy: null,
   batch: null,      // last batch response
+  guides: null,     // best-practice guides from /api/guides
 };
+
+const STATUS_LABELS = { "adopted": "Adopted", "partly": "Partly adopted", "not-yet": "Not yet adopted" };
 
 // ---------------------------------------------------------------- helpers
 
@@ -128,7 +131,7 @@ function selectTab(tab) {
     t.tabIndex = on ? 0 : -1;
     $(`#${t.getAttribute("aria-controls")}`).hidden = !on;
   }
-  try { localStorage.setItem("oscal-assess-tab", tab.id); } catch { /* storage unavailable */ }
+  try { localStorage.setItem("chp-tab", tab.id); } catch { /* storage unavailable */ }
 }
 
 function initTabs() {
@@ -143,21 +146,39 @@ function initTabs() {
     });
   });
   let saved = null;
-  try { saved = localStorage.getItem("oscal-assess-tab"); } catch { /* storage unavailable */ }
+  try { saved = localStorage.getItem("chp-tab"); } catch { /* storage unavailable */ }
   if (saved && $(`#${saved}`)) selectTab($(`#${saved}`));
 }
 
 // ---------------------------------------------------------------- rendering an assessment
 
-function criteriaList(criteria) {
-  if (!criteria.length) return el("p", { class: "none", text: "No criteria returned." });
-  return el("ul", { class: "criteria" }, criteria.map((c) =>
-    el("li", { class: "criterion" },
-      el("span", { class: "criterion__name", text: human(c.name) }),
+function guideFor(kind, name) {
+  return state.guides?.guides?.[kind]?.practices?.[name] || null;
+}
+
+function statusPill(status) {
+  return el("span", { class: `status status--${status}`, text: STATUS_LABELS[status] || status });
+}
+
+// The best-practice checklist: each criterion as a practice, with how to adopt it when it is not adopted yet.
+function practiceList(criteria, kind) {
+  if (!criteria.length) return el("p", { class: "none", text: "No best practices scored." });
+  return el("ul", { class: "criteria" }, criteria.map((c) => {
+    const guide = guideFor(kind, c.name);
+    return el("li", { class: "criterion" },
+      el("span", { class: "criterion__name" }, statusPill(c.status), el("span", { text: c.practice || human(c.name) })),
       bar(c.score),
       el("span", { class: "criterion__pct", text: pct(c.score) }),
       c.note ? el("span", { class: "criterion__note", text: c.note }) : null,
-    )));
+      guide && c.status !== "adopted"
+        ? el("span", { class: "criterion__how" }, el("strong", { text: "How to adopt: " }), guide.how)
+        : null,
+    );
+  }));
+}
+
+function adoptedLine(p) {
+  return `${p.adopted} of ${plural(p.total, "best practice")} adopted` + (p.partly ? `, ${p.partly} partly` : "");
 }
 
 function improvementsList(items) {
@@ -173,10 +194,11 @@ function renderSingle(a) {
       el("span", { class: "verdict__pct", text: pct(a.confidence) }),
       el("span", { class: "verdict__label", text: "confidence" })),
     bar(a.confidence, "bar--large"),
+    el("p", { class: "verdict__practices", text: adoptedLine(a.practices) }),
     el("h3", { text: `Areas for improvement (${a.improvements.length})` }),
     improvementsList(a.improvements),
-    el("h3", { text: "Criteria" }),
-    criteriaList(a.criteria),
+    el("h3", { text: "Best practices" }),
+    practiceList(a.criteria, a.kind),
     el("p", { class: "rationale", text: `${a.rationale} Engine: ${a.engine}.` }),
   );
 }
@@ -203,7 +225,7 @@ function initSingle() {
   form.addEventListener("reset", () => {
     setTimeout(() => {
       applyKind();
-      $("#single-result").replaceChildren(el("p", { class: "placeholder", text: "Enter a statement and select Assess." }));
+      $("#single-result").replaceChildren(el("p", { class: "placeholder", text: "Enter a statement and select Run health check." }));
       showError("");
     });
   });
@@ -231,7 +253,7 @@ function initSingle() {
       form.elements.namedItem("text").focus();
       return;
     }
-    busy($("#single-submit"), "Assessing…", async () => {
+    busy($("#single-submit"), "Checking…", async () => {
       const data = await post({ mode: "single", item });
       renderSingle(data.assessments[0]);
     });
@@ -248,7 +270,7 @@ function updateBatchButton() {
   const n = state.files.length;
   const btn = $("#batch-submit");
   btn.disabled = n === 0;
-  btn.textContent = n ? `Assess ${plural(n, "file")}` : "Assess";
+  btn.textContent = n ? `Check ${plural(n, "file")}` : "Run health check";
 }
 
 function renderFileList() {
@@ -283,8 +305,31 @@ function renderTiles(summary) {
       el("p", { class: "tile__label", text: `${KIND_LABELS[kind]}s` }),
       el("p", { class: "tile__value" }, pct(k.average_confidence), el("small", { text: "average confidence" })),
       bar(k.average_confidence),
-      el("p", { class: "tile__meta", text: `${plural(k.count, "item")}, ${k.with_improvements} with areas for improvement` })));
+      el("p", { class: "tile__meta", text: `${plural(k.count, "item")}, ${k.practices_adopted} of ${k.practices_total} best practices adopted, ${k.with_improvements} with areas for improvement` })));
   $("#tiles").replaceChildren(...tiles);
+}
+
+function renderByFile(assessments) {
+  const files = new Map();
+  for (const a of assessments) {
+    const f = files.get(a.file) || { items: 0, conf: 0, adopted: 0, total: 0, improving: 0 };
+    f.items += 1;
+    f.conf += a.confidence;
+    f.adopted += a.practices.adopted;
+    f.total += a.practices.total;
+    f.improving += a.improvements.length ? 1 : 0;
+    files.set(a.file, f);
+  }
+  $("#by-file").replaceChildren(...Array.from(files, ([name, f]) => {
+    const avg = f.conf / f.items;
+    const share = f.total ? f.adopted / f.total : 0;
+    return el("tr", {},
+      el("th", { scope: "row", text: name }),
+      el("td", { text: String(f.items) }),
+      el("td", {}, el("span", { class: "cell-score" }, bar(avg), el("span", { text: pct(avg) }))),
+      el("td", {}, el("span", { class: "cell-score" }, bar(share), el("span", { text: `${f.adopted}/${f.total}` }))),
+      el("td", { text: String(f.improving) }));
+  }));
 }
 
 function renderFileStatus(files) {
@@ -305,8 +350,8 @@ function resultRow(a, index) {
   $(".bar__fill", node).style.width = pct(a.confidence);
   $(".bar", node).setAttribute("aria-label", `${pct(a.confidence)} confidence`);
   $(".score__pct", node).textContent = pct(a.confidence);
-  $(".result__count", node).textContent = a.improvements.length
-    ? plural(a.improvements.length, "improvement") : "No improvements";
+  $(".result__count", node).textContent = `${a.practices.adopted}/${a.practices.total} adopted`
+    + (a.improvements.length ? ` · ${a.improvements.length} to improve` : "");
 
   // Build the details only when first opened: large batches stay fast.
   node.addEventListener("toggle", () => {
@@ -314,7 +359,7 @@ function resultRow(a, index) {
     if (!node.open || body.childElementCount) return;
     body.append(
       el("div", {}, el("h3", { text: "Areas for improvement" }), improvementsList(a.improvements)),
-      el("div", {}, el("h3", { text: "Criteria" }), criteriaList(a.criteria)),
+      el("div", {}, el("h3", { text: "Best practices" }), practiceList(a.criteria, a.kind)),
       el("div", { class: "full" }, el("h3", { text: "Text assessed" }), el("pre", { class: "quote", text: a.text || "(empty)" })),
       el("p", { class: "rationale full", text: `${a.rationale} Engine: ${a.engine}.` }),
     );
@@ -351,6 +396,7 @@ function renderBatch(data) {
   $("#batch-results").hidden = false;
   renderFileStatus(data.files);
   renderTiles(data.summary);
+  renderByFile(data.assessments);
   const kinds = Object.keys(data.summary.by_kind);
   $("#filter-kind").replaceChildren(
     el("option", { value: "", text: "All kinds" }),
@@ -368,10 +414,12 @@ function csvCell(value) {
 }
 
 function toCsv(assessments) {
-  const header = ["file", "kind", "item", "control_id", "confidence", "improvement_count", "improvements", "rationale", "text"];
+  const header = ["file", "kind", "item", "control_id", "confidence", "practices_adopted", "practices_total",
+    "improvement_count", "improvements", "rationale", "text"];
   const lines = [header.join(",")];
   for (const a of assessments) {
-    lines.push([a.file, a.kind, a.item, a.control_id, Math.round(a.confidence * 100), a.improvements.length,
+    lines.push([a.file, a.kind, a.item, a.control_id, Math.round(a.confidence * 100), a.practices.adopted,
+      a.practices.total, a.improvements.length,
       a.improvements.join(" | "), a.rationale, a.text].map(csvCell).join(","));
   }
   return lines.join("\r\n") + "\r\n";
@@ -404,7 +452,7 @@ function initBatch() {
   });
 
   $("#batch-submit").addEventListener("click", (e) => {
-    busy(e.currentTarget, "Assessing…", async () => {
+    busy(e.currentTarget, "Checking…", async () => {
       const strip = (f) => f && { name: f.name, content: f.content };
       const data = await post({
         mode: "batch",
@@ -425,15 +473,55 @@ function initBatch() {
       if (!data) return;
       const stamp = new Date().toISOString().slice(0, 10);
       const kind = b.dataset.download;
-      if (kind === "csv") download(`oscal-assess-${stamp}.csv`, toCsv(data.assessments), "text/csv");
-      if (kind === "json") download(`oscal-assess-${stamp}.json`, JSON.stringify(
+      if (kind === "csv") download(`chp-${stamp}.csv`, toCsv(data.assessments), "text/csv");
+      if (kind === "json") download(`chp-${stamp}.json`, JSON.stringify(
         { summary: data.summary, files: data.files, assessments: data.assessments }, null, 2), "application/json");
-      if (kind === "md") download(`oscal-assess-${stamp}.md`, data.markdown, "text/markdown");
+      if (kind === "md") download(`chp-${stamp}.md`, data.markdown, "text/markdown");
     });
   }
 }
 
 // ---------------------------------------------------------------- start
+
+// ---------------------------------------------------------------- guides (awareness)
+
+function renderGuide(kind) {
+  for (const b of $$("[data-guide]")) b.setAttribute("aria-pressed", String(b.dataset.guide === kind));
+  const guide = state.guides?.guides?.[kind];
+  if (!guide) return;
+  $("#guide-summary").textContent = guide.summary;
+  const seen = new Set();
+  const cards = [];
+  for (const [name, p] of Object.entries(guide.practices)) {
+    if (seen.has(p.title)) continue;  // aliases (mechanism / specificity) share one card
+    seen.add(p.title);
+    cards.push(el("article", { class: "guide", id: `guide-${kind}-${name}` },
+      el("h3", { text: p.title }),
+      el("p", { class: "guide__why", text: p.why }),
+      el("p", { class: "guide__how" }, el("strong", { text: "How to adopt: " }), p.how),
+      el("div", { class: "guide__examples" },
+        el("figure", { class: "example example--weak" },
+          el("figcaption", { text: "Weak" }), el("blockquote", { text: p.weak })),
+        el("figure", { class: "example example--strong" },
+          el("figcaption", { text: "Strong" }), el("blockquote", { text: p.strong })))));
+  }
+  $("#guide-list").replaceChildren(...cards);
+}
+
+async function initGuides() {
+  for (const b of $$("[data-guide]")) b.addEventListener("click", () => renderGuide(b.dataset.guide));
+  for (const b of $$("[data-goto]")) b.addEventListener("click", () => {
+    const tab = $(`#${b.dataset.goto}`);
+    selectTab(tab);
+    tab.focus();
+  });
+  try {
+    state.guides = await (await fetch("/api/guides")).json();
+    $("#adopted-at").textContent = pct(state.guides.adopted);
+    $("#partly-at").textContent = pct(state.guides.partly);
+    renderGuide("implementation");
+  } catch { /* the rest of the page works without guides */ }
+}
 
 async function initConfig() {
   const select = $("#engine");
@@ -446,11 +534,12 @@ async function initConfig() {
       select.append(el("option", { value: "claude", text: `Claude (${config.claude_model})` }));
     }
   } catch {
-    showError("Could not reach the oscal-assess server. Is oscal-assess-web still running?");
+    showError("Could not reach the Control Hygiene Portal server. Is chp-web still running?");
   }
 }
 
 initTabs();
+initGuides();
 initSingle();
 initBatch();
 initConfig();

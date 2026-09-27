@@ -1,7 +1,7 @@
 import pytest
 
-from oscal_assess.catalog import Catalog
-from oscal_assess.loader import extract_statements, load_statements
+from control_hygiene.catalog import Catalog
+from control_hygiene.loader import extract_statements, load_statements
 
 
 def test_ssp_statements_resolve_components_and_requirements(examples):

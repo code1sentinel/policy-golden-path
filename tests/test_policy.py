@@ -1,11 +1,11 @@
 import pytest
 
-from oscal_assess import heuristic
-from oscal_assess.catalog import Catalog
-from oscal_assess.heuristic import commitments
-from oscal_assess.loader import load_statements
-from oscal_assess.models import Statement
-from oscal_assess.policy import Policy, attach_intents, load_policies, parse_policies
+from control_hygiene import heuristic
+from control_hygiene.catalog import Catalog
+from control_hygiene.heuristic import commitments
+from control_hygiene.loader import load_statements
+from control_hygiene.models import Statement
+from control_hygiene.policy import Policy, attach_intents, load_policies, parse_policies
 
 INTENT = ("Managers review every user account at least quarterly and remove access that is no longer needed "
           "within 5 business days. Review records are retained for at least 12 months.")
@@ -139,7 +139,7 @@ def test_risk_based_intent_does_not_demand_fixed_timelines():
 
 
 def test_policies_apply_to_risk_statements_through_their_targets():
-    from oscal_assess.models import RISK_STATEMENT
+    from control_hygiene.models import RISK_STATEMENT
 
     risk = Statement("ac-2_smt.j, au-6", "x", "assessment-results", kind=RISK_STATEMENT)
     assert risk.targets == [("ac-2", "ac-2_smt.j"), ("au-6", None)]

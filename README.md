@@ -1,6 +1,10 @@
-# oscal-assess
+# Control Hygiene Portal
 
-Reads the text in OSCAL documents and scores how well it is written:
+A one-stop place to check the hygiene of your GRC writing, modelled on CSA's
+[Internet Hygiene Portal](https://ihp.csa.gov.sg/) (IHP). Where IHP checks a
+website or email domain against internet best practices and suggests how to
+adopt the ones that are missing, this portal checks the text in OSCAL
+documents against control-writing best practices:
 
 | Text | From | A good one... |
 | --- | --- | --- |
@@ -8,21 +12,33 @@ Reads the text in OSCAL documents and scores how well it is written:
 | Risk statement | assessment results, POA&M | explains what is wrong, why, and what it could cost |
 | Recommendation | assessment results, POA&M | gives an owned, dated action that fixes the cause |
 
-Each item gets a **confidence score** (0 to 100%) and a list of **areas for
-improvement**. The tool does not pass or fail anything: use the scores and
-improvements in your own review process to decide that.
+It follows IHP's three A's:
+
+| | IHP | Control Hygiene Portal |
+| --- | --- | --- |
+| **Awareness** | Guides on internet hygiene standards | **Guides**: each best practice with why it matters, how to adopt it, and a weak and a strong example |
+| **Assessment** | Self-service health checks for website, email and connectivity | **Health check** for one statement, **batch health check** for OSCAL or CSV files |
+| **Adoption** | Actionable suggestions to adopt best practices | Each practice marked **adopted**, **partly adopted** or **not yet adopted**, with how to adopt it, plus the specific areas for improvement |
+
+Each item gets a **confidence score** (0 to 100%), a count of **best
+practices adopted**, and its **areas for improvement**. Unlike IHP's rating,
+the portal does not pass or fail anything: use the results in your own review
+process to decide that.
+
+This project is not affiliated with or endorsed by the Cyber Security Agency
+of Singapore; it borrows IHP's approach, not its content.
 
 ```
-$ oscal-assess examples/assessment-results-example.json
-Kind            Item                                               Confidence  Improvements
---------------  -------------------------------------------------  ----------  ------------
-Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%             0
-Recommendation  Automate leaver deprovisioning [ac-2_smt.j]               98%             0
-Risk statement  Audit review gaps [au-6]                                   5%             9
-Recommendation  Improve log review [au-6]                                 11%             8
+$ chp examples/assessment-results-example.json
+Kind            Item                                               Confidence  Practices adopted  Improvements
+--------------  -------------------------------------------------  ----------  -----------------  ------------
+Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                7/7             0
+Recommendation  Automate leaver deprovisioning [ac-2_smt.j]               98%                6/6             0
+Risk statement  Audit review gaps [au-6]                                   5%                0/7             9
+Recommendation  Improve log review [au-6]                                 11%                0/6             8
 
-2 risk statements: average confidence 52%, 1 with areas for improvement.
-2 recommendations: average confidence 55%, 1 with areas for improvement.
+2 risk statements: average confidence 52%, 7 of 14 best practices adopted, 1 with areas for improvement.
+2 recommendations: average confidence 55%, 6 of 12 best practices adopted, 1 with areas for improvement.
 
 Areas for improvement
 ---------------------
@@ -44,7 +60,7 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 ## Install
 
 ```
-cd oscal-assess
+cd control-hygiene-portal
 pip install -e .            # heuristic engine, no dependencies
 pip install -e ".[claude]"  # adds the Claude engine
 ```
@@ -54,25 +70,30 @@ Python 3.10 or later.
 ## Web app
 
 ```
-oscal-assess-web --open
+chp-web --open
 ```
 
-Opens the assessor at http://localhost:8765/ with two modes:
+Opens the portal at http://localhost:8765/ with three sections:
 
-- **Single input**: choose implementation statement, risk statement or
+- **Guides**: the best practices for each kind of text, each with why it
+  matters, how to adopt it, and a weak and a strong example.
+- **Health check**: choose implementation statement, risk statement or
   recommendation, paste the text, and optionally add context: the control
   requirement and policy intent; likelihood and impact for a risk; the risk
-  statement, rating, owner and target date for a recommendation. **Load
-  example** fills in a weak example of each kind.
-- **Batch upload**: drop several OSCAL JSON files (SSP, component definition,
-  assessment results, POA&M) or CSV files at once, with an optional catalog and
-  policy file. Results show the average confidence per kind, then every item,
-  which you can filter by kind, search, sort by confidence or number of
-  improvements, and expand for its criteria and areas for improvement.
-  Download them as CSV, JSON or Markdown. A file that cannot be read is listed
-  with the reason and the rest are still assessed.
+  statement, rating, owner and target date for a recommendation. The result
+  shows the confidence, how many best practices are adopted, the areas for
+  improvement, and each practice with how to adopt it. **Load example** fills
+  in a weak example of each kind.
+- **Batch health check**: drop several OSCAL JSON files (SSP, component
+  definition, assessment results, POA&M) or CSV files at once, with an
+  optional catalog and policy file. Results show the average confidence and
+  practices adopted per kind, a **hygiene by file** table, then every item,
+  which you can filter by kind, search, sort, and expand. Download them as
+  CSV, JSON or Markdown. A file that cannot be read is listed with the reason
+  and the rest are still assessed.
 
-Confidence bars use one colour throughout: the page shows scores, not pass or
+Confidence bars use one colour throughout, and adoption status is shown by
+label and shape rather than red and green: the page shows scores, not pass or
 fail.
 
 The engine selector offers Claude when the `anthropic` package is installed
@@ -94,7 +115,7 @@ never markup.
 ## Command line
 
 ```
-oscal-assess DOCUMENT [options]
+chp DOCUMENT [options]
 
 -c, --catalog PATH          OSCAL catalog (JSON) for control requirement text
 -p, --policy PATH           policy file (JSON) with the policy intent for each control
@@ -131,7 +152,7 @@ first.
 
 For statements that are not in OSCAL yet, such as a spreadsheet of draft
 statements. Download the template from the web app, or see
-`src/oscal_assess/tabular.py`. Only `text` is required:
+`src/control_hygiene/tabular.py`. Only `text` is required:
 
 | Column | |
 | --- | --- |
@@ -145,7 +166,12 @@ statements. Download the template from the web app, or see
 
 Headers are case-insensitive, and spaces or hyphens count as underscores.
 
-## Criteria
+## Best practices
+
+Each criterion below is a best practice. A practice is **adopted** when it
+scores 80% or more, **partly adopted** from 40%, and **not yet adopted**
+below that. The guides for every practice are in
+`src/control_hygiene/guides.py`, shown in the web app's Guides section.
 
 All three kinds share the same wording rules, adjusted to what each is for:
 
@@ -210,8 +236,8 @@ separate input for implementation statements. Give it as a policy file, an
 inline intent, or both:
 
 ```
-oscal-assess ssp.json -c catalog.json --policy policies.json
-oscal-assess ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
+chp ssp.json -c catalog.json --policy policies.json
+chp ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
 ```
 
 ```json
@@ -293,7 +319,7 @@ schema-constrained JSON.
 
 ```
 export ANTHROPIC_API_KEY=...
-oscal-assess ssp.json -c catalog.json --engine claude
+chp ssp.json -c catalog.json --engine claude
 ```
 
 | Option | Default | |
@@ -313,13 +339,13 @@ the item scores 0 with a note to review it manually.
 | `-f table` | Scores, a summary per kind, and the areas for improvement (default) |
 | `-f json` | Every score, criterion, improvement and rationale |
 | `-f markdown` | The same as a report, for a PR comment or job summary |
-| `--assessment-results PATH` | An OSCAL `assessment-results` document with one `observation` per item: its confidence, kind, control and original uuid as props, and the improvements in `remarks` |
+| `--assessment-results PATH` | An OSCAL `assessment-results` document with one `observation` per item: its confidence, practices adopted, kind, control and original uuid as props, and the improvements in `remarks` |
 
 ## Use in GitHub Actions
 
 ```yaml
-- run: pip install ./oscal-assess
-- run: oscal-assess ssp.json -c catalog.json -p policies.json -f markdown -o report.md
+- run: pip install ./control-hygiene-portal
+- run: chp ssp.json -c catalog.json -p policies.json -f markdown -o report.md
 - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
@@ -335,9 +361,10 @@ The Claude engine's tests use a stub client, so they run offline.
 ## Layout
 
 ```
-src/oscal_assess/
-  cli.py        command line
-  webapp.py     web app server (oscal-assess-web)
+src/control_hygiene/
+  cli.py        command line (chp)
+  webapp.py     web app server (chp-web)
+  guides.py     best-practice guides and adoption status
   static/       web app page, styles and script
   service.py    the pipeline both share
   tabular.py    CSV input and template

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OSCAL Assess</title>
+  <title>Control Hygiene Portal</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F1F1F'/%3E%3Cpath d='M0 0h32L0 32z' fill='%23E8650A'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -17,8 +17,8 @@
       <div class="brand">
         <span class="brand__mark" aria-hidden="true"></span>
         <div>
-          <h1 class="brand__name">OSCAL Assess</h1>
-          <p class="brand__tag">Scores implementation statements, risk statements and recommendations, and lists areas for improvement.</p>
+          <h1 class="brand__name">Control Hygiene Portal</h1>
+          <p class="brand__tag">Health checks for OSCAL implementation statements, risk statements and recommendations, with guides to good practice.</p>
         </div>
       </div>
       <label class="engine">
@@ -31,9 +31,31 @@
   </header>
 
   <main id="main" class="wrap">
-    <div class="tabs" role="tablist" aria-label="Assessment mode">
-      <button class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single input</button>
-      <button class="tab" role="tab" id="tab-batch" aria-controls="panel-batch" aria-selected="false" tabindex="-1">Batch upload</button>
+    <ol class="three-a" aria-label="How the portal works">
+      <li>
+        <button type="button" data-goto="tab-guides">
+          <span class="three-a__step">Awareness</span>
+          <span class="three-a__text">Read what good looks like for each best practice.</span>
+        </button>
+      </li>
+      <li>
+        <button type="button" data-goto="tab-single">
+          <span class="three-a__step">Assessment</span>
+          <span class="three-a__text">Run a health check on one statement, or a batch of files.</span>
+        </button>
+      </li>
+      <li>
+        <button type="button" data-goto="tab-batch">
+          <span class="three-a__step">Adoption</span>
+          <span class="three-a__text">See which practices are adopted and how to adopt the rest.</span>
+        </button>
+      </li>
+    </ol>
+
+    <div class="tabs" role="tablist" aria-label="Portal sections">
+      <button class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Health check</button>
+      <button class="tab" role="tab" id="tab-batch" aria-controls="panel-batch" aria-selected="false" tabindex="-1">Batch health check</button>
+      <button class="tab" role="tab" id="tab-guides" aria-controls="panel-guides" aria-selected="false" tabindex="-1">Guides</button>
     </div>
 
     <div id="error" class="error" role="alert" hidden></div>
@@ -119,14 +141,14 @@
           </details>
 
           <div class="actions">
-            <button type="submit" class="btn btn--primary" id="single-submit">Assess</button>
+            <button type="submit" class="btn btn--primary" id="single-submit">Run health check</button>
             <button type="button" class="btn" id="single-example">Load example</button>
             <button type="reset" class="btn btn--quiet">Clear</button>
           </div>
         </form>
 
         <div id="single-result" class="card result-card" aria-live="polite">
-          <p class="placeholder">Enter a statement and select <strong>Assess</strong>. The result shows a confidence score and the areas for improvement. It does not pass or fail anything: your review process decides that.</p>
+          <p class="placeholder">Enter a statement and select <strong>Run health check</strong>. The result shows a confidence score, which best practices are adopted, and how to adopt the rest. It does not pass or fail anything: your review process decides that.</p>
         </div>
       </div>
     </section>
@@ -154,7 +176,7 @@
         </div>
 
         <div class="actions">
-          <button type="button" class="btn btn--primary" id="batch-submit" disabled>Assess</button>
+          <button type="button" class="btn btn--primary" id="batch-submit" disabled>Run health check</button>
           <a class="btn btn--quiet" href="/api/template.csv" download>Download CSV template</a>
         </div>
       </div>
@@ -162,6 +184,18 @@
       <div id="batch-results" hidden>
         <ul id="file-status" class="file-status"></ul>
         <div id="tiles" class="tiles"></div>
+
+        <h2 class="section-title">Hygiene by file</h2>
+        <div class="table-wrap">
+          <table class="hygiene">
+            <thead>
+              <tr><th scope="col">File</th><th scope="col">Items</th><th scope="col">Average confidence</th><th scope="col">Best practices adopted</th><th scope="col">With improvements</th></tr>
+            </thead>
+            <tbody id="by-file"></tbody>
+          </table>
+        </div>
+
+        <h2 class="section-title">Items</h2>
 
         <div class="toolbar">
           <label class="field field--inline">
@@ -193,10 +227,22 @@
         <div id="results" class="results"></div>
       </div>
     </section>
+
+    <!-- Guides -->
+    <section id="panel-guides" class="panel" role="tabpanel" aria-labelledby="tab-guides" hidden>
+      <div class="guide-kinds" role="group" aria-label="Guide">
+        <button type="button" class="kind-btn" data-guide="implementation" aria-pressed="true">Implementation statements</button>
+        <button type="button" class="kind-btn" data-guide="risk-statement" aria-pressed="false">Risk statements</button>
+        <button type="button" class="kind-btn" data-guide="recommendation" aria-pressed="false">Recommendations</button>
+      </div>
+      <p id="guide-summary" class="guide-summary"></p>
+      <div id="guide-list" class="guide-list"></div>
+      <p class="guide-foot">A practice counts as <strong>adopted</strong> when it scores <span id="adopted-at"></span> or more, and <strong>partly adopted</strong> from <span id="partly-at"></span>. These describe how a statement is written; they are not a pass or fail.</p>
+    </section>
   </main>
 
   <footer class="wrap foot">
-    <p>Scores reflect how a statement is written, not whether it is true. <span id="version"></span></p>
+    <p>Scores reflect how a statement is written, not whether it is true. The Awareness, Assessment and Adoption approach follows CSA's <a href="https://ihp.csa.gov.sg/" rel="noopener">Internet Hygiene Portal</a>; this tool is not affiliated with CSA. <span id="version"></span></p>
   </footer>
 
   <template id="result-tpl">

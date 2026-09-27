@@ -1,8 +1,8 @@
 import pytest
 
-from oscal_assess import heuristic
-from oscal_assess.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
-from oscal_assess.tabular import parse_csv, template
+from control_hygiene import heuristic
+from control_hygiene.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from control_hygiene.tabular import parse_csv, template
 
 
 def test_template_parses_to_one_of_each_kind():

@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from oscal_assess import webapp
-from oscal_assess.models import Assessment
-from oscal_assess.tabular import template
+from control_hygiene import webapp
+from control_hygiene.models import Assessment
+from control_hygiene.tabular import template
 
 
 @pytest.fixture
@@ -39,13 +39,16 @@ def post(url, body, headers=None, raw=None):
 
 def test_serves_page_assets_and_config(server):
     status, headers, body = get(server + "/")
-    assert status == 200 and b"Batch upload" in body and b"Single input" in body
+    assert status == 200 and b"Batch health check" in body and b"Guides" in body and b"ihp.csa.gov.sg" in body
     assert "default-src 'self'" in headers["Content-Security-Policy"]
     assert headers["X-Content-Type-Options"] == "nosniff"
     for name in ("app.js", "app.css"):
         assert get(f"{server}/{name}")[0] == 200
     config = json.loads(get(server + "/api/config")[2])
     assert "heuristic" in config["engines"] and config["kinds"]["risk-statement"] == "Risk statement"
+    guides = json.loads(get(server + "/api/guides")[2])
+    assert set(guides["guides"]) == {"implementation", "risk-statement", "recommendation"}
+    assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
     status, headers, body = get(server + "/api/template.csv")
     assert body.decode() == template() and "attachment" in headers["Content-Disposition"]
 
@@ -102,7 +105,7 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
                                                         "rows.csv"}
     au6 = next(a for a in data["assessments"] if a["item"] == "au-6 [Splunk]")
     assert au6["policies"] == ["ISP-09"]  # policy applied
-    assert "# OSCAL assessment" in data["markdown"]
+    assert "# Control Hygiene Portal: health check" in data["markdown"]
 
 
 @pytest.mark.parametrize("body, status, message", [
@@ -160,7 +163,7 @@ def test_claude_engine_uses_injected_assessor_and_caps_batch_size(examples, monk
 
 
 def test_cli_accepts_csv(tmp_path, capsys):
-    from oscal_assess.cli import main
+    from control_hygiene.cli import main
 
     path = tmp_path / "rows.csv"
     path.write_text(template())
