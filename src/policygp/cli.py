@@ -23,12 +23,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="policy file (JSON) giving the policy intent each control must meet")
     p.add_argument("-i", "--intent", metavar="TEXT",
                    help="a policy intent to apply to every statement (in addition to --policy)")
-    p.add_argument("-e", "--engine", choices=["heuristic", "claude"], default="heuristic",
-                   help="heuristic: offline rubric (default); claude: LLM judge via the Anthropic API")
-    p.add_argument("--model", default=None, help="Claude model for --engine claude (default: claude-opus-5)")
-    p.add_argument("--effort", default="medium", choices=["low", "medium", "high", "xhigh", "max"],
-                   help="effort level for --engine claude (default: medium)")
-    p.add_argument("--workers", type=int, default=4, help="parallel requests for --engine claude")
     p.add_argument("-f", "--format", choices=["table", "json", "markdown"], default="table")
     p.add_argument("-o", "--output", help="write the report here instead of stdout")
     p.add_argument("--assessment-results", metavar="PATH",
@@ -49,7 +43,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"policygp: {exc}", file=sys.stderr)
         return 2
 
-    assessments = assess_all(statements, args.engine, args.model, args.effort, args.workers)
+    assessments = assess_all(statements)
 
     rendered = {"table": report.to_table, "json": report.to_json, "markdown": report.to_markdown}[args.format](
         assessments

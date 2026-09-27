@@ -417,7 +417,7 @@ def _finish(statement: Statement, criteria: list[CriterionResult], improvements:
         c.issues = improvements.of(c.name)
 
     rationale = f"Rubric score {confidence:.0%}" + (f"; {'; '.join(notes)}" if notes else "") + "."
-    return Assessment(statement, round(confidence, 4), "heuristic", criteria, improvements.texts, rationale)
+    return Assessment(statement, round(confidence, 4), criteria, improvements.texts, rationale)
 
 
 def _signal(name: str, pattern: re.Pattern, text: str, full_at: int, weight: float) -> CriterionResult:

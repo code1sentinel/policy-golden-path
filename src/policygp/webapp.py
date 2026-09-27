@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
-import importlib.util
 import json
 import sys
 import threading
@@ -28,7 +27,6 @@ from .service import assess_all, parse_document, prepare
 from .tabular import template, template_xlsx
 
 MAX_BODY = 20 * 1024 * 1024  # bytes per request
-MAX_CLAUDE_ITEMS = 200  # items per request with the Claude engine, to bound cost
 STATIC = {"index.html": "text/html", "app.css": "text/css", "app.js": "text/javascript"}
 CSP = ("default-src 'self'; style-src 'self' https://fonts.googleapis.com; "
        "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; "
@@ -39,10 +37,6 @@ class BadRequest(Exception):
     def __init__(self, message: str, status: HTTPStatus = HTTPStatus.BAD_REQUEST):
         super().__init__(message)
         self.status = status
-
-
-def claude_available() -> bool:
-    return importlib.util.find_spec("anthropic") is not None
 
 
 def _text(value, name: str, limit: int = 20000) -> str:
@@ -138,7 +132,6 @@ def batch_statements(body: dict) -> tuple[list[Statement], list[dict], list[str]
 
 class Handler(BaseHTTPRequestHandler):
     server_version = f"policygp/{__version__}"
-    assessor = None  # injected in tests
 
     def log_message(self, fmt, *args):  # quieter than the default
         if getattr(self.server, "verbose", False):
@@ -169,14 +162,9 @@ class Handler(BaseHTTPRequestHandler):
             body = resources.files("policygp").joinpath("static", name).read_bytes()
             return self._send(HTTPStatus.OK, body, f"{STATIC[name]}; charset=utf-8")
         if path == "/api/config":
-            from .llm import DEFAULT_MODEL
-
             return self._json(HTTPStatus.OK, {
                 "version": __version__,
-                "engines": ["heuristic"] + (["claude"] if claude_available() else []),
-                "claude_model": DEFAULT_MODEL,
                 "kinds": KIND_LABELS,
-                "max_claude_items": MAX_CLAUDE_ITEMS,
             })
         if path == "/api/guides":
             return self._json(HTTPStatus.OK, {
@@ -227,12 +215,6 @@ class Handler(BaseHTTPRequestHandler):
         return body
 
     def _assess(self, body: dict) -> dict:
-        engine = body.get("engine") or "heuristic"
-        if engine not in ("heuristic", "claude"):
-            raise BadRequest(f"unknown engine {engine!r}")
-        if engine == "claude" and self.assessor is None and not claude_available():
-            raise BadRequest("the Claude engine needs the anthropic package: pip install 'policygp[claude]'")
-
         mode = body.get("mode")
         if mode == "single":
             items, files, names = [single_statement(body.get("item"))], [], ["Single input"]
@@ -241,16 +223,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             raise BadRequest("'mode' must be 'single' or 'batch'")
 
-        if engine == "claude" and len(items) > MAX_CLAUDE_ITEMS:
-            raise BadRequest(f"{len(items)} items is more than the {MAX_CLAUDE_ITEMS} allowed per Claude run; "
-                             "split the batch or use the heuristic engine")
-        try:
-            assessments = assess_all(items, engine, effort=body.get("effort") or "medium",
-                                     assessor=self.assessor)
-        except Exception as exc:  # engine failures (auth, network) go back to the page, not a stack trace
-            if engine != "claude":
-                raise
-            raise BadRequest(f"Claude engine failed: {exc.__class__.__name__}: {exc}", HTTPStatus.BAD_GATEWAY)
+        assessments = assess_all(items)
 
         rows = []
         for name, a in zip(names, assessments):
@@ -265,9 +238,8 @@ class Handler(BaseHTTPRequestHandler):
         }
 
 
-def make_server(host: str = "127.0.0.1", port: int = 8765, assessor=None, verbose: bool = False):
-    handler = type("BoundHandler", (Handler,), {"assessor": assessor})
-    server = ThreadingHTTPServer((host, port), handler)
+def make_server(host: str = "127.0.0.1", port: int = 8765, verbose: bool = False):
+    server = ThreadingHTTPServer((host, port), Handler)
     server.verbose = verbose
     return server
 

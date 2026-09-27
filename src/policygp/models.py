@@ -78,7 +78,6 @@ class CriterionResult:
 class Assessment:
     statement: Statement
     confidence: float  # 0.0 to 1.0
-    engine: str
     criteria: list[CriterionResult] = field(default_factory=list)
     improvements: list[str] = field(default_factory=list)
     rationale: str = ""
@@ -111,7 +110,6 @@ class Assessment:
             if s.kind == "recommendation":
                 out["risk_title"] = s.risk_title
         out.update({
-            "engine": self.engine,
             "confidence": round(self.confidence, 4),
             "practices": self.practices,
             "criteria": [

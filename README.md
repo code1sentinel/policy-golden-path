@@ -72,8 +72,7 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 ```
 git clone https://github.com/code1sentinel/policy-golden-path.git
 cd policy-golden-path
-pip install -e .            # installs the policygp and policygp-web commands
-pip install -e ".[claude]"  # adds the Claude engine
+pip install -e .   # installs the policygp and policygp-web commands; no other dependencies
 ```
 
 Python 3.10 or later.
@@ -109,10 +108,6 @@ Confidence bars use one colour throughout, and adoption status is shown by
 label and shape rather than red and green: the page shows scores, not pass or
 fail.
 
-The engine selector offers Claude when the `anthropic` package is installed
-and credentials are set in the environment that runs the server. A Claude run
-is limited to 200 items, to bound cost.
-
 | Option | Default | |
 | --- | --- | --- |
 | `--host` | `127.0.0.1` | Interface to bind |
@@ -133,7 +128,6 @@ policygp DOCUMENT [options]
 -c, --catalog PATH          OSCAL catalog (JSON) for control requirement text
 -p, --policy PATH           policy file (JSON) with the policy intent for each control
 -i, --intent TEXT           a policy intent applied to every implementation statement
--e, --engine ENGINE         heuristic (default, offline) or claude
 -f, --format FORMAT         table (default), json or markdown
 -o, --output PATH           write the report to a file
 --assessment-results PATH   also write the results as OSCAL observations
@@ -340,37 +334,12 @@ full marks:
 An intent can mix both, for example risk-based review frequency with a fixed
 5-day removal time; each part is checked.
 
-## Engines
+## How it scores
 
-### `heuristic` (default)
-
-Offline and deterministic: it looks for the signals in the tables above. It
-rewards text written the way an assessor needs it, but cannot tell whether
-what the text says is true.
-
-### `claude`
-
-Uses Claude as the assessor, with a rubric for each kind covering the same
-criteria. Each item is sent with its context: the control text and policy
-intent for an implementation statement; the ratings for a risk statement;
-the risk statement, owner and deadline for a recommendation. The model returns
-a confidence, per-criterion scores, areas for improvement and a rationale as
-schema-constrained JSON.
-
-```
-export ANTHROPIC_API_KEY=...
-policygp ssp.json -c catalog.json --engine claude
-```
-
-| Option | Default | |
-| --- | --- | --- |
-| `--model` | `claude-opus-5` | Any Claude model id |
-| `--effort` | `medium` | `low` to `max` |
-| `--workers` | `4` | Parallel requests |
-
-Requests use adaptive thinking and server-side refusal fallbacks
-(`fallbacks: "default"`). If a response is refused, truncated or unreadable,
-the item scores 0 with a note to review it manually.
+All checks run offline and are deterministic: the same text always gets the
+same score, and nothing is sent anywhere. The checks look for the signals in
+the tables above, so they reward text written the way an assessor needs it,
+but they cannot tell whether what the text says is true.
 
 ## Output
 
@@ -399,8 +368,6 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The Claude engine's tests use a stub client, so they run offline.
-
 ## Layout
 
 ```
@@ -417,7 +384,6 @@ src/policygp/
   catalog.py    control and statement-part text out of catalogs
   policy.py     policy intents and which statements they apply to
   heuristic.py  offline rubrics for each kind
-  llm.py        Claude assessor
   report.py     table, JSON, Markdown and OSCAL output
 examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies and assessment results
 tests/

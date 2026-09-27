@@ -82,13 +82,6 @@ GUIDES: dict[str, dict] = {
                 "Access is restricted.",
                 "Access is restricted by Okta group policies mapped to AWS IAM roles.",
             ),
-            "specificity": _p(
-                "Name the mechanism",
-                "The tool, configuration or procedure is what an assessor inspects.",
-                "Name the system and the setting or procedure that implements the control.",
-                "Access is restricted.",
-                "Access is restricted by Okta group policies mapped to AWS IAM roles.",
-            ),
             "frequency": _p(
                 "Say how often, or what triggers it",
                 "Without a frequency or trigger there is no way to tell whether the control is operating.",

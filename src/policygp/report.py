@@ -93,7 +93,6 @@ def to_assessment_results(assessments: list[Assessment], source_href: str) -> st
         props = [
             {"name": "assessed-kind", "ns": NS, "value": st.kind},
             {"name": "confidence", "ns": NS, "value": f"{a.confidence:.4f}"},
-            {"name": "engine", "ns": NS, "value": a.engine},
             {"name": "practices-adopted", "ns": NS, "value": str(a.practices["adopted"])},
             {"name": "practices-total", "ns": NS, "value": str(a.practices["total"])},
         ]

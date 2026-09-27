@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from concurrent.futures import ThreadPoolExecutor
 
 from . import heuristic
 from .catalog import Catalog
@@ -54,13 +53,5 @@ def prepare(statements: list[Statement], catalog: Catalog | None = None,
         attach_intents(untouched, policies)
 
 
-def assess_all(statements: list[Statement], engine: str = "heuristic", model: str | None = None,
-               effort: str = "medium", workers: int = 4, assessor=None) -> list[Assessment]:
-    if engine == "claude":
-        if assessor is None:
-            from .llm import DEFAULT_MODEL, ClaudeAssessor
-
-            assessor = ClaudeAssessor(model=model or DEFAULT_MODEL, effort=effort)
-        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-            return list(pool.map(assessor.assess, statements))
+def assess_all(statements: list[Statement]) -> list[Assessment]:
     return [heuristic.assess(s) for s in statements]

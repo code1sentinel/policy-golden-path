@@ -47,7 +47,6 @@ const EXAMPLES = {
 };
 
 const state = {
-  engine: "heuristic",
   files: [],        // {name, size, content}
   catalog: null,    // {name, content}
   policy: null,
@@ -98,7 +97,7 @@ async function post(body) {
   const res = await fetch("/api/assess", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, engine: state.engine }),
+    body: JSON.stringify(body),
   });
   let data = null;
   try { data = await res.json(); } catch { /* fall through */ }
@@ -199,7 +198,7 @@ function renderSingle(a) {
     improvementsList(a.improvements),
     el("h3", { text: "Best practices" }),
     practiceList(a.criteria, a.kind),
-    el("p", { class: "rationale", text: `${a.rationale} Engine: ${a.engine}.` }),
+    el("p", { class: "rationale", text: a.rationale }),
   );
 }
 
@@ -374,7 +373,7 @@ function resultRow(a, index) {
       el("div", {}, el("h3", { text: "Areas for improvement" }), improvementsList(a.improvements)),
       el("div", {}, el("h3", { text: "Best practices" }), practiceList(a.criteria, a.kind)),
       el("div", { class: "full" }, el("h3", { text: "Text assessed" }), el("pre", { class: "quote", text: a.text || "(empty)" })),
-      el("p", { class: "rationale full", text: `${a.rationale} Engine: ${a.engine}.` }),
+      el("p", { class: "rationale full", text: a.rationale }),
     );
   });
   node.dataset.index = index;
@@ -539,15 +538,10 @@ async function initGuides() {
 }
 
 async function initConfig() {
-  const select = $("#engine");
-  select.addEventListener("change", () => { state.engine = select.value; });
   try {
     const res = await fetch("/api/config");
     const config = await res.json();
     $("#version").textContent = `Version ${config.version}.`;
-    if (config.engines.includes("claude")) {
-      select.append(el("option", { value: "claude", text: `Claude (${config.claude_model})` }));
-    }
   } catch {
     showError("Could not reach the PolicyGP server. Is policygp-web still running?");
   }

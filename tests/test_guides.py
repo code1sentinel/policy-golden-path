@@ -2,7 +2,6 @@ import pytest
 
 from policygp import heuristic
 from policygp.guides import ADOPTED, PARTLY, practice, practice_status
-from policygp.llm import KINDS, POLICY_CRITERION
 from policygp.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
 
 
@@ -12,10 +11,8 @@ def rich(kind):
 
 
 @pytest.mark.parametrize("kind", [IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION])
-def test_every_criterion_either_engine_scores_has_a_guide(kind):
-    heuristic_names = {c.name for c in heuristic.assess(rich(kind)).criteria}
-    claude_names = set(KINDS[kind][1]) | ({POLICY_CRITERION} if kind == IMPLEMENTATION else set())
-    for name in heuristic_names | claude_names:
+def test_every_scored_criterion_has_a_guide(kind):
+    for name in {c.name for c in heuristic.assess(rich(kind)).criteria}:
         guide = practice(kind, name)
         assert guide, f"no guide for {kind}/{name}"
         assert all(guide[k] for k in ("title", "why", "how", "weak", "strong"))

@@ -2,12 +2,10 @@ import json
 import threading
 import urllib.error
 import urllib.request
-from types import SimpleNamespace
 
 import pytest
 
 from policygp import webapp
-from policygp.models import Assessment
 from policygp.tabular import template
 
 
@@ -45,7 +43,7 @@ def test_serves_page_assets_and_config(server):
     for name in ("app.js", "app.css"):
         assert get(f"{server}/{name}")[0] == 200
     config = json.loads(get(server + "/api/config")[2])
-    assert "heuristic" in config["engines"] and config["kinds"]["risk-statement"] == "Risk statement"
+    assert config["kinds"]["risk-statement"] == "Risk statement" and "engines" not in config
     guides = json.loads(get(server + "/api/guides")[2])
     assert set(guides["guides"]) == {"implementation", "risk-statement", "recommendation"}
     assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
@@ -118,7 +116,6 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
     ({"mode": "batch", "documents": [{"name": "a.json", "content": "{}"}],
       "catalog": {"name": "c.json", "content": "{}"}}, 400, "catalog c.json"),
     ({"mode": "other"}, 400, "'mode'"),
-    ({"mode": "single", "item": {"text": "x"}, "engine": "gpt"}, 400, "unknown engine"),
 ])
 def test_bad_requests(server, body, status, message):
     code, data = post(server, body)
@@ -133,36 +130,6 @@ def test_rejects_cross_origin_non_json_and_oversized(server, monkeypatch):
     monkeypatch.setattr(webapp, "MAX_BODY", 10)
     code, data = post(server, {"mode": "single", "item": {"text": "a long enough body"}})
     assert code == 413
-
-
-def test_claude_engine_uses_injected_assessor_and_caps_batch_size(examples, monkeypatch):
-    calls = []
-
-    def fake_assess(statement):
-        calls.append(statement)
-        return Assessment(statement, 0.5, "claude:test", improvements=["x"], rationale="r")
-
-    srv = webapp.make_server("127.0.0.1", 0, assessor=SimpleNamespace(assess=fake_assess))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    url = f"http://127.0.0.1:{srv.server_port}"
-    try:
-        code, data = post(url, {"mode": "single", "engine": "claude", "item": {"text": "Accounts are reviewed."}})
-        assert code == 200 and data["assessments"][0]["engine"] == "claude:test" and len(calls) == 1
-
-        monkeypatch.setattr(webapp, "MAX_CLAUDE_ITEMS", 2)
-        doc = {"name": "ssp.json", "content": (examples / "ssp-example.json").read_text()}
-        code, data = post(url, {"mode": "batch", "engine": "claude", "documents": [doc]})
-        assert code == 400 and "more than the 2 allowed" in data["error"]
-
-        def boom(statement):
-            raise RuntimeError("no credentials")
-
-        srv.RequestHandlerClass.assessor = SimpleNamespace(assess=boom)
-        code, data = post(url, {"mode": "single", "engine": "claude", "item": {"text": "x"}})
-        assert code == 502 and "no credentials" in data["error"]
-    finally:
-        srv.shutdown()
-        srv.server_close()
 
 
 def test_batch_reports_unreadable_workbook(server):
