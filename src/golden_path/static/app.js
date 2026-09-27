@@ -131,7 +131,7 @@ function selectTab(tab) {
     t.tabIndex = on ? 0 : -1;
     $(`#${t.getAttribute("aria-controls")}`).hidden = !on;
   }
-  try { localStorage.setItem("chp-tab", tab.id); } catch { /* storage unavailable */ }
+  try { localStorage.setItem("golden-path-tab", tab.id); } catch { /* storage unavailable */ }
 }
 
 function initTabs() {
@@ -146,7 +146,7 @@ function initTabs() {
     });
   });
   let saved = null;
-  try { saved = localStorage.getItem("chp-tab"); } catch { /* storage unavailable */ }
+  try { saved = localStorage.getItem("golden-path-tab"); } catch { /* storage unavailable */ }
   if (saved && $(`#${saved}`)) selectTab($(`#${saved}`));
 }
 
@@ -473,10 +473,10 @@ function initBatch() {
       if (!data) return;
       const stamp = new Date().toISOString().slice(0, 10);
       const kind = b.dataset.download;
-      if (kind === "csv") download(`chp-${stamp}.csv`, toCsv(data.assessments), "text/csv");
-      if (kind === "json") download(`chp-${stamp}.json`, JSON.stringify(
+      if (kind === "csv") download(`golden-path-${stamp}.csv`, toCsv(data.assessments), "text/csv");
+      if (kind === "json") download(`golden-path-${stamp}.json`, JSON.stringify(
         { summary: data.summary, files: data.files, assessments: data.assessments }, null, 2), "application/json");
-      if (kind === "md") download(`chp-${stamp}.md`, data.markdown, "text/markdown");
+      if (kind === "md") download(`golden-path-${stamp}.md`, data.markdown, "text/markdown");
     });
   }
 }
@@ -534,7 +534,7 @@ async function initConfig() {
       select.append(el("option", { value: "claude", text: `Claude (${config.claude_model})` }));
     }
   } catch {
-    showError("Could not reach the Control Hygiene Portal server. Is chp-web still running?");
+    showError("Could not reach the Golden Path server. Is golden-path-web still running?");
   }
 }
 

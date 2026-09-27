@@ -1,9 +1,9 @@
 import pytest
 
-from control_hygiene import heuristic
-from control_hygiene.guides import ADOPTED, PARTLY, practice, practice_status
-from control_hygiene.llm import KINDS, POLICY_CRITERION
-from control_hygiene.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
+from golden_path import heuristic
+from golden_path.guides import ADOPTED, PARTLY, practice, practice_status
+from golden_path.llm import KINDS, POLICY_CRITERION
+from golden_path.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
 
 
 def rich(kind):
@@ -40,8 +40,8 @@ def test_assessment_reports_practices_adopted():
 
 
 def test_summary_counts_practices(examples):
-    from control_hygiene import report
-    from control_hygiene.loader import load_statements
+    from golden_path import report
+    from golden_path.loader import load_statements
 
     items = [heuristic.assess(s) for s in load_statements(examples / "assessment-results-example.json")]
     s = report.summary(items)["by_kind"]["risk-statement"]

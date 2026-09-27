@@ -1,20 +1,28 @@
-# Control Hygiene Portal
+# Golden Path
 
-A one-stop place to check the hygiene of your GRC writing, modelled on CSA's
-[Internet Hygiene Portal](https://ihp.csa.gov.sg/) (IHP). Where IHP checks a
-website or email domain against internet best practices and suggests how to
-adopt the ones that are missing, this portal checks the text in OSCAL
-documents against control-writing best practices:
+Policy development follows one path, from what the organization commits to,
+through how it is done, to where it falls short and how to fix it. Each stage
+has to carry the intent of the one before it. Golden Path follows that path
+through your OSCAL documents and checks each stage, and the links between
+them:
 
-| Text | From | A good one... |
-| --- | --- | --- |
-| Implementation statement | SSP, component definition | shows how the control is met today |
-| Risk statement | assessment results, POA&M | explains what is wrong, why, and what it could cost |
-| Recommendation | assessment results, POA&M | gives an owned, dated action that fixes the cause |
+| Stage | What it says | Where it lives | Checked for |
+| --- | --- | --- | --- |
+| 1. Policy intent | What the organization commits to | your policy file (input) | |
+| 2. Control requirement | What the control demands | OSCAL catalog (input) | |
+| 3. Implementation statement | How it is met today | SSP, component definition | meeting stages 1 and 2, and being specific, owned, scheduled and evidenced |
+| 4. Risk statement | Where practice falls short, and what it could cost | assessment results, POA&M | the requirement it fails (stages 1 and 2), condition, cause, threat, impact, scope and rating |
+| 5. Recommendation | How to get back on the path | assessment results, POA&M | fixing the cause in stage 4, and being actionable, owned, dated and verifiable |
 
-It follows IHP's three A's:
+Like a platform team's golden path, the aim is to make the right way the easy
+way: show what good looks like at each stage, check your text against it, and
+say how to close the gaps.
 
-| | IHP | Control Hygiene Portal |
+The portal around those checks follows the three A's of CSA's
+[Internet Hygiene Portal](https://ihp.csa.gov.sg/) (IHP), which checks websites
+and email against internet best practices:
+
+| | IHP | Golden Path |
 | --- | --- | --- |
 | **Awareness** | Guides on internet hygiene standards | **Guides**: each best practice with why it matters, how to adopt it, and a weak and a strong example |
 | **Assessment** | Self-service health checks for website, email and connectivity | **Health check** for one statement, **batch health check** for OSCAL or CSV files |
@@ -22,14 +30,14 @@ It follows IHP's three A's:
 
 Each item gets a **confidence score** (0 to 100%), a count of **best
 practices adopted**, and its **areas for improvement**. Unlike IHP's rating,
-the portal does not pass or fail anything: use the results in your own review
+Golden Path does not pass or fail anything: use the results in your own review
 process to decide that.
 
 This project is not affiliated with or endorsed by the Cyber Security Agency
 of Singapore; it borrows IHP's approach, not its content.
 
 ```
-$ chp examples/assessment-results-example.json
+$ golden-path examples/assessment-results-example.json
 Kind            Item                                               Confidence  Practices adopted  Improvements
 --------------  -------------------------------------------------  ----------  -----------------  ------------
 Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                7/7             0
@@ -60,7 +68,7 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 ## Install
 
 ```
-cd control-hygiene-portal
+cd golden-path
 pip install -e .            # heuristic engine, no dependencies
 pip install -e ".[claude]"  # adds the Claude engine
 ```
@@ -70,7 +78,7 @@ Python 3.10 or later.
 ## Web app
 
 ```
-chp-web --open
+golden-path-web --open
 ```
 
 Opens the portal at http://localhost:8765/ with three sections:
@@ -87,7 +95,7 @@ Opens the portal at http://localhost:8765/ with three sections:
 - **Batch health check**: drop several OSCAL JSON files (SSP, component
   definition, assessment results, POA&M) or CSV files at once, with an
   optional catalog and policy file. Results show the average confidence and
-  practices adopted per kind, a **hygiene by file** table, then every item,
+  practices adopted per kind, a **by file** table, then every item,
   which you can filter by kind, search, sort, and expand. Download them as
   CSV, JSON or Markdown. A file that cannot be read is listed with the reason
   and the rest are still assessed.
@@ -115,7 +123,7 @@ never markup.
 ## Command line
 
 ```
-chp DOCUMENT [options]
+golden-path DOCUMENT [options]
 
 -c, --catalog PATH          OSCAL catalog (JSON) for control requirement text
 -p, --policy PATH           policy file (JSON) with the policy intent for each control
@@ -152,7 +160,7 @@ first.
 
 For statements that are not in OSCAL yet, such as a spreadsheet of draft
 statements. Download the template from the web app, or see
-`src/control_hygiene/tabular.py`. Only `text` is required:
+`src/golden_path/tabular.py`. Only `text` is required:
 
 | Column | |
 | --- | --- |
@@ -171,7 +179,7 @@ Headers are case-insensitive, and spaces or hyphens count as underscores.
 Each criterion below is a best practice. A practice is **adopted** when it
 scores 80% or more, **partly adopted** from 40%, and **not yet adopted**
 below that. The guides for every practice are in
-`src/control_hygiene/guides.py`, shown in the web app's Guides section.
+`src/golden_path/guides.py`, shown in the web app's Guides section.
 
 All three kinds share the same wording rules, adjusted to what each is for:
 
@@ -236,8 +244,8 @@ separate input for implementation statements. Give it as a policy file, an
 inline intent, or both:
 
 ```
-chp ssp.json -c catalog.json --policy policies.json
-chp ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
+golden-path ssp.json -c catalog.json --policy policies.json
+golden-path ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
 ```
 
 ```json
@@ -319,7 +327,7 @@ schema-constrained JSON.
 
 ```
 export ANTHROPIC_API_KEY=...
-chp ssp.json -c catalog.json --engine claude
+golden-path ssp.json -c catalog.json --engine claude
 ```
 
 | Option | Default | |
@@ -344,8 +352,8 @@ the item scores 0 with a note to review it manually.
 ## Use in GitHub Actions
 
 ```yaml
-- run: pip install ./control-hygiene-portal
-- run: chp ssp.json -c catalog.json -p policies.json -f markdown -o report.md
+- run: pip install ./golden-path
+- run: golden-path ssp.json -c catalog.json -p policies.json -f markdown -o report.md
 - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
@@ -361,9 +369,9 @@ The Claude engine's tests use a stub client, so they run offline.
 ## Layout
 
 ```
-src/control_hygiene/
-  cli.py        command line (chp)
-  webapp.py     web app server (chp-web)
+src/golden_path/
+  cli.py        command line (golden-path)
+  webapp.py     web app server (golden-path-web)
   guides.py     best-practice guides and adoption status
   static/       web app page, styles and script
   service.py    the pipeline both share

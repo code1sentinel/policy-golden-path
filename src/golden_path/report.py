@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from . import __version__
 from .models import IMPLEMENTATION, KIND_LABELS, Assessment
 
-NS = "https://grcengineering.club/ns/control-hygiene"
+NS = "https://grcengineering.club/ns/golden-path"
 
 
 def summary(assessments: list[Assessment]) -> dict:
@@ -69,7 +69,7 @@ def to_json(assessments: list[Assessment]) -> str:
 
 
 def to_markdown(assessments: list[Assessment]) -> str:
-    out = ["# Control Hygiene Portal: health check", ""]
+    out = ["# Golden Path: health check", ""]
     out += [f"- {line}" for line in _summary_lines(assessments)]
     out += ["", "| Kind | Item | Confidence | Practices adopted | Improvements |", "| --- | --- | --- | --- | --- |"]
     for a in assessments:
@@ -122,7 +122,7 @@ def to_assessment_results(assessments: list[Assessment], source_href: str) -> st
         "assessment-results": {
             "uuid": str(uuid.uuid4()),
             "metadata": {
-                "title": "Control Hygiene Portal health check",
+                "title": "Golden Path health check",
                 "last-modified": now,
                 "version": __version__,
                 "oscal-version": "1.1.2",
@@ -130,7 +130,7 @@ def to_assessment_results(assessments: list[Assessment], source_href: str) -> st
             "import-ap": {"href": source_href},
             "results": [{
                 "uuid": str(uuid.uuid4()),
-                "title": "Control Hygiene Portal run",
+                "title": "Golden Path run",
                 "description": " ".join(_summary_lines(assessments)) or "Nothing assessed.",
                 "start": now,
                 "end": now,

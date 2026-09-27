@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "control-hygiene-portal"
-version = "0.3.0"
-description = "Control Hygiene Portal: health checks for OSCAL implementation statements, risk statements and recommendations, with best-practice guides and areas for improvement."
+name = "golden-path"
+version = "0.4.0"
+description = "Golden Path: follow policy intent through controls, implementation, risk and recommendation, with health checks and best-practice guides for each OSCAL statement."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -16,14 +16,14 @@ claude = ["anthropic>=1.8"]
 dev = ["pytest>=8"]
 
 [project.scripts]
-chp = "control_hygiene.cli:main"
-chp-web = "control_hygiene.webapp:main"
+golden-path = "golden_path.cli:main"
+golden-path-web = "golden_path.webapp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-control_hygiene = ["static/*"]
+golden_path = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,7 +1,7 @@
-from control_hygiene import heuristic
-from control_hygiene.catalog import Catalog
-from control_hygiene.loader import load_statements
-from control_hygiene.models import Statement
+from golden_path import heuristic
+from golden_path.catalog import Catalog
+from golden_path.loader import load_statements
+from golden_path.models import Statement
 
 STRONG = (
     "The Security Operations team reviews and analyzes audit records in Splunk daily for indications of "

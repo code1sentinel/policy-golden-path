@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from control_hygiene import webapp
-from control_hygiene.models import Assessment
-from control_hygiene.tabular import template
+from golden_path import webapp
+from golden_path.models import Assessment
+from golden_path.tabular import template
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
                                                         "rows.csv"}
     au6 = next(a for a in data["assessments"] if a["item"] == "au-6 [Splunk]")
     assert au6["policies"] == ["ISP-09"]  # policy applied
-    assert "# Control Hygiene Portal: health check" in data["markdown"]
+    assert "# Golden Path: health check" in data["markdown"]
 
 
 @pytest.mark.parametrize("body, status, message", [
@@ -163,7 +163,7 @@ def test_claude_engine_uses_injected_assessor_and_caps_batch_size(examples, monk
 
 
 def test_cli_accepts_csv(tmp_path, capsys):
-    from control_hygiene.cli import main
+    from golden_path.cli import main
 
     path = tmp_path / "rows.csv"
     path.write_text(template())

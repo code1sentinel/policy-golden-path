@@ -1,8 +1,8 @@
 import json
 from types import SimpleNamespace
 
-from control_hygiene.llm import ClaudeAssessor
-from control_hygiene.models import Statement
+from golden_path.llm import ClaudeAssessor
+from golden_path.models import Statement
 
 
 class FakeMessages:
@@ -98,7 +98,7 @@ def test_no_policy_criterion_without_intent():
 
 
 def test_risk_statement_and_recommendation_prompts():
-    from control_hygiene.models import RECOMMENDATION, RISK_STATEMENT
+    from golden_path.models import RECOMMENDATION, RISK_STATEMENT
 
     empty = {"confidence": 70, "criteria": [], "improvements": [], "rationale": ""}
     risk = Statement("ac-2_smt.j", "14 of 60 accounts belong to leavers.", "assessment-results",

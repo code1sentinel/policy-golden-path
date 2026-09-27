@@ -1,4 +1,4 @@
-/* Control Hygiene Portal web app. Tokens match the GRC Engineering Club Singapore site. */
+/* Golden Path web app. Tokens match the GRC Engineering Club Singapore site. */
 
 :root {
   --orange: #E8650A;
@@ -54,7 +54,8 @@ body {
 
 .top { border-bottom: 1px solid var(--border-soft); background: rgba(13, 13, 13, 0.85); }
 .top__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 18px; padding-bottom: 18px; flex-wrap: wrap; }
-.brand { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.brand { display: flex; gap: 14px; align-items: center; min-width: 0; flex: 1 1 480px; }
+.brand__tag { max-width: 70ch; }
 .brand__mark {
   width: 34px; height: 34px; border-radius: 8px; flex: none;
   background: linear-gradient(135deg, var(--orange) 0 50%, transparent 50%), var(--orange-dim);
@@ -67,10 +68,11 @@ body {
 
 /* Tabs -------------------------------------------------------------------- */
 
-.tabs { display: flex; gap: 4px; margin: 28px 0 20px; border-bottom: 1px solid var(--border-soft); }
+.tabs { display: flex; gap: 4px; margin: 28px 0 20px; border-bottom: 1px solid var(--border-soft); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
   appearance: none; background: none; border: 0; color: var(--muted);
-  font: 600 14px var(--font); padding: 10px 14px; cursor: pointer;
+  font: 600 14px var(--font); padding: 10px 14px; cursor: pointer; white-space: nowrap; flex: none;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
 }
 .tab:hover { color: var(--text); }
@@ -324,7 +326,7 @@ h3:first-child { margin-top: 0; }
 .three-a__text { color: var(--muted); font-size: 13px; }
 @media (max-width: 700px) { .three-a { grid-template-columns: 1fr; } }
 
-/* Hygiene by file ---------------------------------------------------------- */
+/* By file ---------------------------------------------------------- */
 
 .section-title { font-size: 15px; font-weight: 600; margin: 26px 0 12px; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--border-soft); border-radius: var(--radius-lg); background: var(--surface); }
@@ -334,6 +336,28 @@ h3:first-child { margin-top: 0; }
 .hygiene tbody tr:last-child > * { border-bottom: 0; }
 .hygiene tbody th { font-weight: 600; }
 .cell-score { display: grid; grid-template-columns: minmax(60px, 120px) auto; gap: 10px; align-items: center; font-variant-numeric: tabular-nums; }
+
+/* The golden path -------------------------------------------------------- */
+
+.section-title--first { margin-top: 0; }
+.path { list-style: none; margin: 0 0 30px; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; counter-reset: stage; }
+.path__stage {
+  counter-increment: stage; position: relative; display: flex; flex-direction: column; gap: 4px;
+  background: var(--surface); border: 1px solid var(--border-soft); border-top: 3px solid var(--orange);
+  border-radius: var(--radius); padding: 14px 14px 16px;
+}
+.path__stage:not(:last-child)::after {
+  content: "→"; position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
+  color: var(--orange-bright); font-weight: 700; z-index: 1; background: var(--bg); line-height: 1; padding: 2px 0;
+}
+.path__name { font-weight: 700; font-size: 14px; }
+.path__name::before { content: counter(stage) ". "; color: var(--orange-bright); }
+.path__what { font-size: 13px; color: var(--text); }
+.path__check { font-size: 12px; color: var(--muted); margin-top: auto; padding-top: 6px; }
+@media (max-width: 900px) {
+  .path { grid-template-columns: 1fr; gap: 14px; }
+  .path__stage:not(:last-child)::after { content: "↓"; right: auto; left: 18px; top: auto; bottom: -15px; transform: none; }
+}
 
 /* Guides ------------------------------------------------------------------- */
 

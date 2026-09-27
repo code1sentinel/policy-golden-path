@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Control Hygiene Portal</title>
+  <title>Golden Path</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F1F1F'/%3E%3Cpath d='M0 0h32L0 32z' fill='%23E8650A'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -17,8 +17,8 @@
       <div class="brand">
         <span class="brand__mark" aria-hidden="true"></span>
         <div>
-          <h1 class="brand__name">Control Hygiene Portal</h1>
-          <p class="brand__tag">Health checks for OSCAL implementation statements, risk statements and recommendations, with guides to good practice.</p>
+          <h1 class="brand__name">Golden Path</h1>
+          <p class="brand__tag">The golden path from policy intent to practice: health checks for implementation statements, risk statements and recommendations.</p>
         </div>
       </div>
       <label class="engine">
@@ -185,7 +185,7 @@
         <ul id="file-status" class="file-status"></ul>
         <div id="tiles" class="tiles"></div>
 
-        <h2 class="section-title">Hygiene by file</h2>
+        <h2 class="section-title">By file</h2>
         <div class="table-wrap">
           <table class="hygiene">
             <thead>
@@ -230,6 +230,37 @@
 
     <!-- Guides -->
     <section id="panel-guides" class="panel" role="tabpanel" aria-labelledby="tab-guides" hidden>
+      <h2 class="section-title section-title--first">The golden path</h2>
+      <p class="guide-summary">Policy development follows one path: each stage has to carry the intent of the one before it. Golden Path checks each stage, and the links between them.</p>
+      <ol class="path">
+        <li class="path__stage">
+          <span class="path__name">Policy intent</span>
+          <span class="path__what">What the organization commits to</span>
+          <span class="path__check">Your input: a policy file or intent</span>
+        </li>
+        <li class="path__stage">
+          <span class="path__name">Control requirement</span>
+          <span class="path__what">What the control demands</span>
+          <span class="path__check">Your input: an OSCAL catalog</span>
+        </li>
+        <li class="path__stage">
+          <span class="path__name">Implementation statement</span>
+          <span class="path__what">How it is met today</span>
+          <span class="path__check">Checked against the policy intent and control</span>
+        </li>
+        <li class="path__stage">
+          <span class="path__name">Risk statement</span>
+          <span class="path__what">Where practice falls short, and what it could cost</span>
+          <span class="path__check">Checked against the control and policy it fails</span>
+        </li>
+        <li class="path__stage">
+          <span class="path__name">Recommendation</span>
+          <span class="path__what">How to get back on the path</span>
+          <span class="path__check">Checked against the cause in the risk statement</span>
+        </li>
+      </ol>
+
+      <h2 class="section-title">Best practices at each stage</h2>
       <div class="guide-kinds" role="group" aria-label="Guide">
         <button type="button" class="kind-btn" data-guide="implementation" aria-pressed="true">Implementation statements</button>
         <button type="button" class="kind-btn" data-guide="risk-statement" aria-pressed="false">Risk statements</button>

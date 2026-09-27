@@ -1,8 +1,8 @@
 import pytest
 
-from control_hygiene import heuristic
-from control_hygiene.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
-from control_hygiene.tabular import parse_csv, template
+from golden_path import heuristic
+from golden_path.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from golden_path.tabular import parse_csv, template
 
 
 def test_template_parses_to_one_of_each_kind():
