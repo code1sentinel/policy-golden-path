@@ -71,7 +71,9 @@ GUIDES: dict[str, dict] = {
             "responsibility": _p(
                 "Name who is responsible",
                 "A control with no owner is not operated reliably, and an assessor needs someone to interview.",
-                "Name the role or team that performs, owns or approves the activity.",
+                "Name the role or team that performs, owns or approves the activity. For an inherited control, "
+                "name the provider and the authorization it relies on (a FedRAMP P-ATO, SOC 2 report or MTCS "
+                "certificate), and describe any part the customer still carries out.",
                 "Logs are reviewed daily.",
                 "The Security Operations team reviews logs daily.",
             ),

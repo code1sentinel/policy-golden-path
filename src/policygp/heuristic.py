@@ -75,7 +75,7 @@ _VAGUE = re.compile(
     re.I,
 )
 # Possibility: fine in a risk statement ("could allow"), not in a statement of fact.
-_MODALS = re.compile(r"\b(may|might|could|should)\b", re.I)
+_MODALS = re.compile(r"\b(may(?![ ,]+\d)(?<!\d may)|might|could|should)\b", re.I)  # not "1 May 2013"
 # Tentative actions: weaken a recommendation.
 _WEAK_ACTIONS = re.compile(
     r"\b(consider(ing)?|explore|look into|evaluate whether|assess whether|investigate whether|"
@@ -105,7 +105,7 @@ _ROLES = re.compile(
     r"\b(administrators?|admins?|team|officer|owner|isso|issm|ciso|cio|cto|manager|managers|"
     r"soc|noc|security operations|personnel|staff|custodians?|engineers?|analysts?|operators?|"
     r"supervisors?|approvers?|reviewers?|auditors?|committee|board|help ?desk|service desk|"
-    r"department|hr|human resources|lead|director|responsible|accountable)\b",
+    r"department|hr|human resources|lead|director|responsible|accountable|(cloud )?service providers?|csps?)\b",
     re.I,
 )
 _MECHANISMS = re.compile(
@@ -121,7 +121,18 @@ _FREQUENCY = re.compile(
     r"\b(hourly|daily|weekly|fortnightly|monthly|quarterly|semi-?annually|annually|yearly|"
     r"every \d+|each (day|week|month|quarter|year)|within \d+|\d+ (minutes?|hours?|days?|weeks?|months?)|"
     r"real[- ]time|continuous(ly)?|on (each|every)|upon|prior to|before|immediately|"
-    r"at least (once|every)|at login|at each)\b",
+    r"at least (once|every)|at login|at each|whenever|as (it|they) (occurs?|happens?)|"
+    r"(all|every|each) (\w+ ){0,3}events?)\b",
+    re.I,
+)
+# Inherited controls: a provider operates all or part of the control under its own authorization.
+_INHERITED = re.compile(r"\b(inherit(s|ed|ance)?|leverag(es|ed) authori[sz]ation)\b", re.I)
+_PARTIAL = re.compile(r"\b(partial(ly)?|shared|hybrid|in part)\b", re.I)
+_CUSTOMER_PART = re.compile(r"\b(customer|tenant|consumer|agency|we|our)\b[^.]{0,80}\b(responsible|configures?|"
+                            r"manages?|operates?|performs?)\b", re.I)
+_AUTHORIZATION = re.compile(
+    r"\b(fedramp|p-?ato|ato|authority to operate|soc ?[12]( type (i|ii|1|2))?|iso(/iec)? ?27001|irap|mtcs|"
+    r"csa star|pci[- ]dss|attestation of compliance|provisional authori[sz]ation)\b",
     re.I,
 )
 _EVIDENCE = re.compile(
@@ -425,6 +436,31 @@ def _signal(name: str, pattern: re.Pattern, text: str, full_at: int, weight: flo
     return CriterionResult(name, _ratio(len(hits), full_at), weight, ", ".join(sorted(hits)) or "none found")
 
 
+def _inherited(text: str, criteria: list[CriterionResult], improvements: Improvements) -> None:
+    """Adjust for a control the provider operates under its own authorization.
+
+    Fully inherited: the authorization is the evidence and the schedule is the provider's, so the statement
+    only has to name the provider and the authorization. Partly inherited: the authorization covers the
+    provider's part; the customer's part still needs who, how often and what evidence.
+    """
+    by_name = {c.name: c for c in criteria}
+    authorization = sorted(_distinct(_AUTHORIZATION, text))
+    partial = bool(_PARTIAL.search(text))
+    if authorization:
+        ev = by_name["evidence"]
+        ev.score = max(ev.score, 0.5 if partial else 1.0)
+        ev.note = f"inherited under {', '.join(authorization)}" + (f"; {ev.note}" if ev.note != "none found" else "")
+    else:
+        improvements.add("evidence", "Name the authorization or attestation the inherited control relies on "
+                                     "(a FedRAMP P-ATO, SOC 2 report, ISO 27001 certificate or MTCS certificate).")
+    if not partial:
+        by_name["frequency"].score = 1.0
+        by_name["frequency"].note = "operated by the provider"
+    elif not _CUSTOMER_PART.search(text):
+        improvements.add("responsibility", "The control is only partly inherited: describe the customer's part, "
+                                           "who performs it and how.")
+
+
 # --- Implementation statements ---------------------------------------------------------------
 
 def assess_implementation(statement: Statement) -> Assessment:
@@ -438,6 +474,8 @@ def assess_implementation(statement: Statement) -> Assessment:
     if words < 25:
         improvements.add("substance", "Statement is too brief to show how the control is met.")
 
+    # A fully inherited control is run by the provider: how often and what evidence are the provider's.
+    inherited = bool(_INHERITED.search(text)) and not _PARTIAL.search(text)
     for name, pattern, full_at, tip in (
         ("responsibility", _ROLES, 1, "Name the role or team responsible for performing the control."),
         ("mechanism", _MECHANISMS, 2, "Describe the specific tool, configuration or process that implements it."),
@@ -446,8 +484,10 @@ def assess_implementation(statement: Statement) -> Assessment:
     ):
         c = _signal(name, pattern, text, full_at, WEIGHTS[name])
         criteria.append(c)
-        if c.score < 0.5:
+        if c.score < 0.5 and not (inherited and name in ("frequency", "evidence")):
             improvements.add(name, tip)
+    if _INHERITED.search(text):
+        _inherited(text, criteria, improvements)
 
     if statement.requirement:
         req_words = _term_words(statement.requirement)

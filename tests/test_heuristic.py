@@ -67,3 +67,49 @@ def test_improvements_explain_low_scores():
     assert a.confidence < 0.5
     assert any("responsible" in i for i in a.improvements)
     assert any("how often" in i for i in a.improvements)
+
+
+def assess(statement):
+    return heuristic.assess(statement)
+
+
+def _stmt(text):
+    return Statement("ac-1", text, "ssp")
+
+
+def _crit(result, name):
+    return next(c for c in result.criteria if c.name == name)
+
+
+def test_month_may_is_not_a_hedge():
+    result = assess(_stmt("Access was last recertified on 1 May 2025 by the IAM team using Okta."))
+    assert "may" not in _crit(result, "implemented").note
+    assert "may" in _crit(assess(_stmt("The IAM team may review access in Okta.")), "implemented").note
+
+
+def test_event_driven_trigger_counts_as_frequency():
+    result = assess(_stmt("AWS CloudTrail logs all available API events to an S3 bucket owned by the SOC."))
+    assert _crit(result, "frequency").score == 1.0
+
+
+def test_fully_inherited_control_needs_provider_and_authorization():
+    named = assess(_stmt("This control is inherited from the AWS cloud service provider under its "
+                         "FedRAMP High P-ATO; the SOC 2 Type II report is reviewed yearly by the ISSO."))
+    assert _crit(named, "evidence").score == 1.0
+    assert _crit(named, "frequency").note == "operated by the provider"
+    assert not any("authorization" in t for t in named.improvements)
+
+    unnamed = assess(_stmt("This control is inherited from the hosting provider."))
+    assert any("authorization or attestation" in t for t in unnamed.improvements)
+    assert unnamed.confidence < named.confidence
+
+
+def test_partly_inherited_control_must_describe_customer_part():
+    silent = assess(_stmt("The system partially inherits this control from the FedRAMP P-ATO granted to "
+                          "the AWS Cloud Service Provider dated 1 May 2013."))
+    assert any("customer's part" in t for t in silent.improvements)
+    assert _crit(silent, "evidence").score == 0.5
+    described = assess(_stmt("The system partially inherits this control from the AWS FedRAMP P-ATO; the "
+                             "customer configures AWS Config rules, reviewed weekly by the cloud team, with "
+                             "results logged to Security Hub."))
+    assert not any("customer's part" in t for t in described.improvements)

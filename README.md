@@ -177,6 +177,7 @@ tested with PolicyGP:
 | [Information Security Manual (ISM)](https://github.com/AustralianCyberSecurityCentre/ism-oscal) | ASD, Australia | `ism-1997` |
 | [ICT&SS Policy (IM8) Reform](https://github.com/GovTechSG/tech-standards) | GovTech, Singapore | `as-1` |
 | [CCCS profiles (unofficial samples)](https://github.com/aws-samples/cccs-oscal-samples) | AWS samples, based on Canada's ITSG-33 | `ac-2`, `ac-2_smt.h` |
+| [Acceptable Risk Safeguards (ARS) 5.0](https://github.com/CMSgov/ars-machine-readable) | CMS, United States | `ac-2`, `ac-2_smt.j` |
 
 Resolved profile catalogs (the ISM's Essential Eight maturity levels, the
 CCCS Cloud Medium profile) are catalogs too, so they work the same way. Where
@@ -269,6 +270,14 @@ When there is no catalog or no policy intent, the other weights scale up to
 100%. Describing planned work (`will be implemented`, `roadmap`) limits the
 score to 50%. Nothing about the policy limits the score: falling short of it
 lowers the `policy_intent` criterion like any other.
+
+**Inherited controls.** When a statement says the control is inherited from a
+provider, the provider runs it, so how often and what evidence are the
+provider's to show. A fully inherited statement needs to name the provider and
+the authorization it relies on (a FedRAMP P-ATO, SOC 2 report, ISO 27001 or
+MTCS certificate); that authorization counts as its evidence. A partly
+inherited statement also needs to describe the customer's part: who does it,
+how often, and what it leaves behind.
 
 ### Risk statements
 
@@ -440,6 +449,33 @@ scripts/build_site.py   builds the browser-only site for GitHub Pages
 examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies and assessment results
 tests/
 ```
+
+## References
+
+PolicyGP has been tried against published OSCAL content. The
+[awesome-oscal](https://github.com/oscal-club/awesome-oscal) list from OSCAL
+Club is the best index of what exists.
+
+Catalogs and profiles, for the control requirements:
+
+- [NIST SP 800-53 in OSCAL](https://github.com/usnistgov/oscal-content)
+- [ASD Information Security Manual](https://github.com/AustralianCyberSecurityCentre/ism-oscal), including the Essential Eight maturity levels
+- [GovTech Singapore ICT&SS Policy (IM8) Reform](https://github.com/GovTechSG/tech-standards)
+- [CMS Acceptable Risk Safeguards](https://github.com/CMSgov/ars-machine-readable)
+- [CCCS profiles](https://github.com/aws-samples/cccs-oscal-samples) (unofficial AWS samples)
+
+Component definitions, for real implementation statements to practise on:
+
+- [CivicActions oscal-component-definitions](https://github.com/CivicActions/oscal-component-definitions):
+  AWS, Drupal, Django, Ilias, SSH and privacy controls. Scored against the
+  NIST SP 800-53 Rev 5 catalog, these average 14% to 45%. The usual gaps are
+  who performs the control, how often, and what evidence it leaves.
+- [Red Hat oscal-component-definitions](https://github.com/RedHatProductSecurity/oscal-component-definitions)
+  (a minimal example with FedRAMP High profiles).
+
+The scores measure how the statements are written, not whether they are true.
+Low scores on published samples show where a statement leaves an assessor
+with questions. They are not a judgement on the products.
 
 ## Origin
 
