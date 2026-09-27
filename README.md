@@ -95,8 +95,10 @@ Opens the portal at http://localhost:8765/ with three sections:
   shows the confidence, how many best practices are adopted, the areas for
   improvement, and each practice with how to adopt it. **Load example** fills
   in a weak example of each kind.
-- **Batch health check**: drop several OSCAL JSON files (SSP, component
-  definition, assessment results, POA&M) or CSV files at once, with an
+- **Batch health check**: drop a CSV with one row per policy (columns
+  `policy intent`, `control statement`, `risk statement`, `recommendation`;
+  the page shows them and offers a template), or OSCAL JSON files (SSP,
+  component definition, assessment results, POA&M), several at once, with an
   optional catalog and policy file. Results show the average confidence and
   practices adopted per kind, a **by file** table, then every item,
   which you can filter by kind, search, sort, and expand. Download them as
@@ -145,7 +147,7 @@ policygp DOCUMENT [options]
 | `component-definition` | Each `statements[].description` under an implemented requirement. When a requirement has no statements, its own `description` is read instead. |
 | `assessment-results` | For each risk in each result: its `statement` as a risk statement, and each `remediations[]` entry with `lifecycle: recommendation` as a recommendation. |
 | `plan-of-action-and-milestones` | The same, from the top-level `risks`. |
-| CSV (`.csv`) | One item per row: see below. |
+| CSV (`.csv`) | One row per policy: policy intent, control statement, risk statement, recommendation. See below. |
 
 For risks, the control comes from the findings that reference the risk
 (`related-risks`) and their `target.target-id`. `--catalog` and `--policy`
@@ -161,21 +163,30 @@ first.
 
 ### CSV
 
-For statements that are not in OSCAL yet, such as a spreadsheet of draft
-statements. Download the template from the web app, or see
-`src/policygp/tabular.py`. Only `text` is required:
+The easiest way to start, for example from a spreadsheet. **One row per
+policy**, followed down the golden path. These four columns are required; a
+cell can be left empty when a row has nothing for it:
 
-| Column | |
-| --- | --- |
-| `kind` | `implementation` (default), `risk-statement` or `recommendation` |
-| `control_id`, `statement_id`, `component`, `title` | Identify the item |
-| `text` | The statement, risk statement or recommendation |
-| `requirement`, `policy_intent` | Context for this row, when no catalog or policy file is given |
-| `risk_statement` | For a recommendation: the risk it responds to |
-| `likelihood`, `impact`, `risk` | Ratings |
-| `owner`, `deadline` | For a recommendation |
+| policy intent | control statement | risk statement | recommendation |
+| --- | --- | --- | --- |
+| What your policy says the control must achieve | How the control is implemented today | Where practice falls short, and what it could cost | How to close the gap |
 
-Headers are case-insensitive, and spaces or hyphens count as underscores.
+Each row gives up to three items to assess, checked along the path:
+
+- the **control statement** against the row's policy intent,
+- the **risk statement** against the same policy intent,
+- the **recommendation** against the row's risk statement.
+
+Optional columns add context: `control id`, `control requirement` (the control
+text, when no catalog is given), `title` (labels the row's risk and
+recommendation), `likelihood`, `impact`, `owner` and `target date`.
+
+Column names are not case-sensitive; spaces, hyphens and underscores are
+interchangeable, and common alternatives work too (`implementation
+statement`, `remediation`, `deadline`). Comma, semicolon and tab separated
+files are all read, so a spreadsheet saved as CSV can be uploaded as it is.
+Download the template, with a strong and a weak example row, from the web app
+or the `/api/template.csv` link.
 
 ## Best practices
 

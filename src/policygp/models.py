@@ -60,6 +60,8 @@ class Statement:
             label = self.title or self.uuid or "untitled"
             return f"{label} [{self.control_id}]" if self.control_id else label
         target = self.statement_id or self.control_id
+        if not target:
+            return self.component or self.uuid or "untitled"
         return f"{target} [{self.component}]" if self.component else target
 
 

@@ -240,6 +240,26 @@ h3:first-child { margin-top: 0; }
 .drop__title u { color: var(--orange-bright); text-decoration-color: var(--orange-line); }
 .drop__hint { color: var(--muted); font-size: 13px; }
 
+.columns { margin-top: 16px; border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--bg); padding: 12px 14px; }
+.columns summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.columns__lead { color: var(--muted); font-size: 13px; margin: 10px 0; }
+.columns__table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.columns__table th { text-align: left; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--orange-bright); padding: 8px 10px; border-bottom: 1px solid var(--border-soft); }
+.columns__table td { vertical-align: top; color: #D8D8D8; padding: 8px 10px; }
+.columns__table th + th, .columns__table td + td { border-left: 1px solid var(--border-soft); }
+.columns__optional { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+.columns__optional strong { color: var(--text); }
+@media (max-width: 700px) {
+  .columns__table, .columns__table thead, .columns__table tbody, .columns__table tr, .columns__table th, .columns__table td { display: block; }
+  .columns__table thead { display: none; }
+  .columns__table td { border-left: 0 !important; padding: 6px 0; }
+  .columns__table td::before { display: block; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--orange-bright); }
+  .columns__table td:nth-child(1)::before { content: "policy intent"; }
+  .columns__table td:nth-child(2)::before { content: "control statement"; }
+  .columns__table td:nth-child(3)::before { content: "risk statement"; }
+  .columns__table td:nth-child(4)::before { content: "recommendation"; }
+}
+
 .files { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .files li {
   display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px;

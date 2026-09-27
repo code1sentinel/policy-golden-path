@@ -97,10 +97,10 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
     })
     assert status == 200
     files = {f["name"]: f for f in data["files"]}
-    assert files["ssp-example.json"]["count"] == 4 and files["rows.csv"]["count"] == 3
+    assert files["ssp-example.json"]["count"] == 4 and files["rows.csv"]["count"] == 6
     assert "not valid JSON" in files["broken.json"]["error"]
     assert "add it as the catalog" in files["catalog-excerpt.json"]["error"]
-    assert data["summary"]["total"] == 11
+    assert data["summary"]["total"] == 14
     assert {a["file"] for a in data["assessments"]} == {"ssp-example.json", "assessment-results-example.json",
                                                         "rows.csv"}
     au6 = next(a for a in data["assessments"] if a["item"] == "au-6 [Splunk]")
@@ -168,4 +168,4 @@ def test_cli_accepts_csv(tmp_path, capsys):
     path = tmp_path / "rows.csv"
     path.write_text(template())
     assert main([str(path), "-f", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 3
+    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 6

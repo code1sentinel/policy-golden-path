@@ -159,8 +159,27 @@
         <label class="drop" id="drop">
           <input type="file" id="batch-files" multiple accept=".json,.csv,application/json,text/csv">
           <span class="drop__title">Drop files here, or <u>browse</u></span>
-          <span class="drop__hint">OSCAL JSON (SSP, component definition, assessment results, POA&amp;M) or CSV. Several files at once.</span>
+          <span class="drop__hint">A CSV with one row per policy (columns below), or OSCAL JSON (SSP, component definition, assessment results, POA&amp;M). Several files at once.</span>
         </label>
+
+        <details class="columns" open>
+          <summary>CSV columns</summary>
+          <p class="columns__lead">One row per policy, followed down the golden path. Your file needs these four columns; a cell can be left empty if a row has nothing for it.</p>
+          <table class="columns__table">
+            <thead>
+              <tr><th scope="col">policy intent</th><th scope="col">control statement</th><th scope="col">risk statement</th><th scope="col">recommendation</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>What your policy says the control must achieve</td>
+                <td>How the control is implemented today. Checked against the policy intent</td>
+                <td>Where practice falls short, and what it could cost. Checked against the policy intent</td>
+                <td>How to close the gap. Checked against the risk statement</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="columns__optional"><strong>Optional:</strong> control id, control requirement, title, likelihood, impact, owner, target date. Column names are not case-sensitive, and comma, semicolon or tab separated files all work, so you can save a spreadsheet as CSV and upload it.</p>
+        </details>
 
         <ul id="file-list" class="files"></ul>
 
@@ -177,7 +196,7 @@
 
         <div class="actions">
           <button type="button" class="btn btn--primary" id="batch-submit" disabled>Run health check</button>
-          <a class="btn btn--quiet" href="/api/template.csv" download>Download CSV template</a>
+          <a class="btn btn--quiet" href="/api/template.csv" download>Download CSV template (with examples)</a>
         </div>
       </div>
 

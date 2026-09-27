@@ -1,20 +1,28 @@
-"""Statements from a CSV file, for batches that are not (yet) OSCAL.
+"""Statements from a CSV file: one row per policy, followed down the golden path.
 
-One row per item. `text` is required; everything else is optional:
+Each row carries one policy intent and the text written for it. These four
+columns are required (a cell may be left empty when a row has nothing for it):
 
-    kind            implementation (default), risk-statement or recommendation
-    control_id      e.g. ac-2
-    statement_id    e.g. ac-2_smt.j
-    component       where it is implemented
-    title           risk or recommendation title
-    text            the statement, risk statement or recommendation
-    requirement     control text, when no catalog is supplied
-    policy_intent   policy intent for this row
-    risk_statement  for a recommendation: the risk it responds to
-    likelihood, impact, risk   ratings for a risk statement or recommendation
-    owner, deadline recommendation owner and target date
+    policy intent       what the organization's policy says the control must achieve
+    control statement   how the control is implemented today
+    risk statement      where practice falls short, and what it could cost
+    recommendation      how to close the gap
 
-Header names are case-insensitive, and spaces or hyphens count as underscores.
+A row yields up to three items to assess, checked along the path: the control
+statement and the risk statement against the row's policy intent, and the
+recommendation against the row's risk statement.
+
+Optional columns add context:
+
+    control id          e.g. ac-2
+    control requirement the control text, when no catalog is supplied
+    title               a name for the row, used to label its risk and recommendation
+    likelihood, impact  risk ratings
+    owner, target date  the recommendation's owner and date
+
+Header names are case-insensitive; spaces, hyphens and underscores are
+interchangeable. Comma, semicolon and tab separated files all work, so a
+spreadsheet saved as CSV can be uploaded as it is.
 """
 
 from __future__ import annotations
@@ -22,64 +30,126 @@ from __future__ import annotations
 import csv
 import io
 
-from .models import IMPLEMENTATION, KIND_LABELS, RECOMMENDATION, RISK_STATEMENT, Statement
+from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
 
-COLUMNS = ("kind", "control_id", "statement_id", "component", "title", "text", "requirement", "policy_intent",
-           "risk_statement", "likelihood", "impact", "risk", "owner", "deadline")
-_KINDS = {
-    "": IMPLEMENTATION, "implementation": IMPLEMENTATION, "implementation statement": IMPLEMENTATION,
-    "control statement": IMPLEMENTATION, "risk": RISK_STATEMENT, "risk statement": RISK_STATEMENT,
-    "risk-statement": RISK_STATEMENT, "recommendation": RECOMMENDATION,
+REQUIRED = ("policy_intent", "control_statement", "risk_statement", "recommendation")
+OPTIONAL = ("control_id", "control_requirement", "title", "likelihood", "impact", "owner", "target_date")
+COLUMNS = REQUIRED + OPTIONAL
+
+LABELS = {
+    "policy_intent": "policy intent", "control_statement": "control statement", "risk_statement": "risk statement",
+    "recommendation": "recommendation", "control_id": "control id", "control_requirement": "control requirement",
+    "title": "title", "likelihood": "likelihood", "impact": "impact", "owner": "owner", "target_date": "target date",
 }
+
+# Other names people use for the same columns.
+_ALIASES = {
+    "policy": "policy_intent", "intent": "policy_intent",
+    "implementation_statement": "control_statement", "control_implementation": "control_statement",
+    "implementation": "control_statement", "statement": "control_statement",
+    "risk": "risk_statement",
+    "recommendations": "recommendation", "remediation": "recommendation",
+    "control": "control_id", "control_ref": "control_id",
+    "requirement": "control_requirement", "control_text": "control_requirement",
+    "deadline": "target_date", "due_date": "target_date", "date": "target_date",
+}
+
+EXAMPLE_ROWS = [
+    {
+        "policy_intent": "User access is reviewed at a frequency commensurate with the risk of the access, and "
+                         "access that is no longer needed is removed within 5 business days.",
+        "control_statement": "Accounts are tiered in the annual access risk assessment owned by the CISO: Tier 1 "
+                             "covers privileged and payment access, Tier 2 everything else. Managers review Tier 1 "
+                             "access quarterly and Tier 2 annually in Okta, and unneeded access is removed within "
+                             "2 business days. Tiers are reassessed after major changes. Each review is recorded "
+                             "in a ServiceNow ticket.",
+        "risk_statement": "14 of 60 sampled Okta accounts belonged to leavers, which does not meet AC-2 and the "
+                          "Access Control Policy, because leaver notices are processed manually. A former "
+                          "employee could use them to approve fraudulent payments, causing financial loss; the "
+                          "accounts are internet-facing, so exploitation is likely.",
+        "recommendation": "Integrate Workday with Okta so leaver notices disable accounts automatically instead of "
+                          "being processed manually. The IAM team lead owns this. Verify closure by re-sampling "
+                          "60 accounts.",
+        "control_id": "ac-2", "title": "Leaver accounts", "likelihood": "high", "impact": "high",
+        "owner": "IAM team lead", "target_date": "2026-11-30",
+    },
+    {
+        "policy_intent": "Security events are reviewed daily and audit logs are retained for at least 3 years.",
+        "control_statement": "Logs are reviewed periodically as needed.",
+        "risk_statement": "Audit logs are not always reviewed which could be a risk.",
+        "recommendation": "Consider improving log review where possible.",
+        "control_id": "au-6", "title": "Audit review",
+    },
+]
 
 
 def template() -> str:
-    """A CSV template with one example row of each kind."""
+    """A CSV template: the columns, with one strong and one weak example row."""
     out = io.StringIO()
     w = csv.writer(out)
-    w.writerow(COLUMNS)
-    w.writerow(["implementation", "ac-2", "ac-2_smt.j", "Okta", "", "The IAM team reviews all user accounts "
-                "quarterly in Okta; each review is recorded in a ServiceNow ticket.", "", "", "", "", "", "", "", ""])
-    w.writerow(["risk-statement", "ac-2", "", "", "Leaver accounts remain active", "14 of 60 sampled accounts "
-                "belonged to leavers because deprovisioning is manual.", "", "", "", "high", "high", "", "", ""])
-    w.writerow(["recommendation", "ac-2", "", "", "Automate deprovisioning", "Integrate Workday with Okta to "
-                "disable leaver accounts automatically.", "", "", "14 of 60 sampled accounts belonged to leavers "
-                "because deprovisioning is manual.", "", "", "high", "IAM team lead", "2026-11-30"])
+    w.writerow([LABELS[c] for c in COLUMNS])
+    for row in EXAMPLE_ROWS:
+        w.writerow([row.get(c, "") for c in COLUMNS])
     return out.getvalue()
 
 
+def _normalise(header: str) -> str:
+    key = "_".join(header.strip().lower().replace("-", " ").replace("_", " ").split())
+    return _ALIASES.get(key, key)
+
+
+def _reader(content: str) -> csv.DictReader:
+    first_line = content.splitlines()[0] if content.strip() else ""
+    try:
+        dialect = csv.Sniffer().sniff(first_line, delimiters=",;\t")
+    except csv.Error:
+        dialect = csv.excel
+    return csv.DictReader(io.StringIO(content), dialect=dialect)
+
+
 def parse_csv(content: str, source: str = "csv") -> list[Statement]:
-    reader = csv.DictReader(io.StringIO(content.lstrip("﻿")))
-    if not reader.fieldnames:
+    content = content.lstrip("﻿")
+    if not content.strip():
         raise ValueError("CSV file is empty")
-    fields = {f: f.strip().lower().replace(" ", "_").replace("-", "_") for f in reader.fieldnames if f}
-    if "text" not in fields.values():
-        raise ValueError("CSV needs a 'text' column; download the template for the full set of columns")
-    out = []
+    reader = _reader(content)
+    fields = {f: _normalise(f) for f in reader.fieldnames or [] if f}
+    missing = [LABELS[c] for c in REQUIRED if c not in fields.values()]
+    if missing:
+        raise ValueError(
+            "CSV needs the columns: policy intent, control statement, risk statement, recommendation "
+            f"(missing: {', '.join(missing)}). Download the template to start from."
+        )
+
+    out: list[Statement] = []
     for n, raw in enumerate(reader, start=2):
         row = {fields[k]: (v or "").strip() for k, v in raw.items() if k in fields}
-        if not any(row.values()):
-            continue
-        kind = _KINDS.get(row.get("kind", "").lower())
-        if kind is None:
-            raise ValueError(f"CSV row {n}: unknown kind {row['kind']!r}; use one of "
-                             + ", ".join(KIND_LABELS))
-        ratings = {k: row[k] for k in ("likelihood", "impact", "risk") if row.get(k)}
-        out.append(Statement(
-            control_id=row.get("control_id", ""),
-            text=row.get("text", ""),
-            source=source,
-            uuid=f"{source}:row-{n}",
-            statement_id=row.get("statement_id") or None,
-            component=row.get("component") or None,
-            requirement=row.get("requirement") or None,
-            policy_intent=row.get("policy_intent") or None,
-            policy_ids=["csv"] if row.get("policy_intent") else [],
-            kind=kind,
-            title=row.get("title") or (None if kind == IMPLEMENTATION else f"Row {n}"),
-            risk_statement=row.get("risk_statement") or None,
-            ratings=ratings,
-            owner=row.get("owner") or None,
-            deadline=row.get("deadline") or None,
-        ))
+        if not any(row.get(c) for c in ("control_statement", "risk_statement", "recommendation")):
+            continue  # nothing to assess on this row
+        label = row.get("title") or f"Row {n}"
+        control = row.get("control_id", "")
+        intent = row.get("policy_intent") or None
+        requirement = row.get("control_requirement") or None
+        ratings = {k: row[k] for k in ("likelihood", "impact") if row.get(k)}
+        common = dict(control_id=control, source=source, requirement=requirement)
+
+        if row.get("control_statement"):
+            out.append(Statement(
+                text=row["control_statement"], uuid=f"{source}:row-{n}:control", kind=IMPLEMENTATION,
+                component=label, policy_intent=intent, policy_ids=[f"row {n}"] if intent else [], **common,
+            ))
+        if row.get("risk_statement"):
+            out.append(Statement(
+                text=row["risk_statement"], uuid=f"{source}:row-{n}:risk", kind=RISK_STATEMENT, title=label,
+                policy_intent=intent, policy_ids=[f"row {n}"] if intent else [], ratings=ratings, **common,
+            ))
+        if row.get("recommendation"):
+            out.append(Statement(
+                text=row["recommendation"], uuid=f"{source}:row-{n}:recommendation", kind=RECOMMENDATION,
+                title=label, risk_title=label, risk_statement=row.get("risk_statement") or None, ratings=ratings,
+                owner=row.get("owner") or None, deadline=row.get("target_date") or None,
+                control_id=control, source=source,
+            ))
+    if not out:
+        raise ValueError("CSV has the right columns but no statements to assess: fill in at least one of "
+                         "control statement, risk statement or recommendation")
     return out
