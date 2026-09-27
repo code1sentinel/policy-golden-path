@@ -24,7 +24,10 @@ Score each criterion from 0 to 100:
 - responsibility: names who performs, owns or approves the control activity.
 - frequency: states when or how often the control operates, or what triggers it.
 - evidence: identifies the records, logs or artefacts an assessor could inspect.
-- implemented: describes what operates today rather than plans, intentions or hedged language.
+- implemented: states as fact what operates today. Mark down plans and intentions ("will", "plans \
+to"), hedges ("should", "may", "as needed"), obligations that restate the requirement instead of \
+describing it ("must", "shall"), and open-ended examples ("such as", "e.g.", "etc.") unless the \
+statement says where the full set is defined.
 - policy_intent: only when a <policy-intent> is given. The statement meets what the organization's \
 own policy requires: its objective, and any specific commitments such as frequencies, time limits, \
 retention periods, approvers or technologies. A statement that falls short of a commitment (for \

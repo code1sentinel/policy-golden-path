@@ -4,8 +4,9 @@ Each statement is scored against the questions an assessor asks of an
 implementation statement: who does it, with what, how often, what evidence it
 leaves, whether it answers what the control actually requires, and whether it
 meets the intent of the organization's policy. The weighted sum is the
-confidence, reduced by hedging language and capped hard when the statement is
-a placeholder, describes planned work, or contradicts the policy.
+confidence, reduced by wording that does not belong in a statement of fact
+(hedges, obligations, open-ended examples) and capped hard when the statement
+is a placeholder, describes planned work, or contradicts the policy.
 """
 
 from __future__ import annotations
@@ -44,9 +45,28 @@ _PLANNED = re.compile(
 _HEDGES = re.compile(
     r"\b(as needed|as appropriate|as required|where (possible|practical|feasible)|when necessary|if necessary|"
     r"periodically|from time to time|best effort|generally|typically|usually|may|might|should|could|"
-    r"attempts? to|tries to|some|various|etc)\b",
+    r"attempts? to|tries to|some|various)\b",
     re.I,
 )
+# Obligations restate the requirement instead of saying how it is met.
+_OBLIGATIONS = re.compile(r"\b(must|shall|is required to|are required to|is expected to|are expected to)\b", re.I)
+# Open-ended examples leave the scope undefined...
+_OPEN_EXAMPLES = re.compile(
+    r"\b(such as|for example|for instance|including but not limited to|among others|and so on)\b"
+    r"|\be\.g\.|\betc\b\.?",
+    re.I,
+)
+# ...unless the statement points to where the full set is defined.
+_DEFINED_SET = re.compile(
+    r"\b(listed|defined|documented|enumerated|maintained|catalogu?ed|specified) in\b[^.;]{0,60}?"
+    r"\b(runbook|register|inventory|catalogu?e?|cmdb|standard|procedure|playbook|list|appendix|baseline|"
+    r"library|matrix|schedule)\b"
+    r"|\b(full|complete) (list|set|inventory)\b",
+    re.I,
+)
+
+WORDING_PENALTY = 0.08  # per distinct phrase
+WORDING_FLOOR = 0.60    # wording can take off at most 40%
 _ROLES = re.compile(
     r"\b(administrators?|admins?|team|officer|owner|isso|issm|ciso|cio|cto|manager|managers|"
     r"soc|noc|security operations|personnel|staff|custodians?|engineers?|analysts?|operators?|"
@@ -278,12 +298,26 @@ def assess(statement: Statement, threshold: float) -> Assessment:
         confidence = min(confidence, POLICY_OMISSION_CAP)
         notes.append(f"does not show a policy commitment is met; capped at {POLICY_OMISSION_CAP:.0%}")
 
+    wording: list[str] = []
     hedges = _distinct(_HEDGES, text)
     if hedges:
-        factor = max(0.6, 1.0 - 0.08 * len(hedges))
+        wording += sorted(hedges)
+        gaps.append("Replace hedging words (" + ", ".join(sorted(hedges)) + ") with what actually happens.")
+    obligations = _distinct(_OBLIGATIONS, text)
+    if obligations:
+        wording += sorted(obligations)
+        gaps.append("'" + "', '".join(sorted(obligations)) + f"' {'restate' if len(obligations) > 1 else 'restates'} "
+                    "the requirement; describe what "
+                    "enforces it and what happens today.")
+    examples = {e.rstrip(".") + ("." if e.startswith(("e.g", "etc")) else "") for e in _distinct(_OPEN_EXAMPLES, text)}
+    if examples and not _DEFINED_SET.search(text):
+        wording += sorted(examples)
+        gaps.append("'" + "', '".join(sorted(examples)) + f"' {'leave' if len(examples) > 1 else 'leaves'} "
+                    "the scope open; list the full set or say where it is defined.")
+    if wording:
+        factor = max(WORDING_FLOOR, 1.0 - WORDING_PENALTY * len(wording))
         confidence *= factor
-        notes.append(f"hedging language ({', '.join(sorted(hedges))}) reduced confidence by {1 - factor:.0%}")
-        gaps.append("Replace hedging words with definite commitments.")
+        notes.append(f"wording ({', '.join(wording)}) reduced confidence by {1 - factor:.0%}")
 
     if _PLANNED.search(text):
         confidence = min(confidence, PLANNED_CAP)

@@ -132,12 +132,24 @@ Offline and deterministic. Each statement is scored 0 to 1 on:
 `coverage` needs `--catalog` and `policy_intent` needs a policy intent. When
 either is missing, the remaining weights are scaled up to sum to 100%.
 
-The weighted sum is then adjusted:
+The weighted sum is then adjusted for wording. A statement should state as
+fact what happens today, so each distinct phrase below takes off 8%, up to
+40% in total:
 
-- Hedging (`as needed`, `periodically`, `should`, `may`, ...) takes off 8% per distinct phrase, at most 40%.
-- Planned work (`will be implemented`, `planned for`, `roadmap`, ...) is capped at 50%.
-- Placeholders (`TBD`, `N/A`, `[insert ...]`, empty text) are capped at 20%.
-- Falling short of a policy commitment caps at 50%; leaving one out caps at 75%.
+| Wording | Examples | Why it costs |
+| --- | --- | --- |
+| Hedges | `should`, `may`, `could`, `as needed`, `periodically`, `where possible` | Says what might happen, not what does |
+| Obligations | `must`, `shall`, `is required to` | Restates the requirement instead of saying what enforces it |
+| Open-ended examples | `such as`, `e.g.`, `for example`, `including but not limited to`, `etc.` | Leaves the scope undefined. Allowed when the statement says where the full set is defined (`the use cases listed in the SOC runbook, such as ...`) |
+
+And capped:
+
+| Condition | Cap |
+| --- | --- |
+| Placeholder: `TBD`, `N/A`, `[insert ...]`, empty text | 20% |
+| Planned work: `will be implemented`, `planned for`, `roadmap` | 50% |
+| Falls short of a policy commitment | 50% |
+| Leaves out a policy commitment | 75% |
 
 It is a quality screen, not a verdict: it rewards statements written the way
 an assessor needs them, but cannot tell whether what they say is true.
