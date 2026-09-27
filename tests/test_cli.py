@@ -3,32 +3,46 @@ import json
 from oscal_assess.cli import main
 
 
-def test_exit_code_reflects_failures(examples, capsys):
+def test_reports_results_and_exits_zero(examples, capsys):
     doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
-    assert main([doc, "-c", cat]) == 1
-    assert "2/4 passed at a 80% confidence threshold." in capsys.readouterr().out
-    assert main([doc, "-c", cat, "--no-fail"]) == 0
-    assert main([doc, "-c", cat, "-t", "0"]) == 0
+    assert main([doc, "-c", cat]) == 0
+    out = capsys.readouterr().out
+    assert "4 implementation statements: average confidence" in out
+    assert "Areas for improvement" in out
+    assert "PASS" not in out and "FAIL" not in out
 
 
-def test_threshold_accepts_percent(examples, capsys):
-    main([str(examples / "ssp-example.json"), "-t", "95%", "-f", "json"])
-    assert json.loads(capsys.readouterr().out)["summary"]["threshold"] == 0.95
+def test_assessment_results_input(examples, capsys):
+    assert main([str(examples / "assessment-results-example.json"), "-f", "json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert set(data["summary"]["by_kind"]) == {"risk-statement", "recommendation"}
+    kinds = [a["kind"] for a in data["assessments"]]
+    assert kinds == ["risk-statement", "recommendation", "risk-statement", "recommendation"]
+    assert data["assessments"][1]["risk_title"] == "Leaver accounts can approve payments"
 
 
-def test_json_markdown_and_assessment_results(examples, tmp_path, capsys):
+def test_markdown_and_oscal_observations(examples, tmp_path, capsys):
     doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
     ar = tmp_path / "ar.json"
     md = tmp_path / "report.md"
     main([doc, "-c", cat, "-f", "markdown", "-o", str(md), "--assessment-results", str(ar)])
 
-    assert "**2 of 4 passed**" in md.read_text()
-    results = json.loads(ar.read_text())["assessment-results"]
-    findings = results["results"][0]["findings"]
-    states = {f["target"]["target-id"]: f["target"]["status"]["state"] for f in findings}
-    assert states == {"ia-2": "satisfied", "au-6": "satisfied",
-                      "ac-2_smt.j": "not-satisfied", "ac-2_smt.e": "not-satisfied"}
-    assert results["metadata"]["oscal-version"] == "1.1.2"
+    text = md.read_text()
+    assert "## Areas for improvement" in text and "pass" not in text.lower().replace("passw", "")
+    result = json.loads(ar.read_text())["assessment-results"]["results"][0]
+    assert "findings" not in result
+    obs = result["observations"]
+    assert len(obs) == 4 and all(o["methods"] == ["EXAMINE"] for o in obs)
+    props = {p["name"] for p in obs[0]["props"]}
+    assert {"confidence", "assessed-kind", "control-id"} <= props
+    assert result["reviewed-controls"]["control-selections"][0]["include-controls"]
+
+
+def test_no_threshold_option(examples, capsys):
+    import pytest
+
+    with pytest.raises(SystemExit):
+        main([str(examples / "ssp-example.json"), "--threshold", "0.8"])
 
 
 def test_bad_input_exits_2(tmp_path, capsys):
@@ -36,19 +50,22 @@ def test_bad_input_exits_2(tmp_path, capsys):
     bad.write_text('{"catalog": {}}')
     assert main([str(bad)]) == 2
     assert main([str(tmp_path / "missing.json")]) == 2
+    empty = tmp_path / "empty.json"
+    empty.write_text('{"assessment-results": {"results": []}}')
+    assert main([str(empty)]) == 2
+    assert "nothing to assess" in capsys.readouterr().err
 
 
 def test_policy_intent_is_applied(examples, capsys):
     doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
     main([doc, "-c", cat, "-f", "json"])
     before = {a["control_id"]: a for a in json.loads(capsys.readouterr().out)["assessments"]}
-    assert before["au-6"]["result"] == "pass"
 
     main([doc, "-c", cat, "-p", str(examples / "policy-example.json"), "-f", "json"])
     after = {a["control_id"]: a for a in json.loads(capsys.readouterr().out)["assessments"]}
-    assert after["au-6"]["result"] == "fail"
+    assert after["au-6"]["confidence"] < before["au-6"]["confidence"]
     assert after["au-6"]["policies"] == ["ISP-09"]
-    assert any("retained for at least 3 years" in g for g in after["au-6"]["gaps"])
+    assert any("retained for at least 3 years" in i for i in after["au-6"]["improvements"])
 
 
 def test_inline_intent_applies_to_every_statement(examples, capsys):

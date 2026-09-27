@@ -1,4 +1,8 @@
-"""Pull implementation statements out of OSCAL SSPs and component definitions."""
+"""Pull assessable text out of OSCAL documents.
+
+SSPs and component definitions yield implementation statements; assessment
+results and POA&Ms yield risk statements and recommendations.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +10,7 @@ import json
 from pathlib import Path
 
 from .catalog import Catalog
+from .findings import extract_findings
 from .models import Statement
 
 
@@ -15,7 +20,8 @@ def load_statements(path: str | Path, catalog: Catalog | None = None) -> list[St
     statements = extract_statements(data)
     if catalog is not None:
         for s in statements:
-            s.requirement = catalog.requirement(s.control_id, s.statement_id)
+            if s.kind == "implementation":
+                s.requirement = catalog.requirement(s.control_id, s.statement_id)
     return statements
 
 
@@ -24,8 +30,11 @@ def extract_statements(data: dict) -> list[Statement]:
         return _from_ssp(data["system-security-plan"])
     if "component-definition" in data:
         return _from_component_definition(data["component-definition"])
+    if "assessment-results" in data or "plan-of-action-and-milestones" in data:
+        return extract_findings(data)
     raise ValueError(
-        "unsupported OSCAL document: expected 'system-security-plan' or 'component-definition' at the top level"
+        "unsupported OSCAL document: expected 'system-security-plan', 'component-definition', "
+        "'assessment-results' or 'plan-of-action-and-milestones' at the top level"
     )
 
 

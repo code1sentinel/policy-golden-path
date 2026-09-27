@@ -15,42 +15,42 @@ MEETS = ("The IAM team and line managers review every user account and its acces
 
 
 def assess(text: str, intent: str | None = INTENT):
-    return heuristic.assess(Statement("ac-2", text, "ssp", statement_id="ac-2_smt.j", policy_intent=intent), 0.8)
+    return heuristic.assess(Statement("ac-2", text, "ssp", statement_id="ac-2_smt.j", policy_intent=intent))
 
 
 def criterion(a, name):
     return next(c for c in a.criteria if c.name == name)
 
 
-def test_statement_meeting_the_intent_passes():
+def test_statement_meeting_the_intent_scores_high():
     a = assess(MEETS)
-    assert a.passed
+    assert a.confidence >= 0.9
     assert criterion(a, "policy_intent").score == pytest.approx(1.0)
     assert "3/3 policy commitments met" in criterion(a, "policy_intent").note
 
 
-def test_falling_short_of_a_commitment_caps_below_pass():
+def test_falling_short_of_a_commitment_is_limited():
     a = assess(MEETS.replace("quarterly", "annually"))
-    assert a.confidence <= heuristic.POLICY_CONFLICT_CAP and not a.passed
-    assert 'Policy requires "quarterly"; the statement says "annually".' in a.gaps
+    assert a.confidence <= heuristic.POLICY_CONFLICT_CAP
+    assert 'Policy requires "quarterly"; the statement says "annually".' in a.improvements
 
 
 def test_slower_deadline_and_shorter_retention_are_conflicts():
     a = assess(MEETS.replace("within 2 business days", "within 30 days").replace("3 years", "6 months"))
-    assert not a.passed
-    assert any('"within 5 business days"' in g and '"within 30 days"' in g for g in a.gaps)
-    assert any('"retained for at least 12 months"' in g and "6 months" in g for g in a.gaps)
+    assert a.confidence <= heuristic.POLICY_CONFLICT_CAP
+    assert any('"within 5 business days"' in g and '"within 30 days"' in g for g in a.improvements)
+    assert any('"retained for at least 12 months"' in g and "6 months" in g for g in a.improvements)
 
 
-def test_omitting_a_commitment_caps_below_pass():
+def test_omitting_a_commitment_is_limited():
     a = assess(MEETS.replace(" ServiceNow ticket retained for 3 years as", " ServiceNow ticket as"))
     assert heuristic.POLICY_CONFLICT_CAP < a.confidence <= heuristic.POLICY_OMISSION_CAP
-    assert any("does not say how long records are kept" in g for g in a.gaps)
+    assert any("does not say how long records are kept" in g for g in a.improvements)
 
 
 def test_equivalent_wording_counts_as_met():
     a = assess(MEETS.replace("quarterly", "every 90 days"))
-    assert a.passed
+    assert a.confidence >= 0.9
 
 
 def test_without_intent_criterion_is_absent_and_weights_sum_to_one():
@@ -63,7 +63,7 @@ def test_without_intent_criterion_is_absent_and_weights_sum_to_one():
 
 def test_missing_terms_are_readable_words():
     a = assess("The service desk resets passwords daily and logs each reset.")
-    [gap] = [g for g in a.gaps if g.startswith("Show how")]
+    [gap] = [g for g in a.improvements if g.startswith("Show how")]
     assert "managers" in gap and "quarterly" not in gap and "manag," not in gap
 
 

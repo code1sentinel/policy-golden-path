@@ -19,7 +19,6 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -q
-      # The example component definition contains a deliberately weak statement,
-      # so this step shows the report without failing the build.
-      - run: oscal-assess examples/component-definition-example.json -c examples/catalog-excerpt.json --no-fail
-      - run: oscal-assess examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json --no-fail
+      - run: oscal-assess examples/component-definition-example.json -c examples/catalog-excerpt.json
+      - run: oscal-assess examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
+      - run: oscal-assess examples/assessment-results-example.json

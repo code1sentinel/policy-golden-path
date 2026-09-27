@@ -1,0 +1,98 @@
+{
+  "assessment-results": {
+    "uuid": "f0000000-0000-4000-8000-000000000001",
+    "metadata": {
+      "title": "Payments Platform annual assessment",
+      "last-modified": "2026-09-26T00:00:00Z",
+      "version": "1.0",
+      "oscal-version": "1.1.2"
+    },
+    "import-ap": { "href": "assessment-plan.json" },
+    "results": [
+      {
+        "uuid": "f0000000-0000-4000-8000-000000000002",
+        "title": "Annual assessment 2026",
+        "description": "Results of the 2026 assessment of the Payments Platform.",
+        "start": "2026-09-01T00:00:00Z",
+        "reviewed-controls": {
+          "control-selections": [{ "include-controls": [{ "control-id": "ac-2" }, { "control-id": "au-6" }] }]
+        },
+        "findings": [
+          {
+            "uuid": "f0000000-0000-4000-8000-000000000010",
+            "title": "Leaver accounts remain active",
+            "description": "Accounts of departed staff were not disabled.",
+            "target": { "type": "statement-id", "target-id": "ac-2_smt.j", "status": { "state": "not-satisfied" } },
+            "related-risks": [{ "risk-uuid": "f0000000-0000-4000-8000-000000000020" }]
+          },
+          {
+            "uuid": "f0000000-0000-4000-8000-000000000011",
+            "title": "Audit review not evidenced",
+            "description": "Audit log review could not be evidenced.",
+            "target": { "type": "objective-id", "target-id": "au-6", "status": { "state": "not-satisfied" } },
+            "related-risks": [{ "risk-uuid": "f0000000-0000-4000-8000-000000000021" }]
+          }
+        ],
+        "risks": [
+          {
+            "uuid": "f0000000-0000-4000-8000-000000000020",
+            "title": "Leaver accounts can approve payments",
+            "description": "Access of departed staff is not removed.",
+            "statement": "14 of 60 sampled Okta accounts belonged to staff who had left more than 30 days earlier, and 3 of them held the payment approver role. This does not meet AC-2 and the Access Control Policy, which require access to be removed on departure. It happened because HR leaver notifications are sent by email and processed manually by the IAM team, with no integration between Workday and Okta. A former employee, or an attacker who phished their credentials, could use these accounts to approve fraudulent payments, causing direct financial loss and regulatory reporting obligations. Accounts are internet-facing through Okta SSO, so exploitation is likely.",
+            "status": "open",
+            "characterizations": [
+              {
+                "origin": { "actors": [{ "type": "party", "actor-uuid": "f0000000-0000-4000-8000-0000000000a1" }] },
+                "facets": [
+                  { "name": "likelihood", "system": "http://csrc.nist.gov/ns/oscal", "value": "high" },
+                  { "name": "impact", "system": "http://csrc.nist.gov/ns/oscal", "value": "high" }
+                ]
+              }
+            ],
+            "deadline": "2026-11-30T00:00:00Z",
+            "remediations": [
+              {
+                "uuid": "f0000000-0000-4000-8000-000000000030",
+                "lifecycle": "recommendation",
+                "title": "Automate leaver deprovisioning",
+                "description": "Integrate Workday with Okta so that a termination in Workday disables the user's Okta account and removes the payment approver role automatically within 4 hours. Disable the 14 identified accounts now. The IAM team lead owns the change. Verify closure by re-sampling 60 accounts and confirming none belong to leavers, and retain the Okta deprovisioning log as evidence.",
+                "tasks": [
+                  {
+                    "uuid": "f0000000-0000-4000-8000-000000000031",
+                    "type": "milestone",
+                    "title": "Workday to Okta deprovisioning live",
+                    "timing": { "on-date": { "date": "2026-11-30T00:00:00Z" } },
+                    "responsible-roles": [{ "role-id": "iam-team-lead" }]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "uuid": "f0000000-0000-4000-8000-000000000021",
+            "title": "Audit review gaps",
+            "description": "Audit review is inconsistent.",
+            "statement": "Audit logs are not always reviewed which could be a risk to the organization. The team should review logs more regularly.",
+            "status": "open",
+            "characterizations": [
+              {
+                "origin": { "actors": [{ "type": "party", "actor-uuid": "f0000000-0000-4000-8000-0000000000a1" }] },
+                "facets": [
+                  { "name": "risk", "system": "http://csrc.nist.gov/ns/oscal", "value": "low" }
+                ]
+              }
+            ],
+            "remediations": [
+              {
+                "uuid": "f0000000-0000-4000-8000-000000000032",
+                "lifecycle": "recommendation",
+                "title": "Improve log review",
+                "description": "Consider improving the log review process where possible, such as reviewing alerts, etc."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

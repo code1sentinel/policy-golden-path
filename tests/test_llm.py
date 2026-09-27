@@ -30,18 +30,18 @@ STATEMENT = Statement("ac-2", "Accounts are reviewed quarterly by the IAM team."
                       statement_id="ac-2_smt.j", requirement="j. Review accounts ...")
 
 
-def test_verdict_is_parsed_and_thresholded():
+def test_verdict_is_parsed():
     payload = {
         "confidence": 85,
         "criteria": [{"name": "coverage", "score": 90, "note": "ok"}],
-        "gaps": ["Name the evidence."],
+        "improvements": ["Name the evidence."],
         "rationale": "Mostly complete.",
     }
     client, messages = fake_client(payload=payload)
-    a = ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
+    a = ClaudeAssessor(client=client).assess(STATEMENT)
 
-    assert a.passed and a.confidence == 0.85
-    assert a.gaps == ["Name the evidence."]
+    assert a.confidence == 0.85
+    assert a.improvements == ["Name the evidence."]
     assert a.engine == "claude:claude-opus-5"
     call = messages.calls[0]
     assert call["model"] == "claude-opus-5"
@@ -49,25 +49,26 @@ def test_verdict_is_parsed_and_thresholded():
     assert call["fallbacks"] == "default"
     assert call["output_config"]["format"]["type"] == "json_schema"
     assert "ac-2_smt.j" in call["messages"][0]["content"]
+    assert "pass" not in call["system"].replace("Do not decide whether the text passes", "")
 
 
-def test_below_threshold_fails_and_scores_are_clamped():
+def test_scores_are_clamped():
     payload = {"confidence": 140, "criteria": [{"name": "coverage", "score": -5, "note": ""}],
-               "gaps": [], "rationale": ""}
+               "improvements": [], "rationale": ""}
     client, _ = fake_client(payload=payload)
-    a = ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
+    a = ClaudeAssessor(client=client).assess(STATEMENT)
     assert a.confidence == 1.0 and a.criteria[0].score == 0.0
 
-    payload["confidence"] = 79
-    client, _ = fake_client(payload=payload)
-    assert not ClaudeAssessor(client=client).assess(STATEMENT, 0.8).passed
 
-
-def test_refusal_and_bad_output_fail_closed():
+def test_refusal_and_bad_output_score_zero_with_a_note():
     for stop_reason, payload in (("refusal", ""), ("max_tokens", ""), ("end_turn", "not json")):
         client, _ = fake_client(stop_reason=stop_reason, payload=payload)
-        a = ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
-        assert a.confidence == 0.0 and not a.passed and "manually" in a.rationale
+        a = ClaudeAssessor(client=client).assess(STATEMENT)
+        assert a.confidence == 0.0 and "manually" in a.rationale and a.improvements
+
+
+def schema_names(call):
+    return call["output_config"]["format"]["schema"]["properties"]["criteria"]["items"]["properties"]["name"]["enum"]
 
 
 def test_policy_intent_is_sent_and_enforced():
@@ -76,22 +77,47 @@ def test_policy_intent_is_sent_and_enforced():
     payload = {
         "confidence": 90,
         "criteria": [{"name": "policy_intent", "score": 20, "note": "annual, not quarterly"}],
-        "gaps": ["Review quarterly."],
+        "improvements": ["Review quarterly."],
         "rationale": "Good but annual.",
     }
     client, messages = fake_client(payload=payload)
-    a = ClaudeAssessor(client=client).assess(stmt, 0.8)
+    a = ClaudeAssessor(client=client).assess(stmt)
 
     call = messages.calls[0]
     assert '<policy-intent policies="ISP-05.1">' in call["messages"][0]["content"]
-    enum = call["output_config"]["format"]["schema"]["properties"]["criteria"]["items"]["properties"]["name"]["enum"]
-    assert "policy_intent" in enum
-    assert a.confidence == 0.5 and not a.passed and "policy intent" in a.rationale
+    assert "policy_intent" in schema_names(call)
+    assert a.confidence == 0.5 and "policy intent" in a.rationale
 
 
 def test_no_policy_criterion_without_intent():
-    client, messages = fake_client(payload={"confidence": 50, "criteria": [], "gaps": [], "rationale": ""})
-    ClaudeAssessor(client=client).assess(STATEMENT, 0.8)
+    client, messages = fake_client(payload={"confidence": 50, "criteria": [], "improvements": [], "rationale": ""})
+    ClaudeAssessor(client=client).assess(STATEMENT)
     call = messages.calls[0]
-    enum = call["output_config"]["format"]["schema"]["properties"]["criteria"]["items"]["properties"]["name"]["enum"]
-    assert "policy_intent" not in enum and "<policy-intent" not in call["messages"][0]["content"]
+    assert "policy_intent" not in schema_names(call) and "<policy-intent" not in call["messages"][0]["content"]
+
+
+def test_risk_statement_and_recommendation_prompts():
+    from oscal_assess.models import RECOMMENDATION, RISK_STATEMENT
+
+    empty = {"confidence": 70, "criteria": [], "improvements": [], "rationale": ""}
+    risk = Statement("ac-2_smt.j", "14 of 60 accounts belong to leavers.", "assessment-results",
+                     kind=RISK_STATEMENT, title="Leaver accounts", ratings={"likelihood": "high"})
+    client, messages = fake_client(payload=empty)
+    ClaudeAssessor(client=client).assess(risk)
+    call = messages.calls[0]
+    assert "risk statement of a risk" in call["system"]
+    assert set(schema_names(call)) == {"condition", "criteria", "cause", "threat", "impact", "scope", "rating",
+                                       "clarity"}
+    assert "Ratings: likelihood: high" in call["messages"][0]["content"]
+
+    rec = Statement("ac-2_smt.j", "Disable the accounts.", "assessment-results", kind=RECOMMENDATION,
+                    title="Disable leavers", risk_title="Leaver accounts", risk_statement=risk.text,
+                    owner="iam-team-lead", deadline="2026-11-30")
+    client, messages = fake_client(payload=empty)
+    ClaudeAssessor(client=client).assess(rec)
+    call = messages.calls[0]
+    content = call["messages"][0]["content"]
+    assert "remediation with lifecycle" in call["system"]
+    assert "root_cause" in schema_names(call)
+    assert 'title="Leaver accounts"' in content and "Risk statement: 14 of 60" in content
+    assert 'owner="iam-team-lead" deadline="2026-11-30"' in content

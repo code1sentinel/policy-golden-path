@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-from .models import Assessment, CriterionResult, Statement
+from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
 
 # Relative weights. coverage needs a catalog and policy_intent needs a policy
 # intent; when either is missing the others are rescaled to sum to 1.
@@ -42,10 +42,19 @@ _PLANNED = re.compile(
     r"plan to|intends? to|in progress|not yet|future release|roadmap)\b",
     re.I,
 )
-_HEDGES = re.compile(
+# Vague wording: never says what actually happens.
+_VAGUE = re.compile(
     r"\b(as needed|as appropriate|as required|where (possible|practical|feasible)|when necessary|if necessary|"
-    r"periodically|from time to time|best effort|generally|typically|usually|may|might|should|could|"
+    r"periodically|from time to time|best effort|generally|typically|usually|"
     r"attempts? to|tries to|some|various)\b",
+    re.I,
+)
+# Possibility: fine in a risk statement ("could allow"), not in a statement of fact.
+_MODALS = re.compile(r"\b(may|might|could|should)\b", re.I)
+# Tentative actions: weaken a recommendation.
+_WEAK_ACTIONS = re.compile(
+    r"\b(consider(ing)?|explore|look into|evaluate whether|assess whether|investigate whether|"
+    r"think about|aim to|try to|where feasible|if possible|may wish to|may want to|could)\b",
     re.I,
 )
 # Obligations restate the requirement instead of saying how it is met.
@@ -102,7 +111,8 @@ _STOPWORDS = set(
     these this those to under upon was were when where which with within without all also each such than
     then there they not only more most must shall will can may using used use based including include
     includes organization organizational organizations defined assignment selection one following
-    every least longer needed within days hours weeks months years business minimum""".split()
+    every least longer needed within days hours weeks months years business minimum
+    should could would might always regularly more less risk""".split()
 )
 _WORD = re.compile(r"[a-z][a-z-]+")
 
@@ -198,7 +208,7 @@ _OMITTED = {
 def _policy_intent(intent: str, text: str) -> tuple[float, str, list[str], list[str], list[str]]:
     """Score how far the statement meets the policy intent.
 
-    Returns (score, note, gaps, conflicts, omissions): conflicts are commitments the
+    Returns (score, note, tips, conflicts, omissions): conflicts are commitments the
     statement falls short of, omissions are commitments it does not mention.
     """
     required, found = commitments(intent), commitments(text)
@@ -207,11 +217,11 @@ def _policy_intent(intent: str, text: str) -> tuple[float, str, list[str], list[
     intent_words = {k: w for k, w in _term_words(intent).items() if k not in _terms(phrases)}
     matched = set(intent_words) & _terms(text)
     term_score = min(1.0, (len(matched) / len(intent_words)) / 0.5) if intent_words else 1.0
-    gaps: list[str] = []
+    tips: list[str] = []
     conflicts: list[str] = []
     omissions: list[str] = []
     if term_score < 0.6:
-        gaps.append("Show how the statement meets the policy intent (missing terms: "
+        tips.append("Show how the statement meets the policy intent (missing terms: "
                     + _missing(intent_words, matched) + ").")
 
     met = total = 0
@@ -236,98 +246,372 @@ def _policy_intent(intent: str, text: str) -> tuple[float, str, list[str], list[
     note = f"{len(matched)}/{len(intent_words)} intent terms"
     if total:
         note += f", {met}/{total} policy commitments met"
-    return score, note, gaps, conflicts, omissions
+    return score, note, tips, conflicts, omissions
 
 
-def assess(statement: Statement, threshold: float) -> Assessment:
+def _open_examples(text: str) -> list[str]:
+    found = {e.rstrip(".") + ("." if e.lower().startswith(("e.g", "etc")) else "")
+             for e in _distinct(_OPEN_EXAMPLES, text)}
+    return sorted(found) if found and not _DEFINED_SET.search(text) else []
+
+
+def _quote(phrases: list[str]) -> str:
+    return "'" + "', '".join(phrases) + "'"
+
+
+_SAY_INSTEAD = {
+    IMPLEMENTATION: "what actually happens",
+    RISK_STATEMENT: "what was found",
+    RECOMMENDATION: "the specific action to take",
+}
+
+
+def _wording(text: str, rules: tuple[str, ...], instead: str = "what actually happens") -> tuple[list[str], list[str]]:
+    """Wording that does not belong in this kind of text: (phrases, improvements)."""
+    phrases: list[str] = []
+    improvements: list[str] = []
+    if "vague" in rules:
+        found = sorted(_distinct(_VAGUE, text))
+        if found:
+            phrases += found
+            improvements.append(f"Replace vague wording ({', '.join(found)}) with {instead}.")
+    if "modals" in rules:
+        found = sorted(_distinct(_MODALS, text))
+        if found:
+            phrases += found
+            improvements.append(f"Replace {_quote(found)} with {instead}.")
+    if "obligations" in rules:
+        found = sorted(_distinct(_OBLIGATIONS, text))
+        if found:
+            phrases += found
+            improvements.append(f"{_quote(found)} {'restate' if len(found) > 1 else 'restates'} the requirement; "
+                                "describe what enforces it and what happens today.")
+    if "weak_actions" in rules:
+        found = sorted(_distinct(_WEAK_ACTIONS, text))
+        if found:
+            phrases += found
+            improvements.append(f"{_quote(found)} {'make' if len(found) > 1 else 'makes'} the action optional; "
+                                "state the action to take.")
+    if "examples" in rules:
+        found = _open_examples(text)
+        if found:
+            phrases += found
+            improvements.append(f"{_quote(found)} {'leave' if len(found) > 1 else 'leaves'} the scope open; "
+                                "list the full set or say where it is defined.")
+    return phrases, improvements
+
+
+def _finish(statement: Statement, criteria: list[CriterionResult], improvements: list[str],
+            wording_rules: tuple[str, ...], caps: list[tuple[float, str]] | None = None,
+            placeholder_msg: str = "Replace the placeholder with real text.") -> Assessment:
+    """Weight the criteria, apply wording reductions and caps, and build the assessment."""
+    text = statement.text.strip()
+    total_weight = sum(c.weight for c in criteria)
+    for c in criteria:
+        c.weight /= total_weight
+    confidence = sum(c.score * c.weight for c in criteria)
+    notes: list[str] = []
+
+    for cap, reason in caps or []:
+        if confidence > cap:
+            confidence = cap
+            notes.append(f"{reason}; limited to {cap:.0%}")
+
+    phrases, wording_improvements = _wording(text, wording_rules, _SAY_INSTEAD[statement.kind])
+    improvements += wording_improvements
+    if phrases:
+        factor = max(WORDING_FLOOR, 1.0 - WORDING_PENALTY * len(phrases))
+        confidence *= factor
+        notes.append(f"wording ({', '.join(phrases)}) reduced confidence by {1 - factor:.0%}")
+
+    if not text or _PLACEHOLDER.search(text):
+        confidence = min(confidence, PLACEHOLDER_CAP)
+        notes.append(f"placeholder or empty text; limited to {PLACEHOLDER_CAP:.0%}")
+        improvements.insert(0, placeholder_msg)
+
+    rationale = f"Rubric score {confidence:.0%}" + (f"; {'; '.join(notes)}" if notes else "") + "."
+    return Assessment(statement, round(confidence, 4), "heuristic", criteria, improvements, rationale)
+
+
+def _signal(name: str, pattern: re.Pattern, text: str, full_at: int, weight: float) -> CriterionResult:
+    hits = _distinct(pattern, text)
+    return CriterionResult(name, _ratio(len(hits), full_at), weight, ", ".join(sorted(hits)) or "none found")
+
+
+# --- Implementation statements ---------------------------------------------------------------
+
+def assess_implementation(statement: Statement) -> Assessment:
     text = statement.text.strip()
     words = len(text.split())
     criteria: list[CriterionResult] = []
-    gaps: list[str] = []
+    improvements: list[str] = []
 
     substance = 0.0 if words < 12 else min(1.0, (words - 12) / 38 + 0.25)
     criteria.append(CriterionResult("substance", substance, WEIGHTS["substance"], f"{words} words"))
     if words < 25:
-        gaps.append("Statement is too brief to show how the control is met.")
+        improvements.append("Statement is too brief to show how the control is met.")
 
-    for name, pattern, full_at, gap in (
+    for name, pattern, full_at, tip in (
         ("responsibility", _ROLES, 1, "Name the role or team responsible for performing the control."),
         ("mechanism", _MECHANISMS, 2, "Describe the specific tool, configuration or process that implements it."),
         ("frequency", _FREQUENCY, 1, "State how often or on what trigger the control operates."),
         ("evidence", _EVIDENCE, 2, "Say what records or artefacts prove the control operated."),
     ):
-        hits = _distinct(pattern, text)
-        score = _ratio(len(hits), full_at)
-        criteria.append(CriterionResult(name, score, WEIGHTS[name], ", ".join(sorted(hits)) or "none found"))
-        if score < 0.5:
-            gaps.append(gap)
+        c = _signal(name, pattern, text, full_at, WEIGHTS[name])
+        criteria.append(c)
+        if c.score < 0.5:
+            improvements.append(tip)
 
     if statement.requirement:
         req_words = _term_words(statement.requirement)
-        req_terms = set(req_words)
-        matched = req_terms & _terms(text)
-        coverage = len(matched) / len(req_terms) if req_terms else 1.0
-        score = min(1.0, coverage / 0.4)
-        criteria.append(
-            CriterionResult("coverage", score, WEIGHTS["coverage"],
-                            f"{len(matched)}/{len(req_terms)} requirement terms addressed")
-        )
+        matched = set(req_words) & _terms(text)
+        score = min(1.0, (len(matched) / len(req_words) if req_words else 1.0) / 0.4)
+        criteria.append(CriterionResult("coverage", score, WEIGHTS["coverage"],
+                                        f"{len(matched)}/{len(req_words)} requirement terms addressed"))
         if score < 0.6:
-            gaps.append("Address more of the control requirement (missing terms: "
-                        + _missing(req_words, matched) + ").")
+            improvements.append("Address more of the control requirement (missing terms: "
+                                + _missing(req_words, matched) + ").")
 
-    conflicts: list[str] = []
-    omissions: list[str] = []
+    caps: list[tuple[float, str]] = []
     if statement.policy_intent:
-        score, note, intent_gaps, conflicts, omissions = _policy_intent(statement.policy_intent, text)
+        score, note, intent_tips, conflicts, omissions = _policy_intent(statement.policy_intent, text)
         criteria.append(CriterionResult("policy_intent", score, WEIGHTS["policy_intent"], note))
-        gaps += conflicts + omissions + intent_gaps
-
-    # Rescale so the criteria that apply to this statement sum to 1.
-    total_weight = sum(c.weight for c in criteria)
-    for c in criteria:
-        c.weight /= total_weight
-
-    confidence = sum(c.score * c.weight for c in criteria)
-    notes: list[str] = []
-
-    if conflicts:
-        confidence = min(confidence, POLICY_CONFLICT_CAP)
-        notes.append(f"falls short of a policy commitment; capped at {POLICY_CONFLICT_CAP:.0%}")
-    elif omissions:
-        confidence = min(confidence, POLICY_OMISSION_CAP)
-        notes.append(f"does not show a policy commitment is met; capped at {POLICY_OMISSION_CAP:.0%}")
-
-    wording: list[str] = []
-    hedges = _distinct(_HEDGES, text)
-    if hedges:
-        wording += sorted(hedges)
-        gaps.append("Replace hedging words (" + ", ".join(sorted(hedges)) + ") with what actually happens.")
-    obligations = _distinct(_OBLIGATIONS, text)
-    if obligations:
-        wording += sorted(obligations)
-        gaps.append("'" + "', '".join(sorted(obligations)) + f"' {'restate' if len(obligations) > 1 else 'restates'} "
-                    "the requirement; describe what "
-                    "enforces it and what happens today.")
-    examples = {e.rstrip(".") + ("." if e.startswith(("e.g", "etc")) else "") for e in _distinct(_OPEN_EXAMPLES, text)}
-    if examples and not _DEFINED_SET.search(text):
-        wording += sorted(examples)
-        gaps.append("'" + "', '".join(sorted(examples)) + f"' {'leave' if len(examples) > 1 else 'leaves'} "
-                    "the scope open; list the full set or say where it is defined.")
-    if wording:
-        factor = max(WORDING_FLOOR, 1.0 - WORDING_PENALTY * len(wording))
-        confidence *= factor
-        notes.append(f"wording ({', '.join(wording)}) reduced confidence by {1 - factor:.0%}")
-
+        improvements += conflicts + omissions + intent_tips
+        if conflicts:
+            caps.append((POLICY_CONFLICT_CAP, "falls short of a policy commitment"))
+        elif omissions:
+            caps.append((POLICY_OMISSION_CAP, "does not show a policy commitment is met"))
     if _PLANNED.search(text):
-        confidence = min(confidence, PLANNED_CAP)
-        notes.append(f"describes planned rather than implemented work; capped at {PLANNED_CAP:.0%}")
-        gaps.append("Describe what is implemented today, not what is planned.")
+        caps.append((PLANNED_CAP, "describes planned rather than implemented work"))
+        improvements.append("Describe what is implemented today, not what is planned.")
 
-    if not text or _PLACEHOLDER.search(text):
-        confidence = min(confidence, PLACEHOLDER_CAP)
-        notes.append(f"placeholder or empty text; capped at {PLACEHOLDER_CAP:.0%}")
-        gaps.insert(0, "Replace the placeholder with a real implementation statement.")
+    return _finish(statement, criteria, improvements, ("vague", "modals", "obligations", "examples"), caps,
+                   "Replace the placeholder with a real implementation statement.")
 
-    rationale = f"Rubric score {confidence:.0%}" + (f"; {'; '.join(notes)}" if notes else "") + "."
-    return Assessment(statement, round(confidence, 4), threshold, "heuristic", criteria, gaps, rationale)
+
+# --- Risk statements -------------------------------------------------------------------------
+
+RISK_WEIGHTS = {
+    "condition": 0.20, "impact": 0.20, "cause": 0.15, "threat": 0.15,
+    "scope": 0.10, "criteria": 0.10, "rating": 0.10,
+}
+_CONDITION = re.compile(
+    r"\b(\d+ (of|out of) \d+|\d+(\.\d+)?%|found|identified|observed|noted|sampled|tested|inspected|"
+    r"no evidence|not (configured|enabled|enforced|performed|reviewed|disabled|removed|documented|implemented|"
+    r"patched|encrypted|logged|monitored)|did not|does not|do not|were not|was not|lacks?|missing|absent|"
+    r"exceeded|overdue|outdated|unpatched|remain(s|ed)? (active|enabled|open))\b",
+    re.I,
+)
+_CRITERIA_REF = re.compile(
+    r"\b[a-z]{2}-\d+(\(\d+\))?\b|\b(policy|standard|requirement|required by|baseline|benchmark|procedure|"
+    r"control objective)\b",
+    re.I,
+)
+_CAUSE = re.compile(
+    r"\b(because|due to|as a result of|caused by|root cause|owing to|stems? from|result(s|ed)? from|"
+    r"attributable to|lack of|no (defined |documented )?(process|procedure|owner|automation|integration)|"
+    r"manual(ly)?|not integrated)\b",
+    re.I,
+)
+_THREAT = re.compile(
+    r"\b(attackers?|adversar(y|ies)|threat actors?|malicious|insiders?|former (employees?|staff|contractors?)|"
+    r"unauthori[sz]ed (users?|persons?|parties|individuals?)|cybercriminals?|ransomware|phishing|"
+    r"exploit(s|ed|ation)?|compromis(e|ed)|abuse|misuse|fraudsters?)\b",
+    re.I,
+)
+_LIKELIHOOD = re.compile(
+    r"\b(likel(y|ihood)|probabilit(y|ies)|frequent(ly)?|exposed|internet-facing|publicly (accessible|exposed)|"
+    r"known exploit|actively exploited|easily|trivial(ly)?)\b",
+    re.I,
+)
+_IMPACT = re.compile(
+    r"\b(confidentiality|integrity|availability|disclos(e|ed|ure)|unauthori[sz]ed (access|changes?|payments?|"
+    r"transactions?|disclosure)|data (loss|breach|leak(age)?)|breach(es)?|fraud(ulent)?|financial (loss|impact)|"
+    r"outages?|downtime|disruption|regulatory|fines?|penalt(y|ies)|reputation(al)?|customers?|cardholder|"
+    r"personal data|sensitive data|loss of|tamper(ing|ed)?)\b",
+    re.I,
+)
+_SCOPE = re.compile(
+    r"\b(\d+ (accounts?|systems?|servers?|users?|hosts?|records?|endpoints?|applications?)|accounts?|systems?|"
+    r"servers?|applications?|databases?|endpoints?|users?|records?|environments?|production|workloads?|hosts?|"
+    r"instances?|repositor(y|ies)|subnets?|buckets?|laptops?|devices?)\b",
+    re.I,
+)
+_SEVERE = re.compile(
+    r"\b(breach|fraud(ulent)?|payments?|cardholder|customer data|personal data|regulatory|privileged|"
+    r"administrator|admin|production|outage|ransomware)\b",
+    re.I,
+)
+_REMEDY = re.compile(
+    r"\b(recommend(s|ed|ation)?|(should|must|needs? to)\s+(?!have\b)\w+|to remediate|remediat(e|ion)|"
+    r"we suggest|it is advised)\b",
+    re.I,
+)
+_LOW = re.compile(r"^\s*(very[- ]?low|low|minimal|negligible|1|2)\s*$", re.I)
+
+
+def assess_risk_statement(statement: Statement) -> Assessment:
+    """Does the risk statement say what is wrong, why, who could exploit it, and what it would cost?"""
+    text = statement.text.strip()
+    w = RISK_WEIGHTS
+    improvements: list[str] = []
+    criteria = [
+        _signal("condition", _CONDITION, text, 2, w["condition"]),
+        _signal("criteria", _CRITERIA_REF, text, 1, w["criteria"]),
+        _signal("cause", _CAUSE, text, 1, w["cause"]),
+    ]
+    threat = _distinct(_THREAT, text)
+    likelihood = _distinct(_LIKELIHOOD, text) or ({"rated"} if "likelihood" in statement.ratings else set())
+    criteria.append(CriterionResult("threat", 0.5 * bool(threat) + 0.5 * bool(likelihood), w["threat"],
+                                    ", ".join(sorted(threat | likelihood)) or "none found"))
+    criteria.append(_signal("impact", _IMPACT, text, 2, w["impact"]))
+    scope = _distinct(_SCOPE, text) | _distinct(_MECHANISMS, text)
+    criteria.append(CriterionResult("scope", _ratio(len(scope), 2), w["scope"],
+                                    ", ".join(sorted(scope)) or "none found"))
+
+    tips = {
+        "condition": "State the condition as fact, with the evidence found (for example '14 of 60 sampled "
+                     "accounts belonged to leavers').",
+        "criteria": "Name the control or policy requirement that is not met.",
+        "cause": "Explain the cause, so the recommendation can address it.",
+        "impact": "Describe the impact on this system: which data or service, and the effect on "
+                  "confidentiality, integrity, availability or the business.",
+        "scope": "Say which systems, accounts or components are affected, and how many.",
+    }
+    for c in criteria:
+        if c.name in tips and c.score < 0.5:
+            improvements.append(tips[c.name])
+    if not threat:
+        improvements.append("Name the threat: who or what could exploit the weakness.")
+    if not likelihood:
+        improvements.append("Say how likely exploitation is, or record a likelihood rating.")
+
+    r = statement.ratings
+    rated = (("likelihood" in r) + ("impact" in r or "risk" in r)) / 2
+    note = ", ".join(f"{k}={v}" for k, v in r.items()) or "no characterization facets"
+    severe = sorted(_distinct(_SEVERE, text))
+    level = r.get("risk") or r.get("impact")
+    if level and _LOW.match(level) and len(severe) >= 2:
+        rated = min(rated, 0.5)
+        improvements.append(f"Rated '{level}' but describes {', '.join(severe)}; check the rating matches "
+                            "the statement.")
+    elif rated < 1:
+        improvements.append("Record likelihood and impact in the risk's characterizations.")
+    criteria.append(CriterionResult("rating", rated, w["rating"], note))
+
+    if _REMEDY.search(text):
+        improvements.append("Move the remediation out of the risk statement and into a recommendation.")
+    if len(text.split()) < 20:
+        improvements.insert(0, "Risk statement is too brief to explain the risk.")
+
+    return _finish(statement, criteria, improvements, ("vague", "examples"),
+                   placeholder_msg="Replace the placeholder with a real risk statement.")
+
+
+# --- Recommendations ------------------------------------------------------------------------
+
+RECOMMENDATION_WEIGHTS = {
+    "actionable": 0.20, "root_cause": 0.20, "specific": 0.15,
+    "owner": 0.15, "timeline": 0.15, "completion": 0.15,
+}
+_ACTION_VERBS = set("""
+    add apply assign automate block configure conduct create decommission define delete deploy disable document
+    enable encrypt enforce establish implement integrate isolate migrate monitor patch perform reconcile
+    reduce remove replace require restrict retire revoke rotate schedule segment train update upgrade
+    validate verify
+""".split())
+_DIRECTIVE = re.compile(r"\b(should|must|needs? to|is required to|are required to)\s+(be\s+)?\w+", re.I)
+_DATE = re.compile(
+    r"\b(\d{4}-\d{2}-\d{2}|\d{1,2} (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{4}|"
+    r"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{4}|q[1-4] \d{4}|by (end of |the end of )?"
+    r"(q[1-4]|\w+ \d{4})|within \d+ (days?|weeks?|months?))\b",
+    re.I,
+)
+_COMPLETION = re.compile(
+    r"\b(verif(y|ied|ication)|validat(e|ed|ion)|confirm(ed|ation)?|re-?test(ed|ing)?|evidence|"
+    r"demonstrat(e|ed)|closure|close (the|this) (finding|risk)|until|attest(ation)?|sign-?off|"
+    r"report(ed)? (back|to)|screenshots?|export)\b",
+    re.I,
+)
+_CAUSE_CLAUSE = re.compile(
+    r"\b(?:because|due to|as a result of|caused by|root cause(?: is| was)?|owing to|stems? from|"
+    r"result(?:s|ed)? from|attributable to)\b([^.;]*)",
+    re.I,
+)
+
+
+def _starts_with_action(text: str) -> bool:
+    for sentence in re.split(r"(?<=[.;:])\s+", text):
+        first = re.sub(r"[^a-z]", "", sentence.strip().split(" ")[0].lower()) if sentence.strip() else ""
+        if first in _ACTION_VERBS:
+            return True
+    return False
+
+
+def assess_recommendation(statement: Statement) -> Assessment:
+    """Is the recommendation an owned, dated action that fixes the cause and says how closure is shown?"""
+    text = statement.text.strip()
+    w = RECOMMENDATION_WEIGHTS
+    criteria: list[CriterionResult] = []
+    improvements: list[str] = []
+
+    if _starts_with_action(text):
+        criteria.append(CriterionResult("actionable", 1.0, w["actionable"], "starts with an action"))
+    elif _DIRECTIVE.search(text):
+        criteria.append(CriterionResult("actionable", 0.7, w["actionable"], "directive, not imperative"))
+        improvements.append("Lead with the action itself ('Disable ...', 'Configure ...').")
+    else:
+        criteria.append(CriterionResult("actionable", 0.2, w["actionable"], "no clear action"))
+        improvements.append("State a concrete action, starting with a verb ('Disable ...', 'Configure ...').")
+
+    if statement.risk_statement:
+        causes = " ".join(m.group(1) for m in _CAUSE_CLAUSE.finditer(statement.risk_statement))
+        basis = causes or statement.risk_statement
+        words = _term_words(basis)
+        matched = set(words) & _terms(text)
+        score = min(1.0, (len(matched) / len(words) if words else 1.0) / 0.4)
+        criteria.append(CriterionResult("root_cause", score, w["root_cause"],
+                                        f"{len(matched)}/{len(words)} {'cause' if causes else 'risk'} terms"))
+        if score < 0.6:
+            what = "the cause identified in the risk statement" if causes else "the risk statement"
+            improvements.append(f"Address {what} (missing: {_missing(words, matched)}).")
+
+    specific = _distinct(_MECHANISMS, text) | _distinct(_SCOPE, text)
+    criteria.append(CriterionResult("specific", _ratio(len(specific), 2), w["specific"],
+                                    ", ".join(sorted(specific)) or "none found"))
+    if len(specific) < 2:
+        improvements.append("Name the system, setting or process to change.")
+
+    if statement.owner:
+        criteria.append(CriterionResult("owner", 1.0, w["owner"], f"recorded: {statement.owner}"))
+    else:
+        c = _signal("owner", _ROLES, text, 1, w["owner"])
+        criteria.append(c)
+        if c.score < 1:
+            improvements.append("Name who is accountable for the action.")
+
+    if statement.deadline:
+        criteria.append(CriterionResult("timeline", 1.0, w["timeline"], f"recorded: {statement.deadline}"))
+    else:
+        c = _signal("timeline", _DATE, text, 1, w["timeline"])
+        criteria.append(c)
+        if c.score < 1:
+            rating = ", ".join(f"{k} {v}" for k, v in statement.ratings.items())
+            improvements.append("Set a target date in proportion to the risk"
+                                + (f" ({rating})." if rating else "."))
+
+    done = _distinct(_COMPLETION, text)
+    criteria.append(CriterionResult("completion", _ratio(len(done), 1), w["completion"],
+                                    ", ".join(sorted(done)) or "none found"))
+    if not done:
+        improvements.append("Say what evidence will show the action is complete, so the risk can be closed.")
+
+    return _finish(statement, criteria, improvements, ("vague", "weak_actions", "examples"),
+                   placeholder_msg="Replace the placeholder with a real recommendation.")
+
+
+def assess(statement: Statement) -> Assessment:
+    return {
+        RISK_STATEMENT: assess_risk_statement,
+        RECOMMENDATION: assess_recommendation,
+    }.get(statement.kind, assess_implementation)(statement)
