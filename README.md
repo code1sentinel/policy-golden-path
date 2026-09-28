@@ -382,6 +382,38 @@ found": check it, or say in the text how the treatment addresses the risk.
 In the web app, pick **Identified risk** in the health check and list the
 treatments one per line (`Backup policy: Backups are taken daily...`).
 
+#### FAIR-CAM view (prototype)
+
+Each identified risk also gets a FAIR-CAM view, after the FAIR Institute's
+FAIR Controls Analytics Model. It shows what each linked treatment does for
+the loss scenario, and the gaps between them. It is shown alongside the score
+and does not change it, while the approach is tried out.
+
+| Group | Function | Tagged from wording such as |
+| --- | --- | --- |
+| Loss event controls | Avoid | segmentation, private subnets, no internet access |
+| | Deter | warning banners, disciplinary action, background checks |
+| | Resist | MFA, encryption, patching, filtering, dual approval, disabling accounts |
+| | Detect | monitoring, alerting, logging, reconciliation, breach notification |
+| | Respond | isolating hosts, containing, incident response, playbooks |
+| | Limit loss | backups, restores, failover, continuity, insurance |
+| Variance management | Keep controls working | restore tests, control testing, alerts on drift or failed jobs, vulnerability scanning, recertification |
+| Decision support | Policies and standards | policies, standards, training, risk assessment; every linked policy intent |
+
+The gaps come from how controls depend on each other:
+
+- something detects the event, but nothing responds to it (or the reverse);
+- nothing makes the event less likely (avoid, deter or resist);
+- the impact is high, but nothing limits the loss;
+- **nothing checks that the treatments keep working**, which is the gap the
+  layering check cannot see, and the most common one in the seeded register;
+- no policy or standard sets the expectation.
+
+The tags come from wording, so they show what a treatment claims to do, not
+how well it does it. FAIR-CAM itself is built for measuring control
+performance with data; see the FAIR Institute's FAIR-CAM white paper. The
+descriptions here are our own summary.
+
 `examples/risk-register-example.csv` is a seeded register of 15 scenarios:
 well layered risks, an untreated risk, a mislinked treatment, a vague
 risk-based intent, a low risk with heavy treatment, duplicated treatments and
@@ -529,6 +561,7 @@ src/vitals/
   policy.py     policy intents and which statements they apply to
   heuristic.py  offline rubrics for each kind
   control.py    control statements, IM8 style
+  fair_cam.py   FAIR-CAM view of an identified risk's treatments (prototype)
   treatment.py  identified risks against the policy intents and controls that treat them
   report.py     table, JSON, Markdown and OSCAL output
 scripts/build_site.py   builds the browser-only site for GitHub Pages

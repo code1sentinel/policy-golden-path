@@ -25,6 +25,7 @@ from .heuristic import (
     _IMPACT, _LIKELIHOOD, _RISK_BASED, _SCOPE, _SEVERE, _THREAT, _VAGUE, Improvements, _distinct, _finish,
     _term_words, _terms, commitments,
 )
+from . import fair_cam
 from .models import Assessment, CriterionResult, Statement, Treatment
 
 WEIGHTS = {
@@ -326,6 +327,13 @@ def assess_identified_risk(statement: Statement) -> Assessment:
 
     assessment = _finish(statement, criteria, improvements, ("vague", "examples"),
                          placeholder_msg="Describe the identified risk.")
+    # FAIR-CAM view (prototype): shown alongside the score, not part of it.
+    impact = _level(statement.ratings.get("impact")) or level
+    fair = fair_cam.analyse([t for t, _ in relevant], impact,
+                            detectable=not (risk_themes and set(risk_themes) <= _NO_DETECT))
+    for f in findings:
+        f["fair_cam"] = fair["treatments"].get(f["label"], []) if f["relevant"] else []
     assessment.details = {"treatments": findings, "themes": risk_themes,
+                          "fair_cam": {"map": fair["map"], "gaps": fair["gaps"]},
                           "risk_level": _LEVEL_NAMES.get(level) if level else None}
     return assessment

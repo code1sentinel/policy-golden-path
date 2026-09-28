@@ -322,6 +322,19 @@ h3:first-child { margin-top: 0; }
 .badge[data-kind="control-statement"] { color: #E3C9F5; border-color: rgba(227, 201, 245, 0.35); }
 .badge[data-kind="identified-risk"] { color: #F5E3A8; border-color: rgba(245, 227, 168, 0.35); }
 
+/* FAIR-CAM view (prototype) */
+.fc { margin-top: 18px; display: grid; gap: 10px; }
+.fc h3 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.fc__lead { margin: 0; font-size: 12px; color: var(--muted); }
+.fc__title { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.fc__cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.fc__cell { border: 1px solid var(--orange-line); background: var(--surface-raised); border-radius: 8px; padding: 8px 10px; display: grid; gap: 2px; min-width: 0; }
+.fc__cell.is-empty { border-style: dashed; border-color: var(--border); background: transparent; }
+.fc__name { font-size: 12px; font-weight: 700; }
+.fc__items { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
+.fc__cell.is-empty .fc__items { color: var(--muted); }
+.fc__gaps { margin-top: 4px; }
+
 /* Treatments of an identified risk */
 .treatments { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .treatment { border: 1px solid var(--border); background: var(--surface-raised); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
