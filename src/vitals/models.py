@@ -5,12 +5,28 @@ from dataclasses import dataclass, field
 IMPLEMENTATION = "implementation"
 RISK_STATEMENT = "risk-statement"
 RECOMMENDATION = "recommendation"
+IDENTIFIED_RISK = "identified-risk"
 
 KIND_LABELS = {
     IMPLEMENTATION: "Implementation statement",
     RISK_STATEMENT: "Risk statement",
     RECOMMENDATION: "Recommendation",
+    IDENTIFIED_RISK: "Identified risk",
 }
+
+
+@dataclass
+class Treatment:
+    """A policy intent, a control, or both, that is meant to treat an identified risk."""
+
+    label: str
+    policy_intent: str | None = None
+    control_statement: str | None = None
+    control_id: str | None = None
+
+    @property
+    def text(self) -> str:
+        return " ".join(t for t in (self.policy_intent, self.control_statement) if t)
 
 
 @dataclass
@@ -38,6 +54,7 @@ class Statement:
     ratings: dict[str, str] = field(default_factory=dict)  # risk characterization facets, e.g. likelihood
     deadline: str | None = None  # remediation date from the risk deadline or remediation tasks
     owner: str | None = None  # responsible roles or parties recorded on the remediation
+    treatments: list[Treatment] = field(default_factory=list)  # for an identified risk: what treats it
 
     @property
     def targets(self) -> list[tuple[str, str | None]]:
@@ -81,6 +98,7 @@ class Assessment:
     criteria: list[CriterionResult] = field(default_factory=list)
     improvements: list[str] = field(default_factory=list)
     rationale: str = ""
+    details: dict = field(default_factory=dict)  # kind-specific findings, e.g. each treatment's relevance
 
     @property
     def practices(self) -> dict[str, int]:
@@ -109,6 +127,7 @@ class Assessment:
             out.update({"title": s.title, "ratings": s.ratings, "deadline": s.deadline, "owner": s.owner})
             if s.kind == "recommendation":
                 out["risk_title"] = s.risk_title
+        out.update(self.details)
         out.update({
             "confidence": round(self.confidence, 4),
             "practices": self.practices,

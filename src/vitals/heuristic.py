@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
+from .models import IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
 
 
 class Improvements:
@@ -40,7 +40,8 @@ class Improvements:
 
 
 # The practice that wording, placeholders and planned work count against, for each kind.
-WORDING_PRACTICE = {IMPLEMENTATION: "implemented", RISK_STATEMENT: "clarity", RECOMMENDATION: "clarity"}
+WORDING_PRACTICE = {IMPLEMENTATION: "implemented", RISK_STATEMENT: "clarity", RECOMMENDATION: "clarity",
+                    IDENTIFIED_RISK: "clarity"}
 
 # Relative weights. coverage needs a catalog and policy_intent needs a policy
 # intent; when either is missing the others are rescaled to sum to 1.
@@ -349,6 +350,7 @@ _SAY_INSTEAD = {
     IMPLEMENTATION: "what actually happens",
     RISK_STATEMENT: "what was found",
     RECOMMENDATION: "the specific action to take",
+    IDENTIFIED_RISK: "what could happen",
 }
 
 
@@ -758,6 +760,10 @@ def assess_recommendation(statement: Statement) -> Assessment:
 
 
 def assess(statement: Statement) -> Assessment:
+    if statement.kind == IDENTIFIED_RISK:
+        from .treatment import assess_identified_risk  # treatment builds on this module
+
+        return assess_identified_risk(statement)
     return {
         RISK_STATEMENT: assess_risk_statement,
         RECOMMENDATION: assess_recommendation,

@@ -319,6 +319,15 @@ h3:first-child { margin-top: 0; }
 .badge[data-kind="implementation"] { color: #F5C9A8; border-color: rgba(245, 201, 168, 0.35); }
 .badge[data-kind="risk-statement"] { color: #C9D4F5; border-color: rgba(201, 212, 245, 0.35); }
 .badge[data-kind="recommendation"] { color: #CDEBD5; border-color: rgba(205, 235, 213, 0.35); }
+.badge[data-kind="identified-risk"] { color: #F5E3A8; border-color: rgba(245, 227, 168, 0.35); }
+
+/* Treatments of an identified risk */
+.treatments { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.treatment { border: 1px solid var(--border); background: var(--surface-raised); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.treatment__head { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-weight: 700; }
+.treatment__why { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.treatment.is-unlinked { border-color: var(--orange-line); }
+.chip { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text); }
 .result__item { min-width: 0; display: flex; flex-direction: column; }
 .result__title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .result__file { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -370,7 +379,7 @@ h3:first-child { margin-top: 0; }
 /* The policy path ---------------------------------------------------------- */
 
 .section-title--first { margin-top: 0; }
-.path { list-style: none; margin: 0 0 30px; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; counter-reset: stage; }
+.path { list-style: none; margin: 0 0 30px; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; counter-reset: stage; }
 .path__stage {
   counter-increment: stage; position: relative; display: flex; flex-direction: column; gap: 4px;
   background: var(--surface); border: 1px solid var(--border-soft); border-top: 3px solid var(--orange);

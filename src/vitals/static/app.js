@@ -9,16 +9,19 @@ const KIND_LABELS = {
   "implementation": "Implementation statement",
   "risk-statement": "Risk statement",
   "recommendation": "Recommendation",
+  "identified-risk": "Identified risk",
 };
 const BADGE_LABELS = {
   "implementation": "Implementation",
   "risk-statement": "Risk",
   "recommendation": "Recommendation",
+  "identified-risk": "Identified risk",
 };
 const TEXT_LABELS = {
   "implementation": "Implementation statement",
   "risk-statement": "Risk statement",
   "recommendation": "Recommendation",
+  "identified-risk": "Identified risk",
 };
 const CRITERION_LABELS = {
   policy_intent: "Policy intent",
@@ -43,6 +46,12 @@ const EXAMPLES = {
     text: "Integrate Workday with Okta so that a termination disables the user's Okta account and removes the payment approver role automatically within 4 hours. Verify closure by re-sampling 60 accounts.",
     risk_statement: "14 of 60 sampled Okta accounts belonged to leavers because HR leaver notifications are processed manually by the IAM team.",
     risk: "high", owner: "IAM team lead", deadline: "",
+  },
+  "identified-risk": {
+    title: "R-07 Ransomware",
+    text: "Ransomware delivered by phishing could encrypt the finance file servers and their online backups, halting payments processing for several days.",
+    treatments: "Backup policy: Critical systems are backed up at a frequency commensurate with their criticality.\nEmail security standard: Inbound email is filtered for malicious attachments and links, and staff complete phishing awareness training annually.\nAccess policy: User access is reviewed quarterly.",
+    likelihood: "high", impact: "very high",
   },
 };
 
@@ -255,10 +264,22 @@ function renderSingle(a) {
     el("p", { class: "verdict__practices", text: adoptedLine(a.practices) }),
     el("h3", { text: `Areas for improvement (${a.improvements.length})` }),
     improvementsList(a.improvements),
+    a.treatments ? el("h3", { text: `Treatments (${a.treatments.length})` }) : null,
+    a.treatments ? treatmentList(a.treatments) : null,
     el("h3", { text: "Best practices" }),
     practiceList(a.criteria, a.kind),
     el("p", { class: "rationale", text: a.rationale }),
   );
+}
+
+function treatmentList(items) {
+  if (!items.length) return el("p", { class: "none", text: "No policy intent or control is linked to this risk." });
+  return el("ul", { class: "treatments" }, items.map((t) =>
+    el("li", { class: `treatment${t.relevant ? "" : " is-unlinked"}` },
+      el("div", { class: "treatment__head" }, t.label,
+        t.relevant ? t.types.map((k) => el("span", { class: "chip", text: k })) : el("span", { class: "chip", text: "no link found" })),
+      el("div", { class: "treatment__why", text: [t.policy_intent, t.control_statement].filter(Boolean).join(" · ") }),
+      t.relevant ? el("div", { class: "treatment__why", text: t.why }) : null)));
 }
 
 // ---------------------------------------------------------------- single input
@@ -431,6 +452,7 @@ function resultRow(a, index) {
     body.append(
       el("div", {}, el("h3", { text: "Areas for improvement" }), improvementsList(a.improvements)),
       el("div", {}, el("h3", { text: "Best practices" }), practiceList(a.criteria, a.kind)),
+      a.treatments ? el("div", { class: "full" }, el("h3", { text: "Treatments" }), treatmentList(a.treatments)) : null,
       el("div", { class: "full" }, el("h3", { text: "Text assessed" }), el("pre", { class: "quote", text: a.text || "(empty)" })),
       el("p", { class: "rationale full", text: a.rationale }),
     );

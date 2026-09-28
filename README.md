@@ -1,6 +1,6 @@
 # Vitals
 
-**Vital signs for your controls.** A health check for OSCAL control statements, risk statements and recommendations.
+**Vital signs for your controls.** A health check for identified risks, OSCAL control statements, risk statements and recommendations.
 
 Policy development follows one path, from what the organization commits to,
 through how it is done, to where it falls short and how to fix it. Each stage
@@ -10,6 +10,7 @@ them:
 
 | Stage | What it says | Where it lives | Checked for |
 | --- | --- | --- | --- |
+| 0. Identified risk | What could go wrong (risk-based approach) | your risk register, as CSV or Excel | being treated by the policy intents and controls linked to it, taken together: relevant, layered, proportionate to its rating, with a measurable limit |
 | 1. Policy intent | What the organization commits to | your policy file (input) | |
 | 2. Control requirement | What the control demands | OSCAL catalog (input) | |
 | 3. Implementation statement | How it is met today | SSP, component definition | meeting stages 1 and 2, and being specific, owned, scheduled and evidenced |
@@ -209,6 +210,18 @@ Optional columns add context: `control id`, `control requirement` (the control
 text, when no catalog is given), `title` (labels the row's risk and
 recommendation), `likelihood`, `impact`, `owner` and `target date`.
 
+For a risk-based approach, add `identified risk` (a risk from your risk
+register) and `risk id`. A row then says "this policy intent and control
+statement treat this risk". Several controls often share one risk, so rows
+with the same `risk id` (or the same risk text) are grouped: the risk is
+assessed once, against all their policy intents and control statements
+together. The risk text only needs to be on one of its rows.
+
+| risk id | identified risk | policy intent | control statement | … |
+| --- | --- | --- | --- | --- |
+| R-07 | Ransomware could encrypt the finance file servers and their backups, halting payments for days. | Backups of critical systems are taken daily, kept offline, and restorable within 24 hours. | Veeam backs up the finance servers nightly to immutable storage; restores are tested quarterly. | |
+| R-07 | | Inbound email is filtered for malicious attachments and links. | Defender quarantines malicious attachments; the SOC reviews the quarantine daily. | |
+
 Column names are not case-sensitive; spaces, hyphens and underscores are
 interchangeable, and common alternatives work too (`implementation
 statement`, `remediation`, `deadline`).
@@ -304,6 +317,33 @@ to move into a recommendation.
 | owner | 15% | Is someone accountable? (from the text, or `responsible-roles`) |
 | timeline | 15% | Is there a target date? (from the text, task `timing` or the risk `deadline`) The improvement quotes the risk rating so the date can be set in proportion to it. |
 | completion | 15% | What evidence will show it is done, so the risk can be closed? |
+
+### Identified risks
+
+An identified risk is checked against **all** the policy intents and controls
+linked to it, taken together. One control that only prevents is not marked
+down when another one recovers.
+
+| Criterion | Weight | Asks |
+| --- | --- | --- |
+| treated | 25% | Does at least one linked treatment address this risk? Each treatment that does not is flagged as a link to check. No treatment at all means the risk is untreated, or should be recorded as accepted. |
+| layered | 25% | Do the treatments together prevent it; recover from it when the impact is disruptive (outage, encryption, halted service); and detect it when the risk is high? |
+| proportionate | 15% | Does a medium or high risk get at least one firm commitment? Does a risk-based intent ("commensurate with criticality") say which tier this risk falls in? Is a low risk carrying heavy or duplicated treatment? |
+| tolerance | 15% | Does a treatment set a measurable limit: how often, how fast, how long? |
+| described | 10% | Does the risk name the threat, what is exposed, and the impact? |
+| rated | 10% | Are likelihood and impact recorded? |
+
+Whether a treatment addresses a risk is decided by risk themes (ransomware,
+phishing, unauthorized access, data disclosure, vulnerabilities, outage,
+third parties, fraud, undetected activity), each with the words that signal
+it in a risk and the treatments that address it. For example, ransomware is
+treated by backups, restores, EDR and email filtering. When no theme applies,
+shared wording decides. Each treatment is labelled with what it does:
+prevent, detect, respond or recover. A missed link is shown as "no link
+found": check it, or say in the text how the treatment addresses the risk.
+
+In the web app, pick **Identified risk** in the health check and list the
+treatments one per line (`Backup policy: Backups are taken daily...`).
 
 ## Policy intent
 
@@ -444,6 +484,7 @@ src/vitals/
   catalog.py    control and statement-part text out of catalogs
   policy.py     policy intents and which statements they apply to
   heuristic.py  offline rubrics for each kind
+  treatment.py  identified risks against the policy intents and controls that treat them
   report.py     table, JSON, Markdown and OSCAL output
 scripts/build_site.py   builds the browser-only site for GitHub Pages
 examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies and assessment results

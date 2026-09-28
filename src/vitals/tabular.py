@@ -12,8 +12,15 @@ A row yields up to three items to assess, checked along the path: the control
 statement and the risk statement against the row's policy intent, and the
 recommendation against the row's risk statement.
 
+Rows naming the same identified risk (by risk id, or by the same text) are
+grouped: the risk is assessed once, against the policy intents and control
+statements of all its rows together, since several controls often share one
+risk.
+
 Optional columns add context:
 
+    identified risk     a risk from the risk register that this row's policy intent and control treat
+    risk id             links rows that treat the same risk, e.g. R-01
     control id          e.g. ac-2
     control requirement the control text, when no catalog is supplied
     title               a name for the row, used to label its risk and recommendation
@@ -32,15 +39,16 @@ import io
 import re
 from datetime import date, timedelta
 
-from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
+from .models import IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
 
 REQUIRED = ("policy_intent", "control_statement", "risk_statement", "recommendation")
-OPTIONAL = ("control_id", "control_requirement", "title", "likelihood", "impact", "owner", "target_date")
+OPTIONAL = ("identified_risk", "risk_id", "control_id", "control_requirement", "title", "likelihood", "impact", "owner", "target_date")
 COLUMNS = REQUIRED + OPTIONAL
 
 LABELS = {
     "policy_intent": "policy intent", "control_statement": "control statement", "risk_statement": "risk statement",
-    "recommendation": "recommendation", "control_id": "control id", "control_requirement": "control requirement",
+    "recommendation": "recommendation", "identified_risk": "identified risk", "risk_id": "risk id",
+    "control_id": "control id", "control_requirement": "control requirement",
     "title": "title", "likelihood": "likelihood", "impact": "impact", "owner": "owner", "target_date": "target date",
 }
 
@@ -54,6 +62,8 @@ _ALIASES = {
     "control": "control_id", "control_ref": "control_id",
     "requirement": "control_requirement", "control_text": "control_requirement",
     "deadline": "target_date", "due_date": "target_date", "date": "target_date",
+    "risk_description": "identified_risk", "register_risk": "identified_risk", "risk_register": "identified_risk",
+    "risk_ref": "risk_id", "risk_reference": "risk_id",
 }
 
 EXAMPLE_ROWS = [
@@ -72,6 +82,9 @@ EXAMPLE_ROWS = [
         "recommendation": "Integrate Workday with Okta so leaver notices disable accounts automatically instead of "
                           "being processed manually. The IAM team lead owns this. Verify closure by re-sampling "
                           "60 accounts.",
+        "identified_risk": "Former employees, or attackers using their credentials, could use accounts that are "
+                           "not removed to approve fraudulent payments.",
+        "risk_id": "R-01",
         "control_id": "ac-2", "title": "Leaver accounts", "likelihood": "high", "impact": "high",
         "owner": "IAM team lead", "target_date": "2026-11-30",
     },
@@ -80,6 +93,8 @@ EXAMPLE_ROWS = [
         "control_statement": "Logs are reviewed periodically as needed.",
         "risk_statement": "Audit logs are not always reviewed which could be a risk.",
         "recommendation": "Consider improving log review where possible.",
+        "identified_risk": "Misuse of payment approver accounts could go undetected.",
+        "risk_id": "R-01",
         "control_id": "au-6", "title": "Audit review",
     },
 ]
@@ -100,7 +115,7 @@ def template_xlsx() -> bytes:
     from .xlsx import write_rows
 
     rows = [[LABELS[c] for c in COLUMNS]] + [[row.get(c, "") for c in COLUMNS] for row in EXAMPLE_ROWS]
-    widths = [45, 60, 60, 50, 12, 40, 18, 11, 11, 16, 12]
+    widths = [45, 60, 60, 50, 45, 10, 12, 40, 18, 11, 11, 16, 12]
     return write_rows(rows, sheet_name="Policies", widths=widths)
 
 
@@ -163,8 +178,11 @@ def parse_csv(content: str, source: str = "csv") -> list[Statement]:
         )
 
     out: list[Statement] = []
+    risks: dict[str, Statement] = {}
     for n, raw in enumerate(reader, start=2):
         row = {fields[k]: (v or "").strip() for k, v in raw.items() if k in fields}
+        if row.get("identified_risk") or row.get("risk_id"):
+            _link_risk(row, n, source, risks, out)
         if not any(row.get(c) for c in ("control_statement", "risk_statement", "recommendation")):
             continue  # nothing to assess on this row
         label = row.get("title") or f"Row {n}"
@@ -191,7 +209,39 @@ def parse_csv(content: str, source: str = "csv") -> list[Statement]:
                 owner=row.get("owner") or None, deadline=row.get("target_date") or None,
                 control_id=control, source=source,
             ))
+    for risk in risks.values():
+        if not risk.text:
+            raise ValueError(f"risk id {risk.title} has no identified risk text in any of its rows")
     if not out:
         raise ValueError("CSV has the right columns but no statements to assess: fill in at least one of "
-                         "control statement, risk statement or recommendation")
+                         "control statement, risk statement, recommendation or identified risk")
     return out
+
+
+def _link_risk(row: dict, n: int, source: str, risks: dict[str, Statement], out: list[Statement]) -> None:
+    """Add this row's policy intent and control statement as a treatment of its identified risk."""
+    text = row.get("identified_risk", "")
+    key = (row.get("risk_id") or " ".join(text.lower().split())).lower()
+    risk = risks.get(key)
+    if risk is None:
+        risk = Statement(control_id="", text=text, source=source, uuid=f"{source}:risk-{len(risks) + 1}",
+                         kind=IDENTIFIED_RISK, title=row.get("risk_id") or _short(text))
+        risks[key] = risk
+        out.append(risk)
+    elif text and not risk.text:
+        risk.text = text
+    for k in ("likelihood", "impact"):
+        if row.get(k) and k not in risk.ratings:
+            risk.ratings[k] = row[k]
+    if row.get("policy_intent") or row.get("control_statement"):
+        risk.treatments.append(Treatment(
+            label=row.get("title") or row.get("control_id") or f"Row {n}",
+            policy_intent=row.get("policy_intent") or None,
+            control_statement=row.get("control_statement") or None,
+            control_id=row.get("control_id") or None,
+        ))
+
+
+def _short(text: str, words: int = 8) -> str:
+    parts = text.split()
+    return " ".join(parts[:words]) + ("…" if len(parts) > words else "")

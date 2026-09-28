@@ -1,7 +1,7 @@
 import pytest
 
 from vitals import heuristic
-from vitals.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from vitals.models import IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
 from vitals.tabular import REQUIRED, parse_csv, template
 
 HEADER = "policy intent,control statement,risk statement,recommendation"
@@ -14,8 +14,10 @@ def test_template_has_the_four_columns_first():
 
 def test_each_row_follows_the_policy_path():
     items = parse_csv(template(), source="t.csv")
-    assert [s.kind for s in items] == [IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION] * 2
-    control, risk, rec = items[:3]
+    assert [s.kind for s in items] == [IDENTIFIED_RISK] + [IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION] * 2
+    identified, control, risk, rec = items[:4]
+    # both rows link risk R-01, so it is assessed once against both rows' intents and controls
+    assert identified.title == "R-01" and [t.label for t in identified.treatments] == ["Leaver accounts", "Audit review"]
     # the control and risk statements carry the row's policy intent; the recommendation carries its risk
     assert control.policy_intent == risk.policy_intent and control.policy_intent.startswith("User access")
     assert rec.risk_statement == risk.text
@@ -28,7 +30,7 @@ def test_each_row_follows_the_policy_path():
 def test_template_example_rows_score_strong_and_weak():
     items = parse_csv(template())
     scores = [heuristic.assess(s).confidence for s in items]
-    assert min(scores[:3]) > 0.8 and max(scores[3:]) < 0.35
+    assert min(scores[1:4]) > 0.8 and max(scores[4:]) < 0.35
 
 
 def test_empty_cells_and_blank_rows_are_skipped():

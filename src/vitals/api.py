@@ -11,11 +11,12 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import re
 
 from . import __version__, report
 from .catalog import Catalog
 from .guides import ADOPTED, GUIDES, PARTLY, STATUS_LABELS
-from .models import KIND_LABELS, RECOMMENDATION, RISK_STATEMENT, Statement
+from .models import IDENTIFIED_RISK, KIND_LABELS, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
 from .policy import parse_policies
 from .service import assess_all, parse_document, prepare
 
@@ -38,6 +39,37 @@ def _text(value, name: str, limit: int = 20000) -> str:
     return value.strip()
 
 
+_LABELLED = re.compile(r"^\s*([^:.]{1,60}):\s+(\S.*)$")
+MAX_TREATMENTS = 50
+
+
+def treatments(value) -> list[Treatment]:
+    """Treatments of an identified risk: text with one per line ("Name: text" to label it), or a list of
+    strings or of {"label", "policy_intent", "control_statement", "control_id"} objects."""
+    if value in (None, ""):
+        return []
+    if isinstance(value, str):
+        value = [line for line in value.splitlines() if line.strip()]
+    if not isinstance(value, list):
+        raise BadRequest("'treatments' must be text or a list")
+    if len(value) > MAX_TREATMENTS:
+        raise BadRequest(f"at most {MAX_TREATMENTS} treatments per risk")
+    out = []
+    for i, entry in enumerate(value, start=1):
+        if isinstance(entry, dict):
+            t = {k: _text(entry.get(k), k) for k in ("label", "policy_intent", "control_statement", "control_id")}
+            if not (t["policy_intent"] or t["control_statement"]):
+                raise BadRequest(f"treatment {i} needs a policy_intent or control_statement")
+            out.append(Treatment(t["label"] or t["control_id"] or f"Treatment {i}", t["policy_intent"] or None,
+                                 t["control_statement"] or None, t["control_id"] or None))
+            continue
+        line = _text(entry, f"treatments[{i}]")
+        m = _LABELLED.match(line)
+        label, text = (m.group(1).strip(), m.group(2).strip()) if m else (f"Treatment {i}", line)
+        out.append(Treatment(label, policy_intent=text))
+    return out
+
+
 def single_statement(item: dict) -> Statement:
     if not isinstance(item, dict):
         raise BadRequest("'item' must be an object")
@@ -50,6 +82,10 @@ def single_statement(item: dict) -> Statement:
     if not t["text"]:
         raise BadRequest("enter the text to assess")
     ratings = {k: t[k] for k in ("likelihood", "impact", "risk") if t[k]}
+    if kind == IDENTIFIED_RISK:
+        return Statement(control_id="", text=t["text"], source="single", kind=kind,
+                         title=t["title"] or KIND_LABELS[kind], ratings=ratings,
+                         treatments=treatments(item.get("treatments")))
     return Statement(
         control_id=t["control_id"], text=t["text"], source="single", uuid=None,
         statement_id=t["statement_id"] or None, component=t["component"] or None,

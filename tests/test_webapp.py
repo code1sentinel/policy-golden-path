@@ -45,7 +45,7 @@ def test_serves_page_assets_and_config(server):
     config = json.loads(get(server + "/api/config")[2])
     assert config["kinds"]["risk-statement"] == "Risk statement" and "engines" not in config
     guides = json.loads(get(server + "/api/guides")[2])
-    assert set(guides["guides"]) == {"implementation", "risk-statement", "recommendation"}
+    assert set(guides["guides"]) == {"identified-risk", "implementation", "risk-statement", "recommendation"}
     assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
     status, headers, body = get(server + "/api/template.xlsx")
     assert body[:2] == b"PK" and "vitals-template.xlsx" in headers["Content-Disposition"]
@@ -99,10 +99,10 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
     })
     assert status == 200
     files = {f["name"]: f for f in data["files"]}
-    assert files["ssp-example.json"]["count"] == 4 and files["rows.csv"]["count"] == 6
+    assert files["ssp-example.json"]["count"] == 4 and files["rows.csv"]["count"] == 7
     assert "not valid JSON" in files["broken.json"]["error"]
     assert "add it as the catalog" in files["catalog-excerpt.json"]["error"]
-    assert data["summary"]["total"] == 14
+    assert data["summary"]["total"] == 15
     assert {a["file"] for a in data["assessments"]} == {"ssp-example.json", "assessment-results-example.json",
                                                         "rows.csv"}
     au6 = next(a for a in data["assessments"] if a["item"] == "au-6 [Splunk]")
@@ -141,7 +141,7 @@ def test_batch_reports_unreadable_workbook(server):
     code, data = post(server, {"mode": "batch", "documents": [doc,
                                                               {"name": "rows.csv", "content": template()}]})
     assert code == 200
-    assert "old-style .xls" in data["files"][0]["error"] and data["files"][1]["count"] == 6
+    assert "old-style .xls" in data["files"][0]["error"] and data["files"][1]["count"] == 7
 
 
 def test_cli_accepts_xlsx(tmp_path, capsys):
@@ -151,7 +151,7 @@ def test_cli_accepts_xlsx(tmp_path, capsys):
     path = tmp_path / "policies.xlsx"
     path.write_bytes(template_xlsx())
     assert main([str(path), "-f", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 6
+    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 7
 
 
 def test_cli_accepts_csv(tmp_path, capsys):
@@ -160,4 +160,4 @@ def test_cli_accepts_csv(tmp_path, capsys):
     path = tmp_path / "rows.csv"
     path.write_text(template())
     assert main([str(path), "-f", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 6
+    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 7

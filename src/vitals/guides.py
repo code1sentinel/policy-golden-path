@@ -8,7 +8,7 @@ it, and a weak and a strong example.
 
 from __future__ import annotations
 
-from .models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from .models import IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
 
 # Criterion score at or above which a practice counts as adopted, or partly adopted.
 ADOPTED = 0.8
@@ -34,6 +34,68 @@ def _p(title: str, why: str, how: str, weak: str, strong: str) -> dict:
 
 
 GUIDES: dict[str, dict] = {
+    IDENTIFIED_RISK: {
+        "title": "Identified risks",
+        "summary": "In a risk-based approach, policy starts from risk. Each identified risk should be treated by "
+                   "the policy intents and controls linked to it, taken together, and in proportion to its rating.",
+        "practices": {
+            "described": _p(
+                "Describe the risk",
+                "A risk that is not clearly described cannot be matched to a treatment.",
+                "Name the threat or cause, what is exposed, and the impact in business terms.",
+                "Cyber risk.",
+                "Ransomware delivered by phishing could encrypt the finance file servers and their backups, "
+                "halting payments for several days.",
+            ),
+            "rated": _p(
+                "Rate it",
+                "The rating sets how strong the treatment needs to be.",
+                "Record likelihood and impact, or an overall risk rating, from your risk methodology.",
+                "No rating.",
+                "Likelihood high, impact high.",
+            ),
+            "treated": _p(
+                "Link the treatments that address it",
+                "An untreated risk is a gap in policy; a treatment linked to the wrong risk is false comfort.",
+                "Link every policy intent and control that treats the risk. Several controls can share one risk. "
+                "If nothing treats it, record the risk as accepted.",
+                "Ransomware risk linked only to the user access review policy.",
+                "Ransomware risk linked to the backup policy, the email filtering standard and the EDR control.",
+            ),
+            "layered": _p(
+                "Layer the treatments",
+                "Prevention fails sometimes. A disruptive risk needs a way back, and a high risk needs to be seen "
+                "when it happens.",
+                "Across all linked treatments, cover prevent, and also recover when the impact is disruptive, "
+                "and detect when the risk is high.",
+                "Staff complete phishing awareness training.",
+                "Email is filtered and staff trained (prevent), EDR alerts the SOC (detect), and offline backups "
+                "are restore-tested quarterly (recover).",
+            ),
+            "proportionate": _p(
+                "Treat in proportion",
+                "Under-treating a high risk leaves exposure; over-treating a low one wastes effort.",
+                "Give a medium or high risk at least one treatment with a firm commitment. For a risk-based "
+                "intent, say which tier the risk falls in. Question duplicate or heavy treatment of a low risk.",
+                "Critical systems are backed up at a frequency commensurate with their criticality.",
+                "Tier 1 systems, which include the finance file servers, are backed up daily.",
+            ),
+            "tolerance": _p(
+                "Set a measurable limit",
+                "A limit turns the treatment into something that can be tested against the risk.",
+                "State how often, how fast or how long: a recovery time, a patch window, a review frequency.",
+                "Backups are taken regularly.",
+                "Services are restored within 24 hours, from backups taken daily and kept offline.",
+            ),
+            "clarity": _p(
+                "Keep it clear",
+                "Vague wording hides what could actually happen.",
+                "Avoid 'as needed' and open-ended 'such as' lists; say what the risk is.",
+                "Various cyber threats such as malware etc.",
+                "Ransomware delivered by phishing email.",
+            ),
+        },
+    },
     IMPLEMENTATION: {
         "title": "Implementation statements",
         "summary": "An implementation statement shows an assessor how a control is met today: who does what, "

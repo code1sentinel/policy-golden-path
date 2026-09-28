@@ -19,7 +19,7 @@
         <div>
           <h1 class="brand__name">Vitals</h1>
           <p class="local-note" data-browser-only hidden>Runs in your browser: your files never leave this device.</p>
-          <p class="brand__tag">Vital signs for your controls: health checks for implementation statements, risk statements and recommendations, from policy intent to practice.</p>
+          <p class="brand__tag">Vital signs for your controls: health checks for identified risks, implementation statements, risk statements and recommendations, from policy intent to practice.</p>
         </div>
       </div>
     </div>
@@ -65,10 +65,11 @@
             <label class="kind"><input type="radio" name="kind" value="implementation" checked><span>Implementation statement</span></label>
             <label class="kind"><input type="radio" name="kind" value="risk-statement"><span>Risk statement</span></label>
             <label class="kind"><input type="radio" name="kind" value="recommendation"><span>Recommendation</span></label>
+            <label class="kind"><input type="radio" name="kind" value="identified-risk"><span>Identified risk</span></label>
           </fieldset>
 
           <div class="row">
-            <label class="field">
+            <label class="field" data-for="implementation risk-statement recommendation">
               <span>Control ID</span>
               <input name="control_id" placeholder="ac-2" autocomplete="off">
             </label>
@@ -76,8 +77,8 @@
               <span>Statement part <em>optional</em></span>
               <input name="statement_id" placeholder="ac-2_smt.j" autocomplete="off">
             </label>
-            <label class="field" data-for="risk-statement recommendation">
-              <span>Title <em>optional</em></span>
+            <label class="field" data-for="risk-statement recommendation identified-risk">
+              <span>Title or risk ID <em>optional</em></span>
               <input name="title" autocomplete="off">
             </label>
           </div>
@@ -99,7 +100,12 @@
               <textarea name="policy_intent" rows="3" placeholder="What your policy says this control must achieve"></textarea>
             </label>
 
-            <div class="row" data-for="risk-statement">
+            <label class="field" data-for="identified-risk">
+              <span>Policy intents and controls that treat this risk</span>
+              <textarea name="treatments" rows="6" placeholder="One per line. Optionally start with a name and a colon, e.g.&#10;Backup policy: Backups are taken daily and kept offline."></textarea>
+            </label>
+
+            <div class="row" data-for="risk-statement identified-risk">
               <label class="field">
                 <span>Likelihood</span>
                 <select name="likelihood">
@@ -252,6 +258,11 @@
       <p class="guide-summary">Policy development follows one path: each stage has to carry the intent of the one before it. Vitals checks each stage, and the links between them.</p>
       <ol class="path">
         <li class="path__stage">
+          <span class="path__name">Identified risk</span>
+          <span class="path__what">What could go wrong, for a risk-based approach</span>
+          <span class="path__check">Checked against the policy intents and controls that treat it</span>
+        </li>
+        <li class="path__stage">
           <span class="path__name">Policy intent</span>
           <span class="path__what">What the organization commits to</span>
           <span class="path__check">Your input: a policy file or intent</span>
@@ -283,6 +294,7 @@
         <button type="button" class="kind-btn" data-guide="implementation" aria-pressed="true">Implementation statements</button>
         <button type="button" class="kind-btn" data-guide="risk-statement" aria-pressed="false">Risk statements</button>
         <button type="button" class="kind-btn" data-guide="recommendation" aria-pressed="false">Recommendations</button>
+        <button type="button" class="kind-btn" data-guide="identified-risk" aria-pressed="false">Identified risks</button>
       </div>
       <p id="guide-summary" class="guide-summary"></p>
       <div id="guide-list" class="guide-list"></div>
