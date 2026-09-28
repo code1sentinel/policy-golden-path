@@ -22,14 +22,14 @@ from __future__ import annotations
 import re
 
 from .heuristic import (
-    _IMPACT, _LIKELIHOOD, _RISK_BASED, _SCOPE, _SEVERE, _THREAT, Improvements, _distinct, _finish,
+    _IMPACT, _LIKELIHOOD, _RISK_BASED, _SCOPE, _SEVERE, _THREAT, _VAGUE, Improvements, _distinct, _finish,
     _term_words, _terms, commitments,
 )
 from .models import Assessment, CriterionResult, Statement, Treatment
 
 WEIGHTS = {
-    "described": 0.10, "rated": 0.10, "treated": 0.25,
-    "layered": 0.25, "proportionate": 0.15, "tolerance": 0.15,
+    "described": 0.10, "rated": 0.10, "treated": 0.20,
+    "layered": 0.30, "proportionate": 0.15, "tolerance": 0.15,
 }
 
 
@@ -60,14 +60,16 @@ THEMES: dict[str, tuple[re.Pattern, re.Pattern]] = {
             r"leaver|access (creep|rights)|impersonat|brute.?force|takeover"),
         _re(r"access review|review(ed|s)? (of )?(user )?access|recertif|mfa|multi-factor|least privilege|"
             r"privileged access|pam\b|joiner|mover|leaver|deprovision|disabl|revok|remov(e|ed|al) of access|"
-            r"password|passphrase|sso|role-based|rbac|account|"
+            r"password|passphrase|sso|role-based|rbac|account|sign-?ins?|log-?ins?|log-?ons?|impossible.travel|"
+            r"anomalous (sign|log|access)|"
             r"access[^.]{0,40}(remov|revok|disabl|review|grant|approv)|(remov|revok|disabl)\w*[^.]{0,30}access"),
     ),
     "data disclosure": (
         _re(r"data (breach|leak|loss|exfiltration|disclosure)|disclos|exfiltrat|leak|personal data|customer data|"
             r"cardholder|confidential|sensitive data"),
         _re(r"encrypt|dlp|data loss prevention|classif|mask|tokeni[sz]|retention|dispos|need.to.know|"
-            r"access (control|review)|least privilege"),
+            r"access (control|review)|least privilege|clean desk|shred|secure (print|disposal)|print release|"
+            r"confidential (waste|documents?)"),
     ),
     "vulnerabilities": (
         _re(r"vulnerab|unpatched|exploit|zero.day|misconfigur|outdated|end.of.life|eol\b|legacy"),
@@ -90,6 +92,12 @@ THEMES: dict[str, tuple[re.Pattern, re.Pattern]] = {
         _re(r"segregation of duties|separation of duties|dual (control|approval)|four.eyes|maker.checker|"
             r"approv|reconcil|limit"),
     ),
+    "key people": (
+        _re(r"key.person|only (one |an? )?(engineer|person|administrator|admin|developer|expert)|single person|"
+            r"loss of (key )?(staff|people|knowledge)|losing (the |our )?(only|key)|resign|turnover|succession"),
+        _re(r"cross-?train|succession|deputy|backup (staff|person|engineer)|second (engineer|person|administrator)|"
+            r"runbook|documented procedure|knowledge (transfer|base)"),
+    ),
     "undetected activity": (
         _re(r"undetected|unnoticed|without (being )?detect|no (visibility|monitoring|logging)|go(es)? unnoticed"),
         _re(r"log|monitor|siem|alert|detect|review(ed)? (of )?(logs?|events?)|audit trail|soc\b"),
@@ -99,18 +107,29 @@ THEMES: dict[str, tuple[re.Pattern, re.Pattern]] = {
 # How a treatment acts on a risk.
 TREATMENT_TYPES: dict[str, re.Pattern] = {
     "prevent": _re(r"prevent|block|restrict|enforc|mfa|multi-factor|encrypt|patch|harden|least privilege|"
-                   r"segregat|separat|allowlist|filter|disabl|revok|deprovision|remov|approv|train|awareness|"
-                   r"segment|limit|deny|lock"),
-    "detect": _re(r"detect|monitor|log|alert|siem|review|scan|audit|reconcil|recertif|inspect|test(ed|s|ing)? "
+                   r"segregat|separat|allowlist|filter|disabl|revok|deprovision|remov|approv|train|awareness|shred|"
+                   r"segment|limit|deny|lock|due diligence|before (onboarding|use|go-live|deployment)|vett|"
+                   r"contracts? require|only (with|by|when|after|to)|hold|redundan|multi-(region|az|site)|"
+                   r"high availability|cross-?train|succession"),
+    "detect": _re(r"detect|monitor|log|alert|siem|review|scan|audit|reconcil|recertif|inspect|checks?\b|checked|"
+                  r"test(ed|s|ing)? "
                   r"(controls?|for)"),
     "respond": _re(r"incident response|respond|contain|isolat|escalat|notif|playbook|runbook|investigat"),
     "recover": _re(r"backups?|backed up|restor|recover|failover|redundan|continuity|disaster recovery|rto|rpo|"
-                   r"resilien|rebuild"),
+                   r"resilien|rebuild|runbook"),
 }
 
 # Impacts that need a way back, not only prevention.
 _DISRUPTIVE = _re(r"outage|downtime|unavailab|disrupt|halt|stop|encrypt|destroy|wipe|delet|ransomware|"
-                  r"cannot (operate|process|trade)|several (hours|days)|days|disaster")
+                  r"cannot (operate|process|trade)|several (hours|days)|days|weeks|disaster|offline|delay")
+# What a risk puts at stake, beyond the shared scope words.
+_ASSETS = _re(r"portal|website|app(lication)?s?\b|platform|network|cluster|file shares?|email|mailbox|microsoft 365|"
+              r"m365|cloud|storage|data(base)?s?\b|personal data|records?|payments?|payroll|systems?|services?|"
+              r"printers?|documents?|premises|office|data cent(er|re)|settlement|finance|customers?|suppliers?")
+_HARM = _re(r"steal|stolen|theft|read|expos|leak|lose|loss|delay|damage|offline|halt|disclos|fraudulent|"
+            r"encrypt|destroy|misuse|breach")
+# Themes where detection is not a meaningful treatment.
+_NO_DETECT = {"key people"}
 # A risk-based principle with no values ("backed up at a frequency commensurate with criticality").
 _PRINCIPLE = re.compile(_RISK_BASED.pattern + r"|\b(commensurate with|proportionate to|in proportion to|"
                         r"based on (their|its|the) (criticality|classification|sensitivity|risk))", re.I)
@@ -188,8 +207,8 @@ def assess_identified_risk(statement: Statement) -> Assessment:
 
     # described: threat or cause, what is affected, and the impact.
     threat = _distinct(_THREAT, text) | set(risk_themes)
-    affected = _distinct(_SCOPE, text)
-    impact = _distinct(_IMPACT, text) | {m for m in _distinct(_DISRUPTIVE, text)}
+    affected = _distinct(_SCOPE, text) | _distinct(_ASSETS, text)
+    impact = _distinct(_IMPACT, text) | _distinct(_DISRUPTIVE, text) | _distinct(_HARM, text)
     parts = [bool(threat), bool(affected), bool(impact)]
     criteria.append(CriterionResult("described", sum(parts) / 3, WEIGHTS["described"],
                                     f"threat {'named' if threat else 'missing'}, affected "
@@ -241,7 +260,7 @@ def assess_identified_risk(statement: Statement) -> Assessment:
     needed = ["prevent"]
     if _DISRUPTIVE.search(text):
         needed.append("recover")
-    if level == 3:
+    if level == 3 and not (risk_themes and set(risk_themes) <= _NO_DETECT):
         needed.append("detect")
     missing = [k for k in needed if k not in covered]
     layered = (len(needed) - len(missing)) / len(needed) if relevant else 0.0
@@ -270,10 +289,11 @@ def assess_identified_risk(statement: Statement) -> Assessment:
         proportionate = 0.3
         improvements.add("proportionate", f"The risk is {_LEVEL_NAMES[level]}, but no treatment commits to how often, "
                                           "how fast or how long: give at least one a firm commitment.")
-    elif level == 1 and len(firm) >= 3:
+    elif level == 1 and (len(relevant) >= 3 or len(firm) >= 2):
         proportionate = 0.7
-        improvements.add("proportionate", f"The risk is low, yet {len(firm)} treatments carry firm commitments: "
-                                          "check the effort is justified.")
+        improvements.add("proportionate", f"The risk is low, yet {len(relevant)} treatments address it"
+                                          + (f", {len(firm)} with firm commitments" if firm else "")
+                                          + ": check the effort is justified.")
     else:
         proportionate = 1.0
     for t in vague_risk_based:
@@ -281,6 +301,7 @@ def assess_identified_risk(statement: Statement) -> Assessment:
                                           "that tier requires.")
         proportionate = min(proportionate, 0.7)
     for a, b in _overlaps(relevant):
+        proportionate = min(proportionate, 0.7)
         improvements.add("proportionate", f"'{a}' and '{b}' do the same job in much the same words: check both are "
                                           "needed.")
     criteria.append(CriterionResult("proportionate", proportionate, WEIGHTS["proportionate"],
@@ -291,6 +312,12 @@ def assess_identified_risk(statement: Statement) -> Assessment:
     limits = sorted({p for t, _ in relevant for kind in commitments(t.text).values() for _, p in kind}
                     | {m for t, _ in relevant for m in _distinct(_TOLERANCE, t.text)})
     tolerance = 1.0 if limits else 0.0
+    for t in statement.treatments:
+        vague = sorted(_distinct(_VAGUE, t.text))
+        if vague:
+            tolerance = min(tolerance, 0.5)
+            improvements.add("tolerance", f"'{t.label}' says {', '.join(repr(v) for v in vague)}: replace it with "
+                                          "what the treatment commits to.")
     criteria.append(CriterionResult("tolerance", tolerance, WEIGHTS["tolerance"],
                                     ", ".join(limits[:4]) or "no measurable limit"))
     if relevant and not limits:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vitals"
-version = "0.14.0"
+version = "0.15.0"
 description = "Vitals: vital signs for your controls. Follow policy intent through controls, implementation, risk and recommendation, with health checks and best-practice guides for each OSCAL statement."
 readme = "README.md"
 requires-python = ">=3.10"

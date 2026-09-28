@@ -345,6 +345,13 @@ found": check it, or say in the text how the treatment addresses the risk.
 In the web app, pick **Identified risk** in the health check and list the
 treatments one per line (`Backup policy: Backups are taken daily...`).
 
+`examples/risk-register-example.csv` is a seeded register of 15 scenarios:
+well layered risks, an untreated risk, a mislinked treatment, a vague
+risk-based intent, a low risk with heavy treatment, duplicated treatments and
+a poorly written risk. Run `vitals examples/risk-register-example.csv` to see
+how each one is judged. `tests/test_risk_register.py` pins the expected
+outcome of each.
+
 ## Policy intent
 
 OSCAL has no field for what your organization's policy requires, so it is a
@@ -487,7 +494,7 @@ src/vitals/
   treatment.py  identified risks against the policy intents and controls that treat them
   report.py     table, JSON, Markdown and OSCAL output
 scripts/build_site.py   builds the browser-only site for GitHub Pages
-examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies and assessment results
+examples/       NIST SP 800-53 excerpt, example SSP, component definition, policies, assessment results and a risk register
 tests/
 ```
 
