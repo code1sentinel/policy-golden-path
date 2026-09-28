@@ -1,6 +1,6 @@
 # Vitals
 
-**Vital signs for your controls.** A health check for identified risks, OSCAL control statements, risk statements and recommendations.
+**Vital signs for your controls.** A health check for identified risks, control statements, implementation statements, risk statements and recommendations.
 
 Policy development follows one path, from what the organization commits to,
 through how it is done, to where it falls short and how to fix it. Each stage
@@ -12,8 +12,8 @@ them:
 | --- | --- | --- | --- |
 | 0. Identified risk | What could go wrong (risk-based approach) | your risk register, as CSV or Excel | being treated by the policy intents and controls linked to it, taken together: relevant, layered, proportionate to its rating, with a measurable limit |
 | 1. Policy intent | What the organization commits to | your policy file (input) | |
-| 2. Control requirement | What the control demands | OSCAL catalog (input) | |
-| 3. Implementation statement | How it is met today | SSP, component definition | meeting stages 1 and 2, and being specific, owned, scheduled and evidenced |
+| 2. Control statement | What must be done, IM8 style: the action, no tool | OSCAL catalog, or your CSV | meeting stage 1, and starting with the action, naming no tool, scoped, testable, with a purpose |
+| 3. Implementation statement | How it is met today: who, with which tool | SSP, component definition, or your CSV | meeting stages 1 and 2, and being specific, owned, scheduled and evidenced |
 | 4. Risk statement | Where practice falls short, and what it could cost | assessment results, POA&M | the requirement it fails (stages 1 and 2), condition, cause, threat, impact, scope and rating |
 | 5. Recommendation | How to get back on the path | assessment results, POA&M | fixing the cause in stage 4, and being actionable, owned, dated and verifiable |
 
@@ -187,6 +187,9 @@ Cloud Medium's AC-2 h reads "within twenty-four (24) hours" rather than
 "[Assignment: time period]", so the statement is checked against the actual
 commitment.
 
+A catalog can also be a document to assess: Vitals then checks the catalog's
+own control statements (see [Control statements](#control-statements)).
+
 Only JSON OSCAL is supported. Convert XML or YAML with the NIST OSCAL CLI
 first.
 
@@ -198,15 +201,19 @@ cell can be left empty when a row has nothing for it:
 
 | policy intent | control statement | risk statement | recommendation |
 | --- | --- | --- | --- |
-| What your policy says the control must achieve | How the control is implemented today | Where practice falls short, and what it could cost | How to close the gap |
+| What your policy says the control must achieve | The requirement: what must be done, IM8 style ("Back up all important data at least daily") | Where practice falls short, and what it could cost | How to close the gap |
 
-Each row gives up to three items to assess, checked along the path:
+Each row gives up to four items to assess, checked along the path:
 
-- the **control statement** against the row's policy intent,
-- the **risk statement** against the same policy intent,
+- the **control statement** against the row's policy intent (and the risk it
+  treats, below),
+- the **implementation statement**, when given, against the control statement,
+- the **risk statement** against the policy intent,
 - the **recommendation** against the row's risk statement.
 
-Optional columns add context: `control id`, `control requirement` (the control
+Optional columns add context: `implementation statement` (how the control is
+met today: who, with which tool, how often, what evidence), `control id`,
+`control requirement` (the control
 text, when no catalog is given), `title` (labels the row's risk and
 recommendation), `likelihood`, `impact`, `owner` and `target date`.
 
@@ -217,10 +224,10 @@ with the same `risk id` (or the same risk text) are grouped: the risk is
 assessed once, against all their policy intents and control statements
 together. The risk text only needs to be on one of its rows.
 
-| risk id | identified risk | policy intent | control statement | … |
+| risk id | identified risk | policy intent | control statement | implementation statement |
 | --- | --- | --- | --- | --- |
-| R-07 | Ransomware could encrypt the finance file servers and their backups, halting payments for days. | Backups of critical systems are taken daily, kept offline, and restorable within 24 hours. | Veeam backs up the finance servers nightly to immutable storage; restores are tested quarterly. | |
-| R-07 | | Inbound email is filtered for malicious attachments and links. | Defender quarantines malicious attachments; the SOC reviews the quarantine daily. | |
+| R-07 | Ransomware could encrypt the finance file servers and their backups, halting payments for days. | Backups of critical systems are taken daily, kept offline, and restorable within 24 hours. | Back up critical systems at least daily, keep backups offline, and test restoration at least every [90] days. | Veeam backs up the finance servers nightly to immutable storage; restores are tested quarterly. |
+| R-07 | | Inbound email is filtered for malicious attachments and links. | Filter all inbound email for malicious attachments and links, and quarantine what is detected. | Defender quarantines malicious attachments; the SOC reviews the quarantine daily. |
 
 Column names are not case-sensitive; spaces, hyphens and underscores are
 interchangeable, and common alternatives work too (`implementation
@@ -317,6 +324,36 @@ to move into a recommendation.
 | owner | 15% | Is someone accountable? (from the text, or `responsible-roles`) |
 | timeline | 15% | Is there a target date? (from the text, task `timing` or the risk `deadline`) The improvement quotes the risk rating so the date can be set in proportion to it. |
 | completion | 15% | What evidence will show it is done, so the risk can be closed? |
+
+### Control statements
+
+A control statement is the requirement itself, written the way Singapore's
+[IM8](https://github.com/GovTechSG/tech-standards) writes it: "Back up all
+important data and systems at least every [N] day(s), and store backups in a
+secure and separate location." It says what must be done, not who does it or
+with what; that is the implementation statement's job. Tools go in the
+implementation statement or guidance, as IM8 keeps AWS Backup in its guidance.
+
+| Criterion | Weight | Asks |
+| --- | --- | --- |
+| testable | 25% | Can an assessor test it? A recurring activity (review, test, scan, back up, patch) needs how often or how fast, a trigger or a parameter; "regularly" does not count. A standing requirement (configure, restrict, encrypt) is testable as written. |
+| scope | 20% | Does it say what it applies to (all internet-facing systems, privileged accounts)? Generic objects ("appropriate security measures") are flagged, and a statement with nothing concrete is limited to 40%. |
+| policy_intent | 20% | Does it keep the policy's commitments? (needs a policy intent) |
+| action_first | 15% | Does it start with the action (Back up, Encrypt, Restrict), not a subject ("The IT team…", "Okta…")? A leading condition or adverb is fine ("Where…, restrict…", "Only allow…"). |
+| coverage | 15% | Does it carry the catalog control text it was written for? (needs a catalog) |
+| tool_neutral | 10% | Does it avoid naming products (Okta, Splunk, AWS S3)? |
+| purpose | 10% | Does it say why ("to deter brute-force attacks"), or is the risk it treats linked? |
+| single | 5% | One requirement, or two joined; more is a prompt to split. |
+
+Hedges ("should", "may"), vague wording ("as appropriate") and open-ended
+"such as" lists reduce the score as elsewhere.
+
+Upload a catalog as a document to check its own control statements. IM8 Reform
+scores a median of 95%, with 134 of its 137 statements at 80% or more; each
+IM8 control's `risk-statement` counts as its purpose. The same check on
+tool-specific text ("Workday termination events disable the Okta account")
+scores around 60%, and on weak requirements ("Systems should be patched
+regularly where possible") about 30%.
 
 ### Identified risks
 
@@ -491,6 +528,7 @@ src/vitals/
   catalog.py    control and statement-part text out of catalogs
   policy.py     policy intents and which statements they apply to
   heuristic.py  offline rubrics for each kind
+  control.py    control statements, IM8 style
   treatment.py  identified risks against the policy intents and controls that treat them
   report.py     table, JSON, Markdown and OSCAL output
 scripts/build_site.py   builds the browser-only site for GitHub Pages

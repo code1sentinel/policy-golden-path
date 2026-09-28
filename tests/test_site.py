@@ -16,7 +16,7 @@ import build_site  # noqa: E402
 
 def test_handle_returns_results_and_errors_as_json():
     ok = json.loads(api.handle(json.dumps({"mode": "batch", "documents": [{"name": "t.csv", "content": template()}]})))
-    assert ok["summary"]["total"] == 7 and ok["files"][0]["count"] == 7
+    assert ok["summary"]["total"] == 9 and ok["files"][0]["count"] == 9
     bad = json.loads(api.handle(json.dumps({"mode": "single", "item": {"text": ""}})))
     assert bad == {"error": "enter the text to assess", "status": 400}
     assert json.loads(api.handle("{not json"))["status"] == 400

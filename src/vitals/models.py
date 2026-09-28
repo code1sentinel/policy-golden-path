@@ -6,13 +6,18 @@ IMPLEMENTATION = "implementation"
 RISK_STATEMENT = "risk-statement"
 RECOMMENDATION = "recommendation"
 IDENTIFIED_RISK = "identified-risk"
+CONTROL_STATEMENT = "control-statement"
 
 KIND_LABELS = {
+    CONTROL_STATEMENT: "Control statement",
     IMPLEMENTATION: "Implementation statement",
     RISK_STATEMENT: "Risk statement",
     RECOMMENDATION: "Recommendation",
     IDENTIFIED_RISK: "Identified risk",
 }
+
+# Kinds written for a control and keyed by control and statement part, rather than by a risk.
+STATEMENT_KINDS = (IMPLEMENTATION, CONTROL_STATEMENT)
 
 
 @dataclass
@@ -23,10 +28,11 @@ class Treatment:
     policy_intent: str | None = None
     control_statement: str | None = None
     control_id: str | None = None
+    implementation_statement: str | None = None
 
     @property
     def text(self) -> str:
-        return " ".join(t for t in (self.policy_intent, self.control_statement) if t)
+        return " ".join(t for t in (self.policy_intent, self.control_statement, self.implementation_statement) if t)
 
 
 @dataclass
@@ -63,7 +69,7 @@ class Statement:
         A risk can be linked to several controls or statement parts, joined as
         "ac-2_smt.j, au-6"; each part id's control is the text before the "_".
         """
-        if self.kind == IMPLEMENTATION:
+        if self.kind in STATEMENT_KINDS:
             return [(self.control_id, self.statement_id)] if self.control_id else []
         out = []
         for target in filter(None, (t.strip() for t in self.control_id.split(","))):
@@ -73,7 +79,7 @@ class Statement:
 
     @property
     def key(self) -> str:
-        if self.kind != IMPLEMENTATION:
+        if self.kind not in STATEMENT_KINDS:
             label = self.title or self.uuid or "untitled"
             return f"{label} [{self.control_id}]" if self.control_id else label
         target = self.statement_id or self.control_id
@@ -121,7 +127,7 @@ class Assessment:
             "uuid": s.uuid,
             "source": s.source,
         }
-        if s.kind == IMPLEMENTATION:
+        if s.kind in STATEMENT_KINDS:
             out.update({"statement_id": s.statement_id, "component": s.component, "policies": s.policy_ids})
         else:
             out.update({"title": s.title, "ratings": s.ratings, "deadline": s.deadline, "owner": s.owner})

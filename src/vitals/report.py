@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime, timezone
 
 from . import __version__
-from .models import IMPLEMENTATION, KIND_LABELS, Assessment
+from .models import KIND_LABELS, STATEMENT_KINDS, Assessment
 
 NS = "https://grcengineering.club/ns/vitals"
 
@@ -114,7 +114,7 @@ def to_assessment_results(assessments: list[Assessment], source_href: str) -> st
         observations.append(obs)
 
     control_ids = sorted({a.statement.control_id for a in assessments
-                          if a.statement.kind == IMPLEMENTATION and a.statement.control_id})
+                          if a.statement.kind in STATEMENT_KINDS and a.statement.control_id})
     selection = ({"include-controls": [{"control-id": c} for c in control_ids]} if control_ids
                  else {"include-all": {}})
     doc = {

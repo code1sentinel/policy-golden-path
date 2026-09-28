@@ -45,7 +45,7 @@ def test_serves_page_assets_and_config(server):
     config = json.loads(get(server + "/api/config")[2])
     assert config["kinds"]["risk-statement"] == "Risk statement" and "engines" not in config
     guides = json.loads(get(server + "/api/guides")[2])
-    assert set(guides["guides"]) == {"identified-risk", "implementation", "risk-statement", "recommendation"}
+    assert set(guides["guides"]) == {"control-statement", "identified-risk", "implementation", "risk-statement", "recommendation"}
     assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
     status, headers, body = get(server + "/api/template.xlsx")
     assert body[:2] == b"PK" and "vitals-template.xlsx" in headers["Content-Disposition"]
@@ -99,12 +99,13 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
     })
     assert status == 200
     files = {f["name"]: f for f in data["files"]}
-    assert files["ssp-example.json"]["count"] == 4 and files["rows.csv"]["count"] == 7
+    assert files["ssp-example.json"]["count"] == 4 and files["rows.csv"]["count"] == 9
     assert "not valid JSON" in files["broken.json"]["error"]
-    assert "add it as the catalog" in files["catalog-excerpt.json"]["error"]
-    assert data["summary"]["total"] == 15
+    # a catalog uploaded as a document has its own control statements assessed
+    assert files["catalog-excerpt.json"]["count"] == 3 and files["catalog-excerpt.json"]["error"] is None
+    assert data["summary"]["total"] == 20
     assert {a["file"] for a in data["assessments"]} == {"ssp-example.json", "assessment-results-example.json",
-                                                        "rows.csv"}
+                                                        "rows.csv", "catalog-excerpt.json"}
     au6 = next(a for a in data["assessments"] if a["item"] == "au-6 [Splunk]")
     assert au6["policies"] == ["ISP-09"]  # policy applied
     assert "# Vitals: health check" in data["markdown"]
@@ -141,7 +142,7 @@ def test_batch_reports_unreadable_workbook(server):
     code, data = post(server, {"mode": "batch", "documents": [doc,
                                                               {"name": "rows.csv", "content": template()}]})
     assert code == 200
-    assert "old-style .xls" in data["files"][0]["error"] and data["files"][1]["count"] == 7
+    assert "old-style .xls" in data["files"][0]["error"] and data["files"][1]["count"] == 9
 
 
 def test_cli_accepts_xlsx(tmp_path, capsys):
@@ -151,7 +152,7 @@ def test_cli_accepts_xlsx(tmp_path, capsys):
     path = tmp_path / "policies.xlsx"
     path.write_bytes(template_xlsx())
     assert main([str(path), "-f", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 7
+    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 9
 
 
 def test_cli_accepts_csv(tmp_path, capsys):
@@ -160,4 +161,4 @@ def test_cli_accepts_csv(tmp_path, capsys):
     path = tmp_path / "rows.csv"
     path.write_text(template())
     assert main([str(path), "-f", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 7
+    assert json.loads(capsys.readouterr().out)["summary"]["total"] == 9

@@ -2,7 +2,7 @@ import pytest
 
 from vitals import heuristic
 from vitals.guides import ADOPTED, PARTLY, practice, practice_status
-from vitals.models import IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
+from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
 
 
 def rich(kind):
@@ -11,7 +11,7 @@ def rich(kind):
                      treatments=[Treatment("backup", "Backups are taken daily.")])
 
 
-@pytest.mark.parametrize("kind", [IDENTIFIED_RISK, IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION])
+@pytest.mark.parametrize("kind", [CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION])
 def test_every_scored_criterion_has_a_guide(kind):
     for name in {c.name for c in heuristic.assess(rich(kind)).criteria}:
         guide = practice(kind, name)

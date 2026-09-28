@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-from .models import IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
+from .models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
 
 
 class Improvements:
@@ -41,7 +41,7 @@ class Improvements:
 
 # The practice that wording, placeholders and planned work count against, for each kind.
 WORDING_PRACTICE = {IMPLEMENTATION: "implemented", RISK_STATEMENT: "clarity", RECOMMENDATION: "clarity",
-                    IDENTIFIED_RISK: "clarity"}
+                    IDENTIFIED_RISK: "clarity", CONTROL_STATEMENT: "firm"}
 
 # Relative weights. coverage needs a catalog and policy_intent needs a policy
 # intent; when either is missing the others are rescaled to sum to 1.
@@ -120,7 +120,9 @@ _MECHANISMS = re.compile(
 )
 _FREQUENCY = re.compile(
     r"\b(hourly|daily|weekly|fortnightly|monthly|quarterly|semi-?annually|annually|yearly|"
-    r"every \d+|each (day|week|month|quarter|year)|within \d+|\d+ (minutes?|hours?|days?|weeks?|months?)|"
+    r"every \d+|(each|every) (business |working )?(day|week|month|quarter|year)|within \d+|"
+    r"\d+ (minutes?|hours?|days?|weeks?|months?)|(every|each) (monday|tuesday|wednesday|thursday|friday|"
+    r"saturday|sunday|weekday|night|morning)|"
     r"real[- ]time|continuous(ly)?|on (each|every)|upon|prior to|before|immediately|"
     r"at least (once|every)|at login|at each|whenever|as (it|they) (occurs?|happens?)|"
     r"(all|every|each) (\w+ ){0,3}events?)\b",
@@ -224,6 +226,7 @@ Commitment = tuple[float, str]  # (days, the words used)
 
 def commitments(text: str) -> dict[str, list[Commitment]]:
     """Measurable commitments in the text: how often, how fast, and how long records are kept (in days)."""
+    text = re.sub(r"\[(\d+(?:\.\d+)?)\]", r"\1", text)  # a filled-in parameter: "within [5] business days"
     periods = [(_PERIOD_WORDS[m.group(1).lower()], m.group(0)) for m in _PERIOD_WORD_RE.finditer(text)]
     periods += [(_num(m.group(1)) * _unit(m.group(2)), m.group(0)) for m in _EVERY_RE.finditer(text)]
     periods += [(_unit(m.group(1)), m.group(0)) for m in _ONCE_RE.finditer(text)]
@@ -351,6 +354,7 @@ _SAY_INSTEAD = {
     RISK_STATEMENT: "what was found",
     RECOMMENDATION: "the specific action to take",
     IDENTIFIED_RISK: "what could happen",
+    CONTROL_STATEMENT: "what must be done",
 }
 
 
@@ -764,6 +768,10 @@ def assess(statement: Statement) -> Assessment:
         from .treatment import assess_identified_risk  # treatment builds on this module
 
         return assess_identified_risk(statement)
+    if statement.kind == CONTROL_STATEMENT:
+        from .control import assess_control_statement  # control builds on this module
+
+        return assess_control_statement(statement)
     return {
         RISK_STATEMENT: assess_risk_statement,
         RECOMMENDATION: assess_recommendation,

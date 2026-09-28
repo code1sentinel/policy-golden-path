@@ -6,18 +6,21 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const KIND_LABELS = {
+  "control-statement": "Control statement",
   "implementation": "Implementation statement",
   "risk-statement": "Risk statement",
   "recommendation": "Recommendation",
   "identified-risk": "Identified risk",
 };
 const BADGE_LABELS = {
+  "control-statement": "Control",
   "implementation": "Implementation",
   "risk-statement": "Risk",
   "recommendation": "Recommendation",
   "identified-risk": "Identified risk",
 };
 const TEXT_LABELS = {
+  "control-statement": "Control statement",
   "implementation": "Implementation statement",
   "risk-statement": "Risk statement",
   "recommendation": "Recommendation",
@@ -29,6 +32,12 @@ const CRITERION_LABELS = {
 };
 
 const EXAMPLES = {
+  "control-statement": {
+    control_id: "ac-2", statement_id: "ac-2_smt.j",
+    text: "The IAM team should review Okta accounts regularly.",
+    requirement: "j. Review accounts for compliance with account management requirements [Assignment: frequency of account review];",
+    policy_intent: "User access is reviewed at least every 90 days, and access no longer needed is removed within 5 business days.",
+  },
   "implementation": {
     control_id: "ac-2", statement_id: "ac-2_smt.j",
     text: "Accounts are reviewed periodically as needed to make sure they are still appropriate.",
@@ -255,7 +264,7 @@ function improvementsList(items) {
 
 function renderSingle(a) {
   const box = $("#single-result");
-  box.replaceChildren(
+  box.replaceChildren(...[
     el("p", { class: "verdict__kind", text: KIND_LABELS[a.kind] }),
     el("p", { class: "verdict__score" },
       el("span", { class: "verdict__pct", text: pct(a.confidence) }),
@@ -269,7 +278,7 @@ function renderSingle(a) {
     el("h3", { text: "Best practices" }),
     practiceList(a.criteria, a.kind),
     el("p", { class: "rationale", text: a.rationale }),
-  );
+  ].filter(Boolean));
 }
 
 function treatmentList(items) {
@@ -614,7 +623,7 @@ async function initGuides() {
     state.guides = await backend.guides();
     $("#adopted-at").textContent = pct(state.guides.adopted);
     $("#partly-at").textContent = pct(state.guides.partly);
-    renderGuide("implementation");
+    renderGuide("control-statement");
   } catch { /* the rest of the page works without guides */ }
 }
 

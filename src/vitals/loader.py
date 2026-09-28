@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .catalog import Catalog
 from .findings import extract_findings
-from .models import Statement
+from .models import CONTROL_STATEMENT, Statement
 
 
 def load_statements(path: str | Path, catalog: Catalog | None = None) -> list[Statement]:
@@ -26,6 +26,8 @@ def load_statements(path: str | Path, catalog: Catalog | None = None) -> list[St
 
 
 def extract_statements(data: dict) -> list[Statement]:
+    if "catalog" in data:
+        return _from_catalog(data)
     if "system-security-plan" in data:
         return _from_ssp(data["system-security-plan"])
     if "component-definition" in data:
@@ -33,9 +35,18 @@ def extract_statements(data: dict) -> list[Statement]:
     if "assessment-results" in data or "plan-of-action-and-milestones" in data:
         return extract_findings(data)
     raise ValueError(
-        "unsupported OSCAL document: expected 'system-security-plan', 'component-definition', "
+        "unsupported OSCAL document: expected 'catalog', 'system-security-plan', 'component-definition', "
         "'assessment-results' or 'plan-of-action-and-milestones' at the top level"
     )
+
+
+def _from_catalog(data: dict) -> list[Statement]:
+    """A catalog's own control statements, each with the risk it treats when the catalog records one (IM8 does)."""
+    return [
+        Statement(control_id=cid, text=text, source="catalog", uuid=f"catalog:{cid}",
+                  component=title or None, kind=CONTROL_STATEMENT, risk_statement=risk)
+        for cid, title, text, risk in Catalog(data).controls()
+    ]
 
 
 def _from_ssp(ssp: dict) -> list[Statement]:

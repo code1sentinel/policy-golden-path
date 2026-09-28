@@ -53,3 +53,12 @@ def test_backup_only_high_risk_stays_below_80_percent(results):
 def test_low_risk_with_heavy_treatment_is_questioned_not_failed(results):
     a = results["R-11"]
     assert a.confidence > 0.8 and has(a, "check the effort is justified")
+
+
+def test_control_statements_are_im8_style_and_implementations_follow_them():
+    items = parse_csv((EXAMPLES / "risk-register-example.csv").read_text(), source="register")
+    controls = [s for s in items if s.kind == "control-statement"]
+    assert controls and all(heuristic.assess(s).confidence >= 0.8 for s in controls)
+    implementations = [s for s in items if s.kind == "implementation"]
+    by_label = {s.component: s for s in controls}
+    assert all(s.requirement == by_label[s.component].text for s in implementations)

@@ -32,8 +32,6 @@ def parse_document(name: str, content: str | bytes) -> list[Statement]:
         raise ValueError(f"not valid JSON ({exc.msg} at line {exc.lineno})") from None
     if not isinstance(data, dict):
         raise ValueError("not an OSCAL document: expected a JSON object")
-    if "catalog" in data:
-        raise ValueError("this is a catalog, which supplies control text: add it as the catalog instead")
     if "policies" in data:
         raise ValueError("this is a policy file: add it as the policy file instead")
     return extract_statements(data)

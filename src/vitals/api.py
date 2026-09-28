@@ -16,7 +16,7 @@ import re
 from . import __version__, report
 from .catalog import Catalog
 from .guides import ADOPTED, GUIDES, PARTLY, STATUS_LABELS
-from .models import IDENTIFIED_RISK, KIND_LABELS, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
+from .models import CONTROL_STATEMENT, IDENTIFIED_RISK, KIND_LABELS, STATEMENT_KINDS, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
 from .policy import parse_policies
 from .service import assess_all, parse_document, prepare
 
@@ -91,8 +91,8 @@ def single_statement(item: dict) -> Statement:
         statement_id=t["statement_id"] or None, component=t["component"] or None,
         requirement=t["requirement"] or None, policy_intent=t["policy_intent"] or None,
         policy_ids=["entered"] if t["policy_intent"] else [], kind=kind,
-        title=t["title"] or (None if kind == "implementation" else KIND_LABELS[kind]),
-        risk_statement=(t["risk_statement"] or None) if kind == RECOMMENDATION else None,
+        title=t["title"] or (None if kind in STATEMENT_KINDS else KIND_LABELS[kind]),
+        risk_statement=(t["risk_statement"] or None) if kind in (RECOMMENDATION, CONTROL_STATEMENT) else None,
         ratings=ratings if kind in (RISK_STATEMENT, RECOMMENDATION) else {},
         owner=(t["owner"] or None) if kind == RECOMMENDATION else None,
         deadline=(t["deadline"] or None) if kind == RECOMMENDATION else None,

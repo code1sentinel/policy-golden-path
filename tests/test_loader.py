@@ -42,7 +42,7 @@ def test_ssp_requirement_with_no_description_is_kept():
 
 def test_unsupported_document_raises():
     with pytest.raises(ValueError, match="unsupported OSCAL document"):
-        extract_statements({"catalog": {}})
+        extract_statements({"profile": {}})
 
 
 def test_catalog_substitutes_params_and_indexes_parts(examples):
@@ -87,3 +87,19 @@ def test_resolved_profile_param_values_replace_placeholders():
     ]}})
     assert catalog.requirement("ac-2", "ac-2_smt.h") == "h. Notify account managers within twenty-four (24) hours;"
     assert catalog.requirement("ac-2", "ac-2_smt.j") == "j. Review accounts [Assignment: frequency]."
+
+
+def test_catalog_control_statements_carry_their_risk():
+    from vitals.models import CONTROL_STATEMENT
+
+    items = extract_statements({"catalog": {"groups": [{"controls": [
+        {"id": "br-1", "title": "Backup",
+         "params": [{"id": "br-1_prm_1", "label": "time period (days)"}],
+         "props": [{"name": "risk-statement", "value": "Without backups, data could be lost."}],
+         "parts": [{"id": "br-1_smt", "name": "statement",
+                    "prose": "Backup all important data at least every {{ insert: param, br-1_prm_1 }} day(s)."}]},
+        {"id": "br-9", "title": "Withdrawn", "parts": []},
+    ]}]}})
+    assert [(s.kind, s.key, s.risk_statement) for s in items] == [
+        (CONTROL_STATEMENT, "br-1 [Backup]", "Without backups, data could be lost.")]
+    assert items[0].text == "Backup all important data at least every [Assignment: time period (days)] day(s)."

@@ -20,12 +20,18 @@ class Catalog:
         self._controls: dict[str, str] = {}
         self._parts: dict[str, str] = {}
         self._titles: dict[str, str] = {}
+        self._risks: dict[str, str] = {}  # IM8 records the risk each control treats as a risk-statement prop
+        self._order: list[str] = []
         for control in _walk_controls(root):
             for param in control.get("params", []):
                 self._params[param["id"]] = _param_text(param)
         for control in _walk_controls(root):
             cid = control["id"].lower()
             self._titles[cid] = control.get("title", "")
+            self._order.append(control["id"])
+            risk = next((p.get("value") for p in control.get("props", []) if p.get("name") == "risk-statement"), None)
+            if risk:
+                self._risks[cid] = risk
             for part in control.get("parts", []):
                 if part.get("name") == "statement":
                     self._controls[cid] = self._flatten(part)
@@ -46,6 +52,11 @@ class Catalog:
         if not title or control_id.lower() in title.lower():
             return text
         return f"{title}: {text}"
+
+    def controls(self) -> list[tuple[str, str, str, str | None]]:
+        """(id, title, statement text, risk statement) for each control with a statement, in catalog order."""
+        return [(cid, self._titles[cid.lower()], self._controls[cid.lower()], self._risks.get(cid.lower()))
+                for cid in self._order if cid.lower() in self._controls]
 
     def __contains__(self, control_id: str) -> bool:
         return control_id.lower() in self._controls
