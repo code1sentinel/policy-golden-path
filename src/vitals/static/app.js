@@ -95,8 +95,8 @@ function showError(message) {
 
 // ---------------------------------------------------------------- backends
 //
-// The same page runs in two ways. Served by `policygp-web`, it calls the local server.
-// Built for GitHub Pages (data-mode="browser"), it runs PolicyGP's Python in the browser
+// The same page runs in two ways. Served by `vitals-web`, it calls the local server.
+// Built for GitHub Pages (data-mode="browser"), it runs Vitals's Python in the browser
 // with Pyodide, so files are checked on this device and never uploaded.
 
 const BROWSER = document.documentElement.dataset.mode === "browser";
@@ -117,17 +117,17 @@ const serverBackend = {
   },
 };
 
-let python = null;  // a promise of PolicyGP's API running in Pyodide, started once
+let python = null;  // a promise of Vitals's API running in Pyodide, started once
 
 function startPython() {
   if (!python) {
     python = (async () => {
       const { loadPyodide } = await import("./pyodide/pyodide.mjs");
       const pyodide = await loadPyodide({ indexURL: new URL("pyodide/", location.href).href });
-      const archive = await (await fetch("policygp.zip")).arrayBuffer();
-      pyodide.unpackArchive(archive, "zip", { extractDir: "/home/pyodide/policygp-src" });
-      pyodide.runPython("import sys; sys.path.insert(0, '/home/pyodide/policygp-src')");
-      return pyodide.pyimport("policygp.api");
+      const archive = await (await fetch("vitals.zip")).arrayBuffer();
+      pyodide.unpackArchive(archive, "zip", { extractDir: "/home/pyodide/vitals-src" });
+      pyodide.runPython("import sys; sys.path.insert(0, '/home/pyodide/vitals-src')");
+      return pyodide.pyimport("vitals.api");
     })();
     python.catch(() => { python = null; });  // allow a retry after a failed load
   }
@@ -189,7 +189,7 @@ function selectTab(tab) {
     t.tabIndex = on ? 0 : -1;
     $(`#${t.getAttribute("aria-controls")}`).hidden = !on;
   }
-  try { localStorage.setItem("policygp-tab", tab.id); } catch { /* storage unavailable */ }
+  try { localStorage.setItem("vitals-tab", tab.id); } catch { /* storage unavailable */ }
 }
 
 function initTabs() {
@@ -204,7 +204,7 @@ function initTabs() {
     });
   });
   let saved = null;
-  try { saved = localStorage.getItem("policygp-tab"); } catch { /* storage unavailable */ }
+  try { saved = localStorage.getItem("vitals-tab"); } catch { /* storage unavailable */ }
   if (saved && $(`#${saved}`)) selectTab($(`#${saved}`));
 }
 
@@ -546,10 +546,10 @@ function initBatch() {
       if (!data) return;
       const stamp = new Date().toISOString().slice(0, 10);
       const kind = b.dataset.download;
-      if (kind === "csv") download(`policygp-${stamp}.csv`, toCsv(data.assessments), "text/csv");
-      if (kind === "json") download(`policygp-${stamp}.json`, JSON.stringify(
+      if (kind === "csv") download(`vitals-${stamp}.csv`, toCsv(data.assessments), "text/csv");
+      if (kind === "json") download(`vitals-${stamp}.json`, JSON.stringify(
         { summary: data.summary, files: data.files, assessments: data.assessments }, null, 2), "application/json");
-      if (kind === "md") download(`policygp-${stamp}.md`, data.markdown, "text/markdown");
+      if (kind === "md") download(`vitals-${stamp}.md`, data.markdown, "text/markdown");
     });
   }
 }
@@ -601,8 +601,8 @@ async function initConfig() {
     const config = await backend.config();
     $("#version").textContent = `Version ${config.version}.`;
   } catch {
-    showError(BROWSER ? "Could not load PolicyGP. Check your connection and reload the page."
-      : "Could not reach the PolicyGP server. Is policygp-web still running?");
+    showError(BROWSER ? "Could not load Vitals. Check your connection and reload the page."
+      : "Could not reach the Vitals server. Is vitals-web still running?");
   }
 }
 

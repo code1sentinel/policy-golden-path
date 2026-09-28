@@ -1,8 +1,8 @@
 import pytest
 
-from policygp import heuristic
-from policygp.guides import ADOPTED, PARTLY, practice, practice_status
-from policygp.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
+from vitals import heuristic
+from vitals.guides import ADOPTED, PARTLY, practice, practice_status
+from vitals.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement
 
 
 def rich(kind):
@@ -37,8 +37,8 @@ def test_assessment_reports_practices_adopted():
 
 
 def test_summary_counts_practices(examples):
-    from policygp import report
-    from policygp.loader import load_statements
+    from vitals import report
+    from vitals.loader import load_statements
 
     items = [heuristic.assess(s) for s in load_statements(examples / "assessment-results-example.json")]
     s = report.summary(items)["by_kind"]["risk-statement"]
@@ -47,9 +47,9 @@ def test_summary_counts_practices(examples):
 
 
 def _all_assessments(examples):
-    from policygp.catalog import Catalog
-    from policygp.loader import load_statements
-    from policygp.policy import attach_intents, load_policies
+    from vitals.catalog import Catalog
+    from vitals.loader import load_statements
+    from vitals.policy import attach_intents, load_policies
 
     catalog = Catalog.load(examples / "catalog-excerpt.json")
     policies = load_policies(examples / "policy-example.json")

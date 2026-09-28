@@ -1,7 +1,7 @@
 import pytest
 
-from policygp.catalog import Catalog
-from policygp.loader import extract_statements, load_statements
+from vitals.catalog import Catalog
+from vitals.loader import extract_statements, load_statements
 
 
 def test_ssp_statements_resolve_components_and_requirements(examples):
@@ -58,7 +58,7 @@ def test_catalog_substitutes_params_and_indexes_parts(examples):
 
 
 def test_placeholder_control_titles_are_left_out():
-    from policygp.catalog import Catalog
+    from vitals.catalog import Catalog
 
     catalog = Catalog({"catalog": {"controls": [
         {"id": "ism-1997", "title": "Control: ism-1997",

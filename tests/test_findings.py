@@ -1,9 +1,9 @@
 import pytest
 
-from policygp import heuristic
-from policygp.findings import extract_findings
-from policygp.loader import load_statements
-from policygp.models import RECOMMENDATION, RISK_STATEMENT, Statement
+from vitals import heuristic
+from vitals.findings import extract_findings
+from vitals.loader import load_statements
+from vitals.models import RECOMMENDATION, RISK_STATEMENT, Statement
 
 
 @pytest.fixture
@@ -120,8 +120,8 @@ def test_recommendation_must_address_the_cause():
 
 
 def test_risk_statement_is_checked_against_catalog_and_policy(examples):
-    from policygp.catalog import Catalog
-    from policygp.policy import attach_intents, load_policies
+    from vitals.catalog import Catalog
+    from vitals.policy import attach_intents, load_policies
 
     items = load_statements(examples / "assessment-results-example.json",
                             Catalog.load(examples / "catalog-excerpt.json"))

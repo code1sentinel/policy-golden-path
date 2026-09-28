@@ -1,10 +1,10 @@
-# PolicyGP
+# Vitals
 
-**Policy Golden Path: the golden path for policy development.**
+**Vital signs for your controls.** A health check for OSCAL control statements, risk statements and recommendations.
 
 Policy development follows one path, from what the organization commits to,
 through how it is done, to where it falls short and how to fix it. Each stage
-has to carry the intent of the one before it. PolicyGP follows that path
+has to carry the intent of the one before it. Vitals follows that path
 through your OSCAL documents and checks each stage, and the links between
 them:
 
@@ -16,15 +16,15 @@ them:
 | 4. Risk statement | Where practice falls short, and what it could cost | assessment results, POA&M | the requirement it fails (stages 1 and 2), condition, cause, threat, impact, scope and rating |
 | 5. Recommendation | How to get back on the path | assessment results, POA&M | fixing the cause in stage 4, and being actionable, owned, dated and verifiable |
 
-Like a platform team's golden path, the aim is to make the right way the easy
-way: show what good looks like at each stage, check your text against it, and
-say how to close the gaps.
+Like a health check, the aim is to take each statement's vital signs: show
+what good looks like at each stage, check your text against it, and say how to
+close the gaps.
 
 The portal around those checks follows the three A's of CSA's
 [Internet Hygiene Portal](https://ihp.csa.gov.sg/) (IHP), which checks websites
 and email against internet best practices:
 
-| | IHP | PolicyGP |
+| | IHP | Vitals |
 | --- | --- | --- |
 | **Awareness** | Guides on internet hygiene standards | **Guides**: each best practice with why it matters, how to adopt it, and a weak and a strong example |
 | **Assessment** | Self-service health checks for website, email and connectivity | **Health check** for one statement, **batch health check** for OSCAL or CSV files |
@@ -32,14 +32,14 @@ and email against internet best practices:
 
 Each item gets a **confidence score** (0 to 100%), a count of **best
 practices adopted**, and its **areas for improvement**. Unlike IHP's rating,
-PolicyGP does not pass or fail anything: use the results in your own review
+Vitals does not pass or fail anything: use the results in your own review
 process to decide that.
 
 This project is not affiliated with or endorsed by the Cyber Security Agency
 of Singapore; it borrows IHP's approach, not its content.
 
 ```
-$ policygp examples/assessment-results-example.json
+$ vitals examples/assessment-results-example.json
 Kind            Item                                               Confidence  Practices adopted  Improvements
 --------------  -------------------------------------------------  ----------  -----------------  ------------
 Risk statement  Leaver accounts can approve payments [ac-2_smt.j]        100%                8/8             0
@@ -72,10 +72,10 @@ The exit code is `0` whenever the document was assessed and `2` on bad input.
 | Way | For | How |
 | --- | --- | --- |
 | **Online** | Anyone, nothing to install | https://code1sentinel.github.io/policy-golden-path/ |
-| **Local web app** | The same page, run on your machine | `policygp-web --open` |
-| **Command line** | CI pipelines and scripts | `policygp FILE` |
+| **Local web app** | The same page, run on your machine | `vitals-web --open` |
+| **Command line** | CI pipelines and scripts | `vitals FILE` |
 
-The online version runs entirely in your browser: PolicyGP's Python runs
+The online version runs entirely in your browser: Vitals's Python runs
 there through [Pyodide](https://pyodide.org), served from the site itself.
 Your files are checked on your device and never uploaded, and the site makes
 no requests to any third party. The first visit loads about 13 MB (less over
@@ -88,7 +88,7 @@ the same scores.
 ```
 git clone https://github.com/code1sentinel/policy-golden-path.git
 cd policy-golden-path
-pip install -e .   # installs the policygp and policygp-web commands; no other dependencies
+pip install -e .   # installs the vitals and vitals-web commands; no other dependencies
 ```
 
 Python 3.10 or later.
@@ -96,7 +96,7 @@ Python 3.10 or later.
 ## Web app
 
 ```
-policygp-web --open
+vitals-web --open
 ```
 
 Opens the portal at http://localhost:8765/ with three sections:
@@ -139,7 +139,7 @@ never markup.
 ## Command line
 
 ```
-policygp DOCUMENT [options]
+vitals DOCUMENT [options]
 
 -c, --catalog PATH          OSCAL catalog (JSON) for control requirement text
 -p, --policy PATH           policy file (JSON) with the policy intent for each control
@@ -169,7 +169,7 @@ risk's `deadline`; its owner from its tasks' `responsible-roles` or its
 `origins`.
 
 Any OSCAL catalog in JSON works as the `--catalog`, including published ones
-tested with PolicyGP:
+tested with Vitals:
 
 | Catalog | Publisher | Control ids |
 | --- | --- | --- |
@@ -192,7 +192,7 @@ first.
 ### CSV and Excel
 
 The easiest way to start, for example from a spreadsheet. **One row per
-policy**, followed down the golden path. These four columns are required; a
+policy**, followed down the policy path. These four columns are required; a
 cell can be left empty when a row has nothing for it:
 
 | policy intent | control statement | risk statement | recommendation |
@@ -239,7 +239,7 @@ planned work) count against a practice of their own: **State facts about
 today** for implementation statements, **Keep it factual** for risk
 statements, **Keep it firm** for recommendations. It has no weight, because
 wording already reduces the score directly. The guides for every practice are in
-`src/policygp/guides.py`, shown in the web app's Guides section.
+`src/vitals/guides.py`, shown in the web app's Guides section.
 
 All three kinds share the same wording rules, adjusted to what each is for:
 
@@ -312,8 +312,8 @@ separate input for implementation statements. Give it as a policy file, an
 inline intent, or both:
 
 ```
-policygp ssp.json -c catalog.json --policy policies.json
-policygp ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
+vitals ssp.json -c catalog.json --policy policies.json
+vitals ssp.json --intent "Access is reviewed at least quarterly and records are retained for 12 months."
 ```
 
 ```json
@@ -396,7 +396,7 @@ but they cannot tell whether what the text says is true.
 
 ```yaml
 - run: pip install git+https://github.com/code1sentinel/policy-golden-path.git
-- run: policygp ssp.json -c catalog.json -p policies.json -f markdown -o report.md
+- run: vitals ssp.json -c catalog.json -p policies.json -f markdown -o report.md
 - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
@@ -417,7 +417,7 @@ python scripts/build_site.py --pyodide package --out site
 python -m http.server --directory site
 ```
 
-The build copies the web app in browser mode, zips the `policygp` package
+The build copies the web app in browser mode, zips the `vitals` package
 (without the server and command-line modules) for Pyodide to import, and
 writes the guides, config and templates as static files. A fork gets its own
 site by enabling Pages the same way.
@@ -430,9 +430,9 @@ pytest
 ## Layout
 
 ```
-src/policygp/
-  cli.py        command line (policygp)
-  webapp.py     web app server (policygp-web)
+src/vitals/
+  cli.py        command line (vitals)
+  webapp.py     web app server (vitals-web)
   api.py        request handling, shared by the server and the browser build
   guides.py     best-practice guides and adoption status
   static/       web app page, styles and script (server or browser mode)
@@ -452,7 +452,7 @@ tests/
 
 ## References
 
-PolicyGP has been tried against published OSCAL content. The
+Vitals has been tried against published OSCAL content. The
 [awesome-oscal](https://github.com/oscal-club/awesome-oscal) list from OSCAL
 Club is the best index of what exists.
 

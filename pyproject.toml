@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "policygp"
-version = "0.12.0"
-description = "PolicyGP (Policy Golden Path), the golden path for policy development: follow policy intent through controls, implementation, risk and recommendation, with health checks and best-practice guides for each OSCAL statement."
+name = "vitals"
+version = "0.13.0"
+description = "Vitals: vital signs for your controls. Follow policy intent through controls, implementation, risk and recommendation, with health checks and best-practice guides for each OSCAL statement."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -19,14 +19,14 @@ Issues = "https://github.com/code1sentinel/policy-golden-path/issues"
 dev = ["pytest>=8", "openpyxl>=3.1"]  # openpyxl only to test reading real-world workbooks
 
 [project.scripts]
-policygp = "policygp.cli:main"
-policygp-web = "policygp.webapp:main"
+vitals = "vitals.cli:main"
+vitals-web = "vitals.webapp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-policygp = ["static/*"]
+vitals = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

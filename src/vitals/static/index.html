@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PolicyGP</title>
+  <title>Vitals</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F1F1F'/%3E%3Cpath d='M0 0h32L0 32z' fill='%23E8650A'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -17,9 +17,9 @@
       <div class="brand">
         <span class="brand__mark" aria-hidden="true"></span>
         <div>
-          <h1 class="brand__name">PolicyGP</h1>
+          <h1 class="brand__name">Vitals</h1>
           <p class="local-note" data-browser-only hidden>Runs in your browser: your files never leave this device.</p>
-          <p class="brand__tag">Policy Golden Path, the golden path for policy development: from policy intent to practice, with health checks for implementation statements, risk statements and recommendations.</p>
+          <p class="brand__tag">Vital signs for your controls: health checks for implementation statements, risk statements and recommendations, from policy intent to practice.</p>
         </div>
       </div>
     </div>
@@ -54,7 +54,7 @@
     </div>
 
     <div id="error" class="error" role="alert" hidden></div>
-    <p id="loading" class="loading" role="status" hidden>Loading PolicyGP in your browser. This takes a few seconds on the first visit only.</p>
+    <p id="loading" class="loading" role="status" hidden>Loading Vitals in your browser. This takes a few seconds on the first visit only.</p>
 
     <!-- Single input -->
     <section id="panel-single" class="panel" role="tabpanel" aria-labelledby="tab-single">
@@ -160,7 +160,7 @@
 
         <details class="columns" open>
           <summary>CSV and Excel columns</summary>
-          <p class="columns__lead">One row per policy, followed down the golden path. Your file needs these four columns; a cell can be left empty if a row has nothing for it.</p>
+          <p class="columns__lead">One row per policy, followed down the policy path. Your file needs these four columns; a cell can be left empty if a row has nothing for it.</p>
           <table class="columns__table">
             <thead>
               <tr><th scope="col">policy intent</th><th scope="col">control statement</th><th scope="col">risk statement</th><th scope="col">recommendation</th></tr>
@@ -193,8 +193,8 @@
         <div class="actions">
           <button type="button" class="btn btn--primary" id="batch-submit" disabled>Run health check</button>
           <span class="templates">Template with examples:
-            <a class="btn btn--quiet btn--small" href="template.xlsx" download="policygp-template.xlsx">Excel</a>
-            <a class="btn btn--quiet btn--small" href="template.csv" download="policygp-template.csv">CSV</a>
+            <a class="btn btn--quiet btn--small" href="template.xlsx" download="vitals-template.xlsx">Excel</a>
+            <a class="btn btn--quiet btn--small" href="template.csv" download="vitals-template.csv">CSV</a>
           </span>
         </div>
       </div>
@@ -248,8 +248,8 @@
 
     <!-- Guides -->
     <section id="panel-guides" class="panel" role="tabpanel" aria-labelledby="tab-guides" hidden>
-      <h2 class="section-title section-title--first">The golden path</h2>
-      <p class="guide-summary">Policy development follows one path: each stage has to carry the intent of the one before it. PolicyGP checks each stage, and the links between them.</p>
+      <h2 class="section-title section-title--first">The policy path</h2>
+      <p class="guide-summary">Policy development follows one path: each stage has to carry the intent of the one before it. Vitals checks each stage, and the links between them.</p>
       <ol class="path">
         <li class="path__stage">
           <span class="path__name">Policy intent</span>

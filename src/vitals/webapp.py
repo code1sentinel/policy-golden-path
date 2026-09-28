@@ -1,4 +1,4 @@
-"""policygp-web: PolicyGP as a local web app for guides, single and batch health checks.
+"""vitals-web: Vitals as a local web app for guides, single and batch health checks.
 
 Runs on the standard library only. It binds to 127.0.0.1 by default and has
 no authentication, so only expose it on a network you trust.
@@ -28,7 +28,7 @@ CSP = ("default-src 'self'; style-src 'self' https://fonts.googleapis.com; "
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = f"policygp/{__version__}"
+    server_version = f"vitals/{__version__}"
 
     def log_message(self, fmt, *args):  # quieter than the default
         if getattr(self.server, "verbose", False):
@@ -56,7 +56,7 @@ class Handler(BaseHTTPRequestHandler):
             path = "/index.html"
         name = path.lstrip("/")
         if name in STATIC:
-            body = resources.files("policygp").joinpath("static", name).read_bytes()
+            body = resources.files("vitals").joinpath("static", name).read_bytes()
             return self._send(HTTPStatus.OK, body, f"{STATIC[name]}; charset=utf-8")
         if path == "/api/config":
             return self._json(HTTPStatus.OK, api.config())
@@ -65,10 +65,10 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/api/template.xlsx", "/template.xlsx"):
             return self._send(HTTPStatus.OK, template_xlsx(),
                               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                              {"Content-Disposition": 'attachment; filename="policygp-template.xlsx"'})
+                              {"Content-Disposition": 'attachment; filename="vitals-template.xlsx"'})
         if path in ("/api/template.csv", "/template.csv"):
             return self._send(HTTPStatus.OK, template().encode(), "text/csv; charset=utf-8",
-                              {"Content-Disposition": 'attachment; filename="policygp-template.csv"'})
+                              {"Content-Disposition": 'attachment; filename="vitals-template.csv"'})
         self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_POST(self):
@@ -114,7 +114,7 @@ def make_server(host: str = "127.0.0.1", port: int = 8765, verbose: bool = False
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="policygp-web", description="PolicyGP web app.")
+    p = argparse.ArgumentParser(prog="vitals-web", description="Vitals web app.")
     p.add_argument("--host", default="127.0.0.1", help="interface to bind (default: 127.0.0.1)")
     p.add_argument("--port", type=int, default=8765, help="port (default: 8765)")
     p.add_argument("--open", action="store_true", help="open the page in a browser")
@@ -125,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         print("warning: the app has no authentication; anyone who can reach this address can use it",
               file=sys.stderr)
-    print(f"PolicyGP on {url}  (Ctrl+C to stop)")
+    print(f"Vitals on {url}  (Ctrl+C to stop)")
     if args.open:
         threading.Timer(0.5, webbrowser.open, args=(url,)).start()
     try:

@@ -1,7 +1,7 @@
 """Read rows from an Excel workbook (.xlsx) with the standard library only.
 
 An .xlsx file is a zip of XML parts. This reads the cell values of one
-worksheet: the first sheet whose header row has the golden-path columns, or
+worksheet: the first sheet whose header row has the policy-path columns, or
 else the first sheet. Formulas are read as their last calculated value.
 
 Workbooks are untrusted input, so the reader refuses anything that looks

@@ -1,8 +1,8 @@
 import pytest
 
-from policygp import heuristic
-from policygp.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
-from policygp.tabular import REQUIRED, parse_csv, template
+from vitals import heuristic
+from vitals.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from vitals.tabular import REQUIRED, parse_csv, template
 
 HEADER = "policy intent,control statement,risk statement,recommendation"
 
@@ -12,7 +12,7 @@ def test_template_has_the_four_columns_first():
     assert first.startswith(HEADER)
 
 
-def test_each_row_follows_the_golden_path():
+def test_each_row_follows_the_policy_path():
     items = parse_csv(template(), source="t.csv")
     assert [s.kind for s in items] == [IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION] * 2
     control, risk, rec = items[:3]

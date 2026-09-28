@@ -1,4 +1,4 @@
-"""Statements from a CSV file: one row per policy, followed down the golden path.
+"""Statements from a CSV file: one row per policy, followed down the policy path.
 
 Each row carries one policy intent and the text written for it. These four
 columns are required (a cell may be left empty when a row has nothing for it):

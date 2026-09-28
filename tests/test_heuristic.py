@@ -1,7 +1,7 @@
-from policygp import heuristic
-from policygp.catalog import Catalog
-from policygp.loader import load_statements
-from policygp.models import Statement
+from vitals import heuristic
+from vitals.catalog import Catalog
+from vitals.loader import load_statements
+from vitals.models import Statement
 
 STRONG = (
     "The Security Operations team reviews and analyzes audit records in Splunk daily for indications of "

@@ -12,7 +12,7 @@ from .service import assess_all, parse_document, prepare
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="policygp",
+        prog="vitals",
         description="Score OSCAL implementation statements, risk statements and recommendations, "
                     "and list areas for improvement.",
     )
@@ -40,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
             policies.append(Policy("--intent", args.intent.strip()))
         prepare(statements, catalog, policies)
     except (OSError, ValueError, KeyError) as exc:
-        print(f"policygp: {exc}", file=sys.stderr)
+        print(f"vitals: {exc}", file=sys.stderr)
         return 2
 
     assessments = assess_all(statements)
@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if not statements:
-        print("policygp: nothing to assess in this document", file=sys.stderr)
+        print("vitals: nothing to assess in this document", file=sys.stderr)
         return 2
     return 0
 

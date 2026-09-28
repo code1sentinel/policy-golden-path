@@ -5,10 +5,10 @@ import zipfile
 
 import pytest
 
-from policygp.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
-from policygp.service import parse_document
-from policygp.tabular import parse_xlsx, template_xlsx
-from policygp.xlsx import MAX_UNCOMPRESSED, WorkbookError, read_rows, write_rows
+from vitals.models import IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from vitals.service import parse_document
+from vitals.tabular import parse_xlsx, template_xlsx
+from vitals.xlsx import MAX_UNCOMPRESSED, WorkbookError, read_rows, write_rows
 
 
 def test_template_round_trips():
@@ -104,7 +104,7 @@ def test_template_opens_in_openpyxl():
 
 
 def test_web_upload_accepts_base64_workbooks():
-    from policygp.api import batch_statements
+    from vitals.api import batch_statements
 
     doc = {"name": "policies.xlsx", "content_base64": base64.b64encode(_excel_style_workbook()).decode()}
     items, files, names = batch_statements({"documents": [doc]})

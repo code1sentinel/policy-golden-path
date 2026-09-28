@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from policygp import api
-from policygp.tabular import template
+from vitals import api
+from vitals.tabular import template
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -34,7 +34,7 @@ def site(tmp_path):
 
 
 def test_site_has_everything_the_page_loads(site):
-    for name in ("index.html", "app.css", "app.js", "policygp.zip", "config.json", "guides.json",
+    for name in ("index.html", "app.css", "app.js", "vitals.zip", "config.json", "guides.json",
                  "template.csv", "template.xlsx", ".nojekyll", *(f"pyodide/{f}" for f in build_site.PYODIDE_FILES)):
         assert (site / name).exists(), name
     assert json.loads((site / "config.json").read_text()) == api.config()
@@ -48,15 +48,15 @@ def test_index_runs_in_browser_mode_with_no_third_parties(site):
 
 
 def test_browser_package_works_without_server_modules(site, tmp_path):
-    with zipfile.ZipFile(site / "policygp.zip") as zf:
+    with zipfile.ZipFile(site / "vitals.zip") as zf:
         names = set(zf.namelist())
         zf.extractall(tmp_path / "unpacked")
-    assert "policygp/api.py" in names and "policygp/xlsx.py" in names
-    assert not {"policygp/webapp.py", "policygp/cli.py"} & names
+    assert "vitals/api.py" in names and "vitals/xlsx.py" in names
+    assert not {"vitals/webapp.py", "vitals/cli.py"} & names
     # Import and run it in a clean interpreter that can only see the unpacked archive, as Pyodide does.
-    # -I -S: no environment, no site-packages, so the installed policygp cannot be picked up instead.
+    # -I -S: no environment, no site-packages, so the installed vitals cannot be picked up instead.
     unpacked = tmp_path / "unpacked"
-    code = ("import sys; sys.path.insert(0, sys.argv[1]); import json, policygp.api as a; "
+    code = ("import sys; sys.path.insert(0, sys.argv[1]); import json, vitals.api as a; "
             "print(a.__file__); "
             "print(json.loads(a.handle(json.dumps({'mode': 'single', 'item': {'text': 'Logs are reviewed.'}})))"
             "['summary']['total'])")

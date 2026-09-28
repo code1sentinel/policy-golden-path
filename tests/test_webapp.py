@@ -5,8 +5,8 @@ import urllib.request
 
 import pytest
 
-from policygp import webapp
-from policygp.tabular import template
+from vitals import webapp
+from vitals.tabular import template
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def test_serves_page_assets_and_config(server):
     assert set(guides["guides"]) == {"implementation", "risk-statement", "recommendation"}
     assert guides["statuses"]["not-yet"] == "Not yet adopted" and guides["adopted"] == 0.8
     status, headers, body = get(server + "/api/template.xlsx")
-    assert body[:2] == b"PK" and "policygp-template.xlsx" in headers["Content-Disposition"]
+    assert body[:2] == b"PK" and "vitals-template.xlsx" in headers["Content-Disposition"]
     assert get(server + "/template.xlsx")[2][:2] == b"PK"  # relative links from the page
     assert get(server + "/template.csv")[2].decode() == template()
     status, headers, body = get(server + "/api/template.csv")
@@ -107,7 +107,7 @@ def test_batch_mixes_oscal_and_csv_with_catalog_and_policy(server, examples):
                                                         "rows.csv"}
     au6 = next(a for a in data["assessments"] if a["item"] == "au-6 [Splunk]")
     assert au6["policies"] == ["ISP-09"]  # policy applied
-    assert "# PolicyGP: health check" in data["markdown"]
+    assert "# Vitals: health check" in data["markdown"]
 
 
 @pytest.mark.parametrize("body, status, message", [
@@ -145,8 +145,8 @@ def test_batch_reports_unreadable_workbook(server):
 
 
 def test_cli_accepts_xlsx(tmp_path, capsys):
-    from policygp.cli import main
-    from policygp.tabular import template_xlsx
+    from vitals.cli import main
+    from vitals.tabular import template_xlsx
 
     path = tmp_path / "policies.xlsx"
     path.write_bytes(template_xlsx())
@@ -155,7 +155,7 @@ def test_cli_accepts_xlsx(tmp_path, capsys):
 
 
 def test_cli_accepts_csv(tmp_path, capsys):
-    from policygp.cli import main
+    from vitals.cli import main
 
     path = tmp_path / "rows.csv"
     path.write_text(template())

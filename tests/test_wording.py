@@ -1,7 +1,7 @@
 import pytest
 
-from policygp import heuristic
-from policygp.models import Statement
+from vitals import heuristic
+from vitals.models import Statement
 
 BASE = ("The SOC team reviews alerts daily in Splunk for privilege escalation and impossible travel, "
         "and each review is recorded in a ServiceNow ticket.")

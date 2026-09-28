@@ -1,4 +1,4 @@
-"""The PolicyGP request API, shared by the local server and the browser build.
+"""The Vitals request API, shared by the local server and the browser build.
 
 `assess(body)` handles a single or batch health check and returns the result
 as plain data. The local server (webapp.py) calls it for POST /api/assess; the

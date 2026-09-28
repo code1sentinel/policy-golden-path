@@ -1,11 +1,11 @@
 import pytest
 
-from policygp import heuristic
-from policygp.catalog import Catalog
-from policygp.heuristic import commitments
-from policygp.loader import load_statements
-from policygp.models import Statement
-from policygp.policy import Policy, attach_intents, load_policies, parse_policies
+from vitals import heuristic
+from vitals.catalog import Catalog
+from vitals.heuristic import commitments
+from vitals.loader import load_statements
+from vitals.models import Statement
+from vitals.policy import Policy, attach_intents, load_policies, parse_policies
 
 INTENT = ("Managers review every user account at least quarterly and remove access that is no longer needed "
           "within 5 business days. Review records are retained for at least 12 months.")
@@ -139,7 +139,7 @@ def test_risk_based_intent_does_not_demand_fixed_timelines():
 
 
 def test_policies_apply_to_risk_statements_through_their_targets():
-    from policygp.models import RISK_STATEMENT
+    from vitals.models import RISK_STATEMENT
 
     risk = Statement("ac-2_smt.j, au-6", "x", "assessment-results", kind=RISK_STATEMENT)
     assert risk.targets == [("ac-2", "ac-2_smt.j"), ("au-6", None)]
