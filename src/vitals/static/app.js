@@ -275,38 +275,10 @@ function renderSingle(a) {
     improvementsList(a.improvements),
     a.treatments ? el("h3", { text: `Treatments (${a.treatments.length})` }) : null,
     a.treatments ? treatmentList(a.treatments) : null,
-    a.fair_cam ? fairCamView(a.fair_cam) : null,
     el("h3", { text: "Best practices" }),
     practiceList(a.criteria, a.kind),
     el("p", { class: "rationale", text: a.rationale }),
   ].filter(Boolean));
-}
-
-// FAIR-CAM (prototype): which job each treatment does for the loss scenario. Shown alongside the score, not in it.
-const FAIR_CAM_GROUPS = [
-  ["Loss event controls", [["avoid", "Avoid"], ["deter", "Deter"], ["resist", "Resist"], ["detect", "Detect"],
-    ["respond", "Respond"], ["limit", "Limit loss"]]],
-  ["Variance management", [["variance", "Keep controls working"]]],
-  ["Decision support", [["decision", "Policies and standards"]]],
-];
-
-function fairCamView(fc) {
-  const groups = FAIR_CAM_GROUPS.map(([title, cells]) =>
-    el("div", { class: "fc__group" },
-      el("p", { class: "fc__title", text: title }),
-      el("div", { class: "fc__cells" }, cells.map(([key, label]) => {
-        const labels = fc.map[key] || [];
-        return el("div", { class: `fc__cell${labels.length ? "" : " is-empty"}` },
-          el("span", { class: "fc__name", text: label }),
-          el("span", { class: "fc__items", text: labels.length ? labels.join(", ") : "none" }));
-      }))));
-  return el("section", { class: "fc", "aria-label": "FAIR-CAM view" },
-    el("h3", {}, "FAIR-CAM view ", el("span", { class: "chip", text: "prototype" })),
-    el("p", { class: "fc__lead", text: "What each treatment does for the loss scenario, after the FAIR Controls Analytics Model. Shown alongside the score, not part of it." }),
-    ...groups,
-    fc.gaps.length
-      ? el("ul", { class: "improvements fc__gaps" }, fc.gaps.map((g) => el("li", { text: g })))
-      : el("p", { class: "none", text: "No FAIR-CAM gaps found." }));
 }
 
 function treatmentList(items) {
@@ -490,7 +462,6 @@ function resultRow(a, index) {
       el("div", {}, el("h3", { text: "Areas for improvement" }), improvementsList(a.improvements)),
       el("div", {}, el("h3", { text: "Best practices" }), practiceList(a.criteria, a.kind)),
       a.treatments ? el("div", { class: "full" }, el("h3", { text: "Treatments" }), treatmentList(a.treatments)) : null,
-      a.fair_cam ? el("div", { class: "full" }, fairCamView(a.fair_cam)) : null,
       el("div", { class: "full" }, el("h3", { text: "Text assessed" }), el("pre", { class: "quote", text: a.text || "(empty)" })),
       el("p", { class: "rationale full", text: a.rationale }),
     );
