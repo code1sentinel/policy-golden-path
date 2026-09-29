@@ -73,3 +73,35 @@ def test_filled_in_parameters_meet_the_policy():
               "staff leaving.", policy_intent="Access is reviewed at least every 90 days and removed within 5 "
                                               "business days of leaving.")
     assert "2/2 policy commitments met" in crit(a, "policy_intent").note
+
+
+AU6 = ("a. Review and analyze system audit records [Assignment: frequency] for indications of [Assignment: "
+       "inappropriate or unusual activity] and the potential impact of the inappropriate or unusual activity; "
+       "b. Report findings to [Assignment: personnel or roles]; and c. Adjust the level of audit record review, "
+       "analysis, and reporting within the system when there is a change in risk based on law enforcement "
+       "information, intelligence information, or other credible sources of information.")
+
+
+def test_every_part_of_the_control_is_assessed():
+    from vitals.heuristic import requirement_parts
+
+    assert [label for label, _ in requirement_parts(AU6)] == ["a", "b", "c"]
+    assert requirement_parts("Validate all inputs.") == [("", "Validate all inputs.")]
+
+    partial = check("Review and analyze audit records daily for unusual activity.", requirement=AU6)
+    assert crit(partial, "coverage").note == "1 of 3 parts addressed (a)"
+    assert any("Not addressed: parts b (Report findings to …); c (Adjust the level of audit record…)" in i
+               for i in partial.improvements)
+
+    whole = check("Review and analyze audit records daily for unusual activity and its potential impact, report "
+                  "findings to the CISO within [1 business day], and adjust the level of review when threat "
+                  "intelligence shows a change in risk.", requirement=AU6)
+    assert crit(whole, "coverage").score == 1.0
+
+
+def test_implementation_statements_are_checked_against_every_part_too():
+    from vitals.models import IMPLEMENTATION
+
+    a = heuristic.assess(Statement("au-6", "The SOC reviews Splunk audit records daily for unusual activity.",
+                                   "t", kind=IMPLEMENTATION, requirement=AU6))
+    assert next(c for c in a.criteria if c.name == "coverage").note == "1 of 3 parts addressed (a)"

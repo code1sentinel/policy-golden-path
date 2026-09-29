@@ -182,6 +182,68 @@ def _missing(required: dict[str, str], present: set[str], limit: int = 8) -> str
     return ", ".join(sorted(required[t] for t in set(required) - present)[:limit])
 
 
+# Top-level parts of a control, as catalogs label them: "a. Define ...; b. Assign ...".
+_PART_LABEL = re.compile(r"(?:^|(?<=[;:.]\s)|(?<=\band\s)|(?<=\bor\s))([a-z])\.\s", re.M)
+# Organization-defined parameters say nothing a statement has to repeat word for word.
+_PARAM_TEXT = re.compile(r"\[(assignment|selection)[^\]]*\]", re.I)
+
+
+def requirement_parts(requirement: str) -> list[tuple[str, str]]:
+    """(label, text) for each lettered part of a control, a, b, c in order; one unlabelled part otherwise."""
+    marks = [m for m in _PART_LABEL.finditer(requirement)]
+    run: list[re.Match] = []
+    for m in marks:  # keep the run a, b, c, ... and skip stray letters ("item e." inside a part)
+        if ord(m.group(1)) - ord("a") == len(run):
+            run.append(m)
+    if len(run) < 2:
+        return [("", requirement)]
+    return [(m.group(1), requirement[m.end():(run[i + 1].start() if i + 1 < len(run) else len(requirement))])
+            for i, m in enumerate(run)]
+
+
+def requirement_coverage(requirement: str, text: str) -> tuple[float, str, list[str]]:
+    """How much of the control requirement the statement addresses. Returns (score, note, improvements).
+
+    A control with lettered parts is checked part by part: a part counts when the statement uses a word
+    only that part has, or a good share of the part's words. A single-part control is checked on its words.
+    """
+    present = _terms(text)
+    parts = requirement_parts(requirement)
+    if len(parts) == 1:
+        req_words = _term_words(_PARAM_TEXT.sub(" ", requirement))
+        matched = set(req_words) & present
+        score = min(1.0, (len(matched) / len(req_words) if req_words else 1.0) / 0.4)
+        tips = [] if score >= 0.6 else ["Address more of the control requirement (missing terms: "
+                                        + _missing(req_words, matched) + ")."]
+        return score, f"{len(matched)}/{len(req_words)} requirement terms addressed", tips
+
+    words = [_term_words(_PARAM_TEXT.sub(" ", body)) for _, body in parts]
+    covered, missing = [], []
+    for i, (label, body) in enumerate(parts):
+        others = set().union(*(set(w) for j, w in enumerate(words) if j != i))
+        own = set(words[i]) - others
+        hit = set(words[i]) & present
+        if (own & present) or (words[i] and len(hit) / len(words[i]) >= 0.4):
+            covered.append(label)
+        else:
+            missing.append((label, body))
+    score = len(covered) / len(parts)
+    tips = []
+    if missing:
+        listed = "; ".join(f"{label} ({_opening_words(body)})" for label, body in missing[:4])
+        more = f", and {len(missing) - 4} more" if len(missing) > 4 else ""
+        tips.append(f"Address every part of the control. Not addressed: part{'s' if len(missing) > 1 else ''} "
+                    f"{listed}{more}.")
+    note = f"{len(covered)} of {len(parts)} parts addressed" + (f" ({', '.join(covered)})" if covered else "")
+    return score, note, tips
+
+
+def _opening_words(text: str, n: int = 6) -> str:
+    text = re.sub(r"[\s;,]*\b(and|or)?[\s;,.]*$", "", _PARAM_TEXT.sub("…", text))
+    words = text.strip(" ;,.").split()
+    return " ".join(words[:n]) + ("…" if len(words) > n else "")
+
+
 def _distinct(pattern: re.Pattern, text: str) -> set[str]:
     return {m.group(0).lower() for m in pattern.finditer(text)}
 
@@ -496,14 +558,9 @@ def assess_implementation(statement: Statement) -> Assessment:
         _inherited(text, criteria, improvements)
 
     if statement.requirement:
-        req_words = _term_words(statement.requirement)
-        matched = set(req_words) & _terms(text)
-        score = min(1.0, (len(matched) / len(req_words) if req_words else 1.0) / 0.4)
-        criteria.append(CriterionResult("coverage", score, WEIGHTS["coverage"],
-                                        f"{len(matched)}/{len(req_words)} requirement terms addressed"))
-        if score < 0.6:
-            improvements.add("coverage", "Address more of the control requirement (missing terms: "
-                                + _missing(req_words, matched) + ").")
+        score, note, tips = requirement_coverage(statement.requirement, text)
+        criteria.append(CriterionResult("coverage", score, WEIGHTS["coverage"], note))
+        improvements.extend("coverage", tips)
 
     caps: list[tuple[float, str]] = []
     if statement.policy_intent:

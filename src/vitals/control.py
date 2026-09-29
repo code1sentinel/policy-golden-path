@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 
 from .heuristic import (
-    Improvements, _distinct, _finish, _missing, _policy_intent, _term_words, _terms, commitments,
+    Improvements, _distinct, _finish, _policy_intent, _term_words, _terms, commitments, requirement_coverage,
 )
 from .models import Assessment, CriterionResult, Statement
 
@@ -204,14 +204,9 @@ def assess_control_statement(statement: Statement) -> Assessment:
     # coverage: against the catalog's control text, when the statement is written for one.
     # (A catalog's own statement is not checked against itself.)
     if statement.requirement and not statement.requirement.strip().endswith(text):
-        req_words = _term_words(statement.requirement)
-        matched = set(req_words) & _terms(text)
-        score = min(1.0, (len(matched) / len(req_words) if req_words else 1.0) / 0.4)
-        criteria.append(CriterionResult("coverage", score, WEIGHTS["coverage"],
-                                        f"{len(matched)}/{len(req_words)} requirement terms addressed"))
-        if score < 0.6:
-            improvements.add("coverage", "Address more of the control requirement (missing terms: "
-                                         + _missing(req_words, matched) + ").")
+        score, note, tips = requirement_coverage(statement.requirement, text)
+        criteria.append(CriterionResult("coverage", score, WEIGHTS["coverage"], note))
+        improvements.extend("coverage", tips)
 
     if statement.policy_intent:
         score, note, tips = _policy_intent(statement.policy_intent, text)

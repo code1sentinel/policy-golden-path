@@ -32,17 +32,18 @@ const CRITERION_LABELS = {
 };
 
 const EXAMPLES = {
+  // Examples use the whole control (NIST SP 800-53 AU-6, parts a to c): every part is assessed.
   "control-statement": {
-    control_id: "ac-2", statement_id: "ac-2_smt.j",
-    text: "The IAM team should review Okta accounts regularly.",
-    requirement: "j. Review accounts for compliance with account management requirements [Assignment: frequency of account review];",
-    policy_intent: "User access is reviewed at least every 90 days, and access no longer needed is removed within 5 business days.",
+    control_id: "au-6",
+    text: "The SOC should review Splunk logs regularly.",
+    requirement: "a. Review and analyze system audit records [Assignment: frequency] for indications of [Assignment: inappropriate or unusual activity] and the potential impact of the inappropriate or unusual activity; b. Report findings to [Assignment: personnel or roles]; and c. Adjust the level of audit record review, analysis, and reporting within the system when there is a change in risk based on law enforcement information, intelligence information, or other credible sources of information.",
+    policy_intent: "Security events are reviewed daily, and findings are reported to the CISO within 1 business day.",
   },
   "implementation": {
-    control_id: "ac-2", statement_id: "ac-2_smt.j",
-    text: "Accounts are reviewed periodically as needed to make sure they are still appropriate.",
-    requirement: "j. Review accounts for compliance with account management requirements [Assignment: frequency of account review];",
-    policy_intent: "User access is reviewed at a frequency commensurate with the risk of the access, with privileged and payment access reviewed most often. Review records are retained for at least 12 months.",
+    control_id: "au-6",
+    text: "Logs are reviewed periodically as needed to spot anything unusual.",
+    requirement: "a. Review and analyze system audit records [Assignment: frequency] for indications of [Assignment: inappropriate or unusual activity] and the potential impact of the inappropriate or unusual activity; b. Report findings to [Assignment: personnel or roles]; and c. Adjust the level of audit record review, analysis, and reporting within the system when there is a change in risk based on law enforcement information, intelligence information, or other credible sources of information.",
+    policy_intent: "Security events are reviewed daily, and findings are reported to the CISO within 1 business day.",
   },
   "risk-statement": {
     control_id: "au-6", title: "Audit review gaps",

@@ -278,7 +278,7 @@ or empty text (`TBD`, `N/A`, `[insert ...]`) is limited to 20%.
 
 | Criterion | Weight | Asks |
 | --- | --- | --- |
-| coverage | 20% | Does it address every part of the control requirement? (needs `--catalog`) |
+| coverage | 20% | Does it address every part of the control requirement? A control with lettered parts (a., b., c.) is checked part by part, and the parts not addressed are named. (needs `--catalog`, or the control text) |
 | policy_intent | 20% | Does it meet the policy intent? (needs `--policy` or `--intent`) |
 | substance | 12% | Is there enough detail to describe an implementation? |
 | responsibility | 12% | Does it name who does it? |
@@ -340,7 +340,7 @@ implementation statement or guidance, as IM8 keeps AWS Backup in its guidance.
 | scope | 20% | Does it say what it applies to (all internet-facing systems, privileged accounts)? Generic objects ("appropriate security measures") are flagged, and a statement with nothing concrete is limited to 40%. |
 | policy_intent | 20% | Does it keep the policy's commitments? (needs a policy intent) |
 | action_first | 15% | Does it start with the action (Back up, Encrypt, Restrict), not a subject ("The IT team…", "Okta…")? A leading condition or adverb is fine ("Where…, restrict…", "Only allow…"). |
-| coverage | 15% | Does it carry the catalog control text it was written for? (needs a catalog) |
+| coverage | 15% | Does it carry every part of the catalog control it was written for? Checked part by part, naming any part not addressed. (needs a catalog, or the control text) |
 | tool_neutral | 10% | Does it avoid naming products (Okta, Splunk, AWS S3)? |
 | purpose | 10% | Does it say why ("to deter brute-force attacks"), or is the risk it treats linked? |
 | single | 5% | One requirement, or two joined; more is a prompt to split. |

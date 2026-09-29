@@ -74,10 +74,6 @@
               <span>Control ID</span>
               <input name="control_id" placeholder="ac-2" autocomplete="off">
             </label>
-            <label class="field" data-for="implementation">
-              <span>Statement part <em>optional</em></span>
-              <input name="statement_id" placeholder="ac-2_smt.j" autocomplete="off">
-            </label>
             <label class="field" data-for="risk-statement recommendation identified-risk">
               <span>Title or risk ID <em>optional</em></span>
               <input name="title" autocomplete="off">
@@ -93,8 +89,8 @@
             <summary>Context <em>optional, improves the assessment</em></summary>
 
             <label class="field" data-for="control-statement implementation risk-statement">
-              <span>Control requirement</span>
-              <textarea name="requirement" rows="3" placeholder="The catalog's control text, or for an implementation statement, your control statement"></textarea>
+              <span>Control requirement <em>the whole control; every part is checked</em></span>
+              <textarea name="requirement" rows="4" placeholder="Paste the full control text, all its parts (a. ... b. ... c. ...). For an implementation statement, your control statement."></textarea>
             </label>
             <label class="field" data-for="control-statement implementation risk-statement">
               <span>Policy intent</span>
