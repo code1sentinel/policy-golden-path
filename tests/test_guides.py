@@ -2,7 +2,7 @@ import pytest
 
 from vitals import heuristic
 from vitals.guides import ADOPTED, PARTLY, practice, practice_status
-from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
+from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, RECOMMENDATION, RISK_STATEMENT, Statement, Treatment
 
 
 def rich(kind):
@@ -11,7 +11,7 @@ def rich(kind):
                      treatments=[Treatment("backup", "Backups are taken daily.")])
 
 
-@pytest.mark.parametrize("kind", [CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION])
+@pytest.mark.parametrize("kind", [CONTROL_STATEMENT, IDENTIFIED_RISK, RISK_STATEMENT, RECOMMENDATION])
 def test_every_scored_criterion_has_a_guide(kind):
     for name in {c.name for c in heuristic.assess(rich(kind)).criteria}:
         guide = practice(kind, name)
@@ -33,8 +33,8 @@ def test_assessment_reports_practices_adopted():
     d = a.to_dict()
     assert d["practices"]["total"] == len(d["criteria"])
     assert d["practices"]["adopted"] + d["practices"]["partly"] + d["practices"]["not-yet"] == d["practices"]["total"]
-    responsibility = next(c for c in d["criteria"] if c["name"] == "responsibility")
-    assert responsibility["status"] == "adopted" and responsibility["practice"] == "Name who is responsible"
+    determinable = next(c for c in d["criteria"] if c["name"] == "determinable")
+    assert determinable["status"] == "adopted" and determinable["practice"] == "Make it determinable"
 
 
 def test_summary_counts_practices(examples):
@@ -51,14 +51,16 @@ def _all_assessments(examples):
     from vitals.catalog import Catalog
     from vitals.loader import load_statements
     from vitals.policy import attach_intents, load_policies
+    from vitals.tabular import parse_csv
 
     catalog = Catalog.load(examples / "catalog-excerpt.json")
     policies = load_policies(examples / "policy-example.json")
     out = []
-    for name in ("ssp-example.json", "component-definition-example.json", "assessment-results-example.json"):
+    for name in ("catalog-excerpt.json", "assessment-results-example.json"):
         items = load_statements(examples / name, catalog)
         attach_intents(items, policies)
         out += [heuristic.assess(s) for s in items]
+    out += [heuristic.assess(s) for s in parse_csv((examples / "risk-register-example.csv").read_text())]
     return out
 
 
@@ -86,7 +88,7 @@ def test_open_improvement_caps_a_high_score_at_partly():
 def test_wording_practice_carries_no_weight():
     text = ("The SOC team reviews alerts daily in Splunk for unusual activity such as privilege escalation, "
             "and each review is recorded in a ServiceNow ticket.")
-    a = heuristic.assess(Statement("au-6", text, "ssp"))
-    implemented = next(c for c in a.criteria if c.name == "implemented")
-    assert implemented.weight == 0 and implemented.issues
+    a = heuristic.assess(Statement("au-6", text, "ssp", kind=CONTROL_STATEMENT))
+    firm = next(c for c in a.criteria if c.name == "firm")
+    assert firm.weight == 0 and firm.issues
     assert abs(sum(c.weight for c in a.criteria) - 1.0) < 1e-9

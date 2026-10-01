@@ -1,21 +1,20 @@
 import pytest
 
 from vitals import heuristic
-from vitals.catalog import Catalog
 from vitals.heuristic import commitments
-from vitals.loader import load_statements
-from vitals.models import Statement
+from vitals.models import CONTROL_STATEMENT, Statement
 from vitals.policy import Policy, attach_intents, load_policies, parse_policies
 
 INTENT = ("Managers review every user account at least quarterly and remove access that is no longer needed "
           "within 5 business days. Review records are retained for at least 12 months.")
-MEETS = ("The IAM team and line managers review every user account and its access quarterly in the Okta "
-         "access certification workflow. Access flagged as no longer needed is removed within 2 business days, "
-         "and each review is recorded in a ServiceNow ticket retained for 3 years as evidence.")
+MEETS = ("Review every user account and its access at least quarterly, to limit exposure from access that is "
+         "no longer needed, and remove access that is no longer needed within 2 business days. Each review "
+         "record is retained for at least 3 years.")
 
 
 def assess(text: str, intent: str | None = INTENT):
-    return heuristic.assess(Statement("ac-2", text, "ssp", statement_id="ac-2_smt.j", policy_intent=intent))
+    return heuristic.assess(Statement("ac-2", text, "t", statement_id="ac-2_smt.j", policy_intent=intent,
+                                      kind=CONTROL_STATEMENT))
 
 
 def criterion(a, name):
@@ -47,7 +46,7 @@ def test_slower_deadline_and_shorter_retention_are_conflicts():
 
 
 def test_omitting_a_commitment_lowers_the_score():
-    a = assess(MEETS.replace(" ServiceNow ticket retained for 3 years as", " ServiceNow ticket as"))
+    a = assess(MEETS.replace(" for at least 3 years", ""))
     assert a.confidence < assess(MEETS).confidence
     assert any("does not say how long records are kept" in g for g in a.improvements)
 
@@ -66,7 +65,7 @@ def test_without_intent_criterion_is_absent_and_weights_sum_to_one():
 
 
 def test_missing_terms_are_readable_words():
-    a = assess("The service desk resets passwords daily and logs each reset.")
+    a = assess("Reset passwords daily and log each reset.")
     [gap] = [g for g in a.improvements if g.startswith("Show how")]
     assert "managers" in gap and "quarterly" not in gap and "manag," not in gap
 
@@ -80,13 +79,16 @@ def test_commitments_are_parsed():
 
 
 def test_policies_map_to_controls_and_statement_parts(examples):
-    catalog = Catalog.load(examples / "catalog-excerpt.json")
-    statements = load_statements(examples / "ssp-example.json", catalog)
+    statements = [
+        Statement("ia-2", "x", "catalog", kind=CONTROL_STATEMENT),
+        Statement("ac-2", "x", "catalog", statement_id="ac-2_smt.j", kind=CONTROL_STATEMENT),
+        Statement("ac-2", "x", "catalog", statement_id="ac-2_smt.e", kind=CONTROL_STATEMENT),
+    ]
     attach_intents(statements, load_policies(examples / "policy-example.json"))
     by_key = {s.key: s for s in statements}
-    assert by_key["ia-2 [Okta]"].policy_ids == ["ISP-06"]
-    assert by_key["ac-2_smt.j [Payments Platform]"].policy_ids == ["ISP-05.1"]
-    assert by_key["ac-2_smt.e [Okta]"].policy_ids == ["ISP-05.2"]
+    assert by_key["ia-2"].policy_ids == ["ISP-06"]
+    assert by_key["ac-2_smt.j"].policy_ids == ["ISP-05.1"]
+    assert by_key["ac-2_smt.e"].policy_ids == ["ISP-05.2"]
 
 
 def test_policy_without_controls_applies_everywhere_and_intents_combine():
@@ -108,10 +110,10 @@ def test_invalid_policy_files(data, message):
 
 RISK_BASED = ("User access is reviewed at a frequency commensurate with the risk of the access, and access "
               "that is no longer needed is removed promptly.")
-TIERED = ("Accounts are tiered in the annual access risk assessment owned by the CISO: Tier 1 covers "
-          "privileged and payment access, Tier 2 everything else. Managers review Tier 1 access quarterly "
-          "and Tier 2 access annually in Okta, and unneeded access is removed within 5 business days. "
-          "Tiers are reassessed after major changes. Each review is recorded in a ServiceNow ticket.")
+TIERED = ("Tier accounts in the annual access risk assessment owned by the CISO: Tier 1 covers "
+          "privileged and payment access, Tier 2 everything else. Review Tier 1 access quarterly "
+          "and Tier 2 access annually, and remove unneeded access within 5 business days. "
+          "Reassess tiers after major changes, and record each review.")
 
 
 def test_risk_based_intent_is_met_by_a_tiered_schedule():
@@ -123,8 +125,7 @@ def test_risk_based_intent_is_met_by_a_tiered_schedule():
 
 
 def test_based_on_risk_alone_is_not_enough():
-    vague = ("Managers review user access in Okta based on risk, and each review is recorded in a "
-             "ServiceNow ticket.")
+    vague = "Review user access based on risk, and record each review."
     a = assess(vague, RISK_BASED)
     text = " ".join(a.improvements)
     assert "'based on risk' without saying how risk is rated" in text

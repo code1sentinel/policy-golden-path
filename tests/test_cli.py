@@ -1,13 +1,15 @@
 import json
 
 from vitals.cli import main
+from vitals.tabular import template
 
 
-def test_reports_results_and_exits_zero(examples, capsys):
-    doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
-    assert main([doc, "-c", cat]) == 0
+def test_reports_results_and_exits_zero(tmp_path, capsys):
+    doc = tmp_path / "rows.csv"
+    doc.write_text(template())
+    assert main([str(doc)]) == 0
     out = capsys.readouterr().out
-    assert "4 implementation statements: average confidence" in out
+    assert "2 control statements: average confidence" in out
     assert "Areas for improvement" in out
     assert "PASS" not in out and "FAIL" not in out
 
@@ -22,17 +24,17 @@ def test_assessment_results_input(examples, capsys):
 
 
 def test_markdown_and_oscal_observations(examples, tmp_path, capsys):
-    doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
+    doc = str(examples / "catalog-excerpt.json")
     ar = tmp_path / "ar.json"
     md = tmp_path / "report.md"
-    main([doc, "-c", cat, "-f", "markdown", "-o", str(md), "--assessment-results", str(ar)])
+    main([doc, "-f", "markdown", "-o", str(md), "--assessment-results", str(ar)])
 
     text = md.read_text()
     assert "## Areas for improvement" in text and "pass" not in text.lower().replace("passw", "")
     result = json.loads(ar.read_text())["assessment-results"]["results"][0]
     assert "findings" not in result
     obs = result["observations"]
-    assert len(obs) == 4 and all(o["methods"] == ["EXAMINE"] for o in obs)
+    assert len(obs) == 3 and all(o["methods"] == ["EXAMINE"] for o in obs)
     props = {p["name"] for p in obs[0]["props"]}
     assert {"confidence", "assessed-kind", "control-id"} <= props
     assert result["reviewed-controls"]["control-selections"][0]["include-controls"]
@@ -42,7 +44,7 @@ def test_no_threshold_option(examples, capsys):
     import pytest
 
     with pytest.raises(SystemExit):
-        main([str(examples / "ssp-example.json"), "--threshold", "0.8"])
+        main([str(examples / "catalog-excerpt.json"), "--threshold", "0.8"])
 
 
 def test_bad_input_exits_2(tmp_path, capsys):
@@ -57,11 +59,11 @@ def test_bad_input_exits_2(tmp_path, capsys):
 
 
 def test_policy_intent_is_applied(examples, capsys):
-    doc, cat = str(examples / "ssp-example.json"), str(examples / "catalog-excerpt.json")
-    main([doc, "-c", cat, "-f", "json"])
+    doc = str(examples / "catalog-excerpt.json")
+    main([doc, "-f", "json"])
     before = {a["control_id"]: a for a in json.loads(capsys.readouterr().out)["assessments"]}
 
-    main([doc, "-c", cat, "-p", str(examples / "policy-example.json"), "-f", "json"])
+    main([doc, "-p", str(examples / "policy-example.json"), "-f", "json"])
     after = {a["control_id"]: a for a in json.loads(capsys.readouterr().out)["assessments"]}
     assert after["au-6"]["confidence"] < before["au-6"]["confidence"]
     assert after["au-6"]["policies"] == ["ISP-09"]
@@ -69,7 +71,7 @@ def test_policy_intent_is_applied(examples, capsys):
 
 
 def test_inline_intent_applies_to_every_statement(examples, capsys):
-    main([str(examples / "ssp-example.json"), "-i", "Reviewed at least weekly.", "-f", "json"])
+    main([str(examples / "catalog-excerpt.json"), "-i", "Reviewed at least weekly.", "-f", "json"])
     data = json.loads(capsys.readouterr().out)
     assert all(a["policies"] == ["--intent"] for a in data["assessments"])
 
@@ -77,4 +79,4 @@ def test_inline_intent_applies_to_every_statement(examples, capsys):
 def test_bad_policy_file_exits_2(examples, tmp_path):
     bad = tmp_path / "p.json"
     bad.write_text('{"policies": [{"id": "P"}]}')
-    assert main([str(examples / "ssp-example.json"), "-p", str(bad)]) == 2
+    assert main([str(examples / "catalog-excerpt.json"), "-p", str(bad)]) == 2

@@ -5,10 +5,17 @@ A control statement says what must be done, not who does it or with what:
     Back up all important data and systems at least every [N] day(s), and store
     backups in a secure and separate location.                    (IM8 BR-1)
 
-It starts with the action, names no product (tools belong in the
-implementation statement or guidance), says what it applies to, can be tested,
-and says why. How the organization meets it, with which tools and people, is
-the implementation statement's job, checked separately.
+It starts with the action, names no product (tools belong in guidance, or
+with however the organization implements it), says what it applies to, can
+be tested, and says why. How the organization meets it, with which tools and
+people, is a separate concern, checked elsewhere.
+
+Alongside IM8's house style, a handful of criteria draw on OSCAL's own
+authoring conventions for a catalog control: joined requirements get their
+own lettered, referenceable parts (`labeled_parts`), as a catalog's own
+`statement`/`item` parts do; and a requirement should be written so an
+assessor can determine pass or fail, not left to a subjective judgment call
+(`determinable`), the way a NIST SP 800-53A assessment objective is.
 """
 
 from __future__ import annotations
@@ -17,12 +24,14 @@ import re
 
 from .heuristic import (
     Improvements, _distinct, _finish, _policy_intent, _term_words, _terms, commitments, requirement_coverage,
+    requirement_parts,
 )
 from .models import Assessment, CriterionResult, Statement
 
 WEIGHTS = {
     "action_first": 0.15, "tool_neutral": 0.10, "scope": 0.20, "testable": 0.25,
     "purpose": 0.10, "single": 0.05, "coverage": 0.15, "policy_intent": 0.20,
+    "labeled_parts": 0.05, "determinable": 0.05,
 }
 
 # Verbs a requirement can open with: IM8's own openers and the usual control verbs.
@@ -46,7 +55,7 @@ _CONDITION = re.compile(r"^(where|when|if|for|before|after|unless|in the event)\
 _SUBJECT = re.compile(r"^(the|our|we|it|this|these|those|all|each|every|any|staff|users?|employees?|managers?|"
                       r"administrators?|admins?|teams?|[a-z]+ (team|officer|owner|manager)s?)\b", re.I)
 
-# Products and vendors: these belong in the implementation statement or guidance.
+# Products and vendors: these belong in guidance, or wherever the control is implemented.
 _PRODUCTS = re.compile(
     r"\b(okta|splunk|crowdstrike|falcon|microsoft|defender|entra|azure|intune|office 365|m365|sharepoint|"
     r"aws|amazon|s3|ec2|ecs|eks|lambda|dynamodb|cloudfront|cloudtrail|guardduty|google cloud|gcp|"
@@ -87,6 +96,13 @@ _CLAUSE = re.compile(r"([\w-]+)(?:,\s*(?:and\s+|or\s+)?|;\s*(?:and\s+)?|\s+and\s
 # "a secure and separate location": a word joined to an adjective or verb is describing, not a new action.
 _ADJECTIVE = re.compile(r"(al|ive|ous|ible|able|ful|less|ic|ary|ed|ing)$|^(secure|safe|separate|clear|strong|"
                         r"complete|accurate|current|valid)$", re.I)
+# Evaluative words with no fixed test: an assessor cannot determine pass or fail against them on their own,
+# the way a NIST SP 800-53A assessment objective must be determinable (OSCAL catalogs write to the same end).
+_SUBJECTIVE = re.compile(
+    r"\b(robust|effective(ly)?|adequate(ly)?|sufficient(ly)?|suitable|reasonable|sound|appropriate|proper(ly)?|"
+    r"industry[- ]standard|best[- ]practice|state[- ]of[- ]the[- ]art)\b",
+    re.I,
+)
 
 
 def _opening(text: str) -> str:
@@ -133,19 +149,19 @@ def assess_control_statement(statement: Statement) -> Assessment:
     elif _PRODUCTS.match(opening) or _SUBJECT.match(opening) or re.match(r"^\w+ (is|are|will|shall|must|should)\b", opening, re.I):
         action_first, note = 0.0, f"starts with the subject ('{' '.join(opening.split()[:2])}')"
         improvements.add("action_first", "Start with the action (Back up, Encrypt, Restrict), not who does it: "
-                                         "the implementation statement says who.")
+                                         "that belongs with how the control is implemented, not the requirement.")
     else:
         action_first, note = 0.5, f"starts with '{first}'"
         improvements.add("action_first", "Start with the verb for what must be done (Back up, Encrypt, Restrict).")
     criteria.append(CriterionResult("action_first", action_first, WEIGHTS["action_first"], note))
 
-    # tool_neutral: products belong in the implementation statement or guidance.
+    # tool_neutral: products belong in guidance, or wherever the control is implemented.
     products = sorted(_distinct(_PRODUCTS, text))
     criteria.append(CriterionResult("tool_neutral", 0.3 if products else 1.0, WEIGHTS["tool_neutral"],
                                     ", ".join(products) or "no products named"))
     if products:
         improvements.add("tool_neutral", f"Names {', '.join(products)}: say what must be achieved, and move the "
-                                         "product to the implementation statement or guidance.")
+                                         "product to guidance or wherever the control is implemented.")
 
     # scope: what it applies to. A qualified object is best; any concrete object will do; generic words
     # ("security", "measures") leave nobody able to tell what is in scope.
@@ -200,6 +216,32 @@ def assess_control_statement(statement: Statement) -> Assessment:
     if single < 1:
         improvements.add("single", f"Combines {len(actions)} requirements ({', '.join(actions)}): consider "
                                    "splitting them so each can be tested and reported on its own.")
+
+    # labeled_parts: OSCAL gives each joined requirement in a catalog control its own lettered, referenceable
+    # part (a., b., c.), rather than leaving them run together; a statement that bundles more than two
+    # requirements (the point "single" starts flagging it) should be split that way, not just split somehow.
+    if len(actions) <= 2:
+        labeled_parts, parts_note = 1.0, "not bundled"
+    elif len(requirement_parts(text)) > 1:
+        labeled_parts, parts_note = 1.0, "already split into lettered parts"
+    else:
+        labeled_parts, parts_note = 0.5, "bundled, not split into lettered parts"
+        improvements.add("labeled_parts", "OSCAL gives each joined requirement its own lettered part (a., b., c.) "
+                                          "with a stable id, so each can be assessed and referenced on its own "
+                                          "(e.g. 'ac-2_smt.j'): split this statement that way, not with commas.")
+    criteria.append(CriterionResult("labeled_parts", labeled_parts, WEIGHTS["labeled_parts"], parts_note))
+
+    # determinable: an assessor needs something to check pass or fail against, not a subjective judgment call,
+    # the way a NIST SP 800-53A assessment objective must be determinable.
+    subjective = sorted(_distinct(_SUBJECTIVE, text))
+    determinable = 0.5 if subjective else 1.0
+    criteria.append(CriterionResult("determinable", determinable, WEIGHTS["determinable"],
+                                    ", ".join(subjective) or "no subjective qualifiers"))
+    if subjective:
+        quoted = "'" + "', '".join(subjective) + "'"
+        improvements.add("determinable", f"{quoted} cannot be objectively tested: say exactly what must be true "
+                                         "(a setting, a threshold, a named control) so an assessor can determine "
+                                         "pass or fail.")
 
     # coverage: against the catalog's control text, when the statement is written for one.
     # (A catalog's own statement is not checked against itself.)

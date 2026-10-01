@@ -19,7 +19,7 @@
         <div>
           <h1 class="brand__name">Vitals</h1>
           <p class="local-note" data-browser-only hidden>Runs in your browser: your files never leave this device.</p>
-          <p class="brand__tag">Vital signs for your controls: health checks for identified risks, control statements, implementation statements, risk statements and recommendations, from policy intent to practice.</p>
+          <p class="brand__tag">Vital signs for your controls: health checks for identified risks, control statements, risk statements and recommendations, from policy intent to practice.</p>
         </div>
       </div>
     </div>
@@ -63,14 +63,13 @@
           <fieldset class="kinds">
             <legend>What are you assessing?</legend>
             <label class="kind"><input type="radio" name="kind" value="control-statement" checked><span>Control statement</span></label>
-            <label class="kind"><input type="radio" name="kind" value="implementation"><span>Implementation statement</span></label>
             <label class="kind"><input type="radio" name="kind" value="risk-statement"><span>Risk statement</span></label>
             <label class="kind"><input type="radio" name="kind" value="recommendation"><span>Recommendation</span></label>
             <label class="kind"><input type="radio" name="kind" value="identified-risk"><span>Identified risk</span></label>
           </fieldset>
 
           <div class="row">
-            <label class="field" data-for="control-statement implementation risk-statement recommendation">
+            <label class="field" data-for="control-statement risk-statement recommendation">
               <span>Control ID</span>
               <input name="control_id" placeholder="ac-2" autocomplete="off">
             </label>
@@ -81,18 +80,18 @@
           </div>
 
           <label class="field">
-            <span id="text-label">Implementation statement</span>
+            <span id="text-label">Control statement</span>
             <textarea name="text" rows="7" required></textarea>
           </label>
 
           <details class="context" open>
             <summary>Context <em>optional, improves the assessment</em></summary>
 
-            <label class="field" data-for="control-statement implementation risk-statement">
+            <label class="field" data-for="control-statement risk-statement">
               <span>Control requirement <em>the whole control; every part is checked</em></span>
-              <textarea name="requirement" rows="4" placeholder="Paste the full control text, all its parts (a. ... b. ... c. ...). For an implementation statement, your control statement."></textarea>
+              <textarea name="requirement" rows="4" placeholder="Paste the full control text, all its parts (a. ... b. ... c. ...)."></textarea>
             </label>
-            <label class="field" data-for="control-statement implementation risk-statement">
+            <label class="field" data-for="control-statement risk-statement">
               <span>Policy intent</span>
               <textarea name="policy_intent" rows="3" placeholder="What your policy says this control must achieve"></textarea>
             </label>
@@ -162,7 +161,7 @@
         <label class="drop" id="drop">
           <input type="file" id="batch-files" multiple accept=".csv,.xlsx,.json,text/csv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
           <span class="drop__title">Drop files here, or <u>browse</u></span>
-          <span class="drop__hint">A CSV or Excel (.xlsx) file with one row per policy (columns below), or OSCAL JSON (catalog, SSP, component definition, assessment results, POA&amp;M). A catalog such as IM8 has its own control statements checked. Several files at once.</span>
+          <span class="drop__hint">A CSV or Excel (.xlsx) file with one row per policy (columns below), or OSCAL JSON (catalog, assessment results, POA&amp;M). A catalog such as IM8 has its own control statements checked. Several files at once.</span>
         </label>
 
         <details class="columns" open>
@@ -181,7 +180,7 @@
               </tr>
             </tbody>
           </table>
-          <p class="columns__optional"><strong>Optional:</strong> implementation statement (how the control is met today: who, with which tool, how often, what evidence; checked against the control statement), identified risk and risk id (for a risk-based approach), control id, control requirement, title, likelihood, impact, owner, target date. Column names are not case-sensitive. Upload an Excel workbook as it is (the sheet with these columns is used), or a comma, semicolon or tab separated CSV.</p>
+          <p class="columns__optional"><strong>Optional:</strong> identified risk and risk id (for a risk-based approach), control id, control requirement, title, likelihood, impact, owner, target date. Column names are not case-sensitive. Upload an Excel workbook as it is (the sheet with these columns is used), or a comma, semicolon or tab separated CSV.</p>
         </details>
 
         <ul id="file-list" class="files"></ul>
@@ -274,11 +273,6 @@
           <span class="path__check">Checked against the policy intent and the risk it treats</span>
         </li>
         <li class="path__stage">
-          <span class="path__name">Implementation statement</span>
-          <span class="path__what">How it is met today</span>
-          <span class="path__check">Checked against the control statement and policy intent</span>
-        </li>
-        <li class="path__stage">
           <span class="path__name">Risk statement</span>
           <span class="path__what">Where practice falls short, and what it could cost</span>
           <span class="path__check">Checked against the control and policy it fails</span>
@@ -293,7 +287,6 @@
       <h2 class="section-title">Best practices at each stage</h2>
       <div class="guide-kinds" role="group" aria-label="Guide">
         <button type="button" class="kind-btn" data-guide="control-statement" aria-pressed="true">Control statements</button>
-        <button type="button" class="kind-btn" data-guide="implementation" aria-pressed="false">Implementation statements</button>
         <button type="button" class="kind-btn" data-guide="risk-statement" aria-pressed="false">Risk statements</button>
         <button type="button" class="kind-btn" data-guide="recommendation" aria-pressed="false">Recommendations</button>
         <button type="button" class="kind-btn" data-guide="identified-risk" aria-pressed="false">Identified risks</button>

@@ -13,10 +13,10 @@ from .service import assess_all, parse_document, prepare
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="vitals",
-        description="Score OSCAL implementation statements, risk statements and recommendations, "
+        description="Score OSCAL control statements, risk statements and recommendations, "
                     "and list areas for improvement.",
     )
-    p.add_argument("document", help="OSCAL SSP, component definition, assessment results or POA&M (JSON), "
+    p.add_argument("document", help="OSCAL catalog, assessment results or POA&M (JSON), "
                                     "a CSV or an Excel workbook (.xlsx) with one row per policy")
     p.add_argument("-c", "--catalog", help="OSCAL catalog (JSON) supplying control requirement text")
     p.add_argument("-p", "--policy", metavar="PATH",

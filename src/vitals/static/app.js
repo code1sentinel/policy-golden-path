@@ -7,21 +7,18 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const KIND_LABELS = {
   "control-statement": "Control statement",
-  "implementation": "Implementation statement",
   "risk-statement": "Risk statement",
   "recommendation": "Recommendation",
   "identified-risk": "Identified risk",
 };
 const BADGE_LABELS = {
   "control-statement": "Control",
-  "implementation": "Implementation",
   "risk-statement": "Risk",
   "recommendation": "Recommendation",
   "identified-risk": "Identified risk",
 };
 const TEXT_LABELS = {
   "control-statement": "Control statement",
-  "implementation": "Implementation statement",
   "risk-statement": "Risk statement",
   "recommendation": "Recommendation",
   "identified-risk": "Identified risk",
@@ -36,12 +33,6 @@ const EXAMPLES = {
   "control-statement": {
     control_id: "au-6",
     text: "The SOC should review Splunk logs regularly.",
-    requirement: "a. Review and analyze system audit records [Assignment: frequency] for indications of [Assignment: inappropriate or unusual activity] and the potential impact of the inappropriate or unusual activity; b. Report findings to [Assignment: personnel or roles]; and c. Adjust the level of audit record review, analysis, and reporting within the system when there is a change in risk based on law enforcement information, intelligence information, or other credible sources of information.",
-    policy_intent: "Security events are reviewed daily, and findings are reported to the CISO within 1 business day.",
-  },
-  "implementation": {
-    control_id: "au-6",
-    text: "Logs are reviewed periodically as needed to spot anything unusual.",
     requirement: "a. Review and analyze system audit records [Assignment: frequency] for indications of [Assignment: inappropriate or unusual activity] and the potential impact of the inappropriate or unusual activity; b. Report findings to [Assignment: personnel or roles]; and c. Adjust the level of audit record review, analysis, and reporting within the system when there is a change in risk based on law enforcement information, intelligence information, or other credible sources of information.",
     policy_intent: "Security events are reviewed daily, and findings are reported to the CISO within 1 business day.",
   },

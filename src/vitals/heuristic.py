@@ -1,19 +1,18 @@
 """Offline, deterministic rubric scorer.
 
-Each statement is scored against the questions an assessor asks of an
-implementation statement: who does it, with what, how often, what evidence it
-leaves, whether it answers what the control actually requires, and whether it
-meets the intent of the organization's policy. The weighted sum is the
-confidence, reduced by wording that does not belong in a statement of fact
-(hedges, obligations, open-ended examples) and limited when the statement is a
-placeholder or describes planned work.
+Each statement is scored against the questions an assessor asks of it: whether
+it answers what the control actually requires, whether it meets the intent of
+the organization's policy, and the signals specific to its kind. The weighted
+sum is the confidence, reduced by wording that does not belong in a statement
+of fact (hedges, open-ended examples) and limited when the statement is a
+placeholder.
 """
 
 from __future__ import annotations
 
 import re
 
-from .models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
+from .models import CONTROL_STATEMENT, IDENTIFIED_RISK, RECOMMENDATION, RISK_STATEMENT, Assessment, CriterionResult, Statement
 
 
 class Improvements:
@@ -39,33 +38,15 @@ class Improvements:
         return [t for p, t in self.items if p == practice]
 
 
-# The practice that wording, placeholders and planned work count against, for each kind.
-WORDING_PRACTICE = {IMPLEMENTATION: "implemented", RISK_STATEMENT: "clarity", RECOMMENDATION: "clarity",
+# The practice that wording and placeholders count against, for each kind.
+WORDING_PRACTICE = {RISK_STATEMENT: "clarity", RECOMMENDATION: "clarity",
                     IDENTIFIED_RISK: "clarity", CONTROL_STATEMENT: "firm"}
 
-# Relative weights. coverage needs a catalog and policy_intent needs a policy
-# intent; when either is missing the others are rescaled to sum to 1.
-WEIGHTS = {
-    "substance": 0.12,
-    "responsibility": 0.12,
-    "mechanism": 0.12,
-    "frequency": 0.12,
-    "evidence": 0.12,
-    "coverage": 0.20,
-    "policy_intent": 0.20,
-}
-
 PLACEHOLDER_CAP = 0.20
-PLANNED_CAP = 0.50
 TOLERANCE = 1.05  # "every 90 days" meets "quarterly"
 
 _PLACEHOLDER = re.compile(
     r"\b(tbd|tbc|todo|to be (determined|confirmed|completed)|lorem ipsum|n/?a|placeholder|fill in)\b|\[insert|<[^>]+>",
-    re.I,
-)
-_PLANNED = re.compile(
-    r"\b(will be (implemented|configured|deployed|established|developed)|is planned|are planned|planned for|"
-    r"plan to|intends? to|in progress|not yet|future release|roadmap)\b",
     re.I,
 )
 # Vague wording: never says what actually happens.
@@ -83,8 +64,6 @@ _WEAK_ACTIONS = re.compile(
     r"think about|aim to|try to|where feasible|if possible|may wish to|may want to|could)\b",
     re.I,
 )
-# Obligations restate the requirement instead of saying how it is met.
-_OBLIGATIONS = re.compile(r"\b(must|shall|is required to|are required to|is expected to|are expected to)\b", re.I)
 # Open-ended examples leave the scope undefined...
 _OPEN_EXAMPLES = re.compile(
     r"\b(such as|for example|for instance|including but not limited to|among others|and so on)\b"
@@ -118,6 +97,7 @@ _MECHANISMS = re.compile(
     r"encrypt(ed|ion|s)?|hash(ed|ing)?|backup|replicat(ed|ion))\b",
     re.I,
 )
+# Frequency or trigger wording, used to judge whether a risk-based policy has been turned into a schedule.
 _FREQUENCY = re.compile(
     r"\b(hourly|daily|weekly|fortnightly|monthly|quarterly|semi-?annually|annually|yearly|"
     r"every \d+|(each|every) (business |working )?(day|week|month|quarter|year)|within \d+|"
@@ -126,22 +106,6 @@ _FREQUENCY = re.compile(
     r"real[- ]time|continuous(ly)?|on (each|every)|upon|prior to|before|immediately|"
     r"at least (once|every)|at login|at each|whenever|as (it|they) (occurs?|happens?)|"
     r"(all|every|each) (\w+ ){0,3}events?)\b",
-    re.I,
-)
-# Inherited controls: a provider operates all or part of the control under its own authorization.
-_INHERITED = re.compile(r"\b(inherit(s|ed|ance)?|leverag(es|ed) authori[sz]ation)\b", re.I)
-_PARTIAL = re.compile(r"\b(partial(ly)?|shared|hybrid|in part)\b", re.I)
-_CUSTOMER_PART = re.compile(r"\b(customer|tenant|consumer|agency|we|our)\b[^.]{0,80}\b(responsible|configures?|"
-                            r"manages?|operates?|performs?)\b", re.I)
-_AUTHORIZATION = re.compile(
-    r"\b(fedramp|p-?ato|ato|authority to operate|soc ?[12]( type (i|ii|1|2))?|iso(/iec)? ?27001|irap|mtcs|"
-    r"csa star|pci[- ]dss|attestation of compliance|provisional authori[sz]ation)\b",
-    re.I,
-)
-_EVIDENCE = re.compile(
-    r"\b(logs?|logged|logging|records?|recorded|reports?|tickets?|audit trails?|retained|retention|"
-    r"documented|evidence|attestations?|sign-?off|approv(al|ed)|alerts?|dashboards?|screenshots?|"
-    r"exports?|reviewed|minutes|history|archived?)\b",
     re.I,
 )
 
@@ -412,7 +376,6 @@ def _quote(phrases: list[str]) -> str:
 
 
 _SAY_INSTEAD = {
-    IMPLEMENTATION: "what actually happens",
     RISK_STATEMENT: "what was found",
     RECOMMENDATION: "the specific action to take",
     IDENTIFIED_RISK: "what could happen",
@@ -434,12 +397,6 @@ def _wording(text: str, rules: tuple[str, ...], instead: str = "what actually ha
         if found:
             phrases += found
             improvements.append(f"Replace {_quote(found)} with {instead}.")
-    if "obligations" in rules:
-        found = sorted(_distinct(_OBLIGATIONS, text))
-        if found:
-            phrases += found
-            improvements.append(f"{_quote(found)} {'restate' if len(found) > 1 else 'restates'} the requirement; "
-                                "describe what enforces it and what happens today.")
     if "weak_actions" in rules:
         found = sorted(_distinct(_WEAK_ACTIONS, text))
         if found:
@@ -488,8 +445,7 @@ def _finish(statement: Statement, criteria: list[CriterionResult], improvements:
 
     # Wording is scored as a multiplier above, so its practice carries no weight of its own:
     # it is listed so the checklist and the improvements always agree.
-    planned = statement.kind == IMPLEMENTATION and _PLANNED.search(text)
-    wording_score = 0.0 if placeholder else factor * (PLANNED_CAP if planned else 1.0)
+    wording_score = 0.0 if placeholder else factor
     criteria.append(CriterionResult(wording, wording_score, 0.0,
                                     ", ".join(phrases) if phrases else ("placeholder" if placeholder else "clear")))
     for c in criteria:
@@ -502,77 +458,6 @@ def _finish(statement: Statement, criteria: list[CriterionResult], improvements:
 def _signal(name: str, pattern: re.Pattern, text: str, full_at: int, weight: float) -> CriterionResult:
     hits = _distinct(pattern, text)
     return CriterionResult(name, _ratio(len(hits), full_at), weight, ", ".join(sorted(hits)) or "none found")
-
-
-def _inherited(text: str, criteria: list[CriterionResult], improvements: Improvements) -> None:
-    """Adjust for a control the provider operates under its own authorization.
-
-    Fully inherited: the authorization is the evidence and the schedule is the provider's, so the statement
-    only has to name the provider and the authorization. Partly inherited: the authorization covers the
-    provider's part; the customer's part still needs who, how often and what evidence.
-    """
-    by_name = {c.name: c for c in criteria}
-    authorization = sorted(_distinct(_AUTHORIZATION, text))
-    partial = bool(_PARTIAL.search(text))
-    if authorization:
-        ev = by_name["evidence"]
-        ev.score = max(ev.score, 0.5 if partial else 1.0)
-        ev.note = f"inherited under {', '.join(authorization)}" + (f"; {ev.note}" if ev.note != "none found" else "")
-    else:
-        improvements.add("evidence", "Name the authorization or attestation the inherited control relies on "
-                                     "(a FedRAMP P-ATO, SOC 2 report, ISO 27001 certificate or MTCS certificate).")
-    if not partial:
-        by_name["frequency"].score = 1.0
-        by_name["frequency"].note = "operated by the provider"
-    elif not _CUSTOMER_PART.search(text):
-        improvements.add("responsibility", "The control is only partly inherited: describe the customer's part, "
-                                           "who performs it and how.")
-
-
-# --- Implementation statements ---------------------------------------------------------------
-
-def assess_implementation(statement: Statement) -> Assessment:
-    text = statement.text.strip()
-    words = len(text.split())
-    criteria: list[CriterionResult] = []
-    improvements = Improvements()
-
-    substance = 0.0 if words < 12 else min(1.0, (words - 12) / 38 + 0.25)
-    criteria.append(CriterionResult("substance", substance, WEIGHTS["substance"], f"{words} words"))
-    if words < 25:
-        improvements.add("substance", "Statement is too brief to show how the control is met.")
-
-    # A fully inherited control is run by the provider: how often and what evidence are the provider's.
-    inherited = bool(_INHERITED.search(text)) and not _PARTIAL.search(text)
-    for name, pattern, full_at, tip in (
-        ("responsibility", _ROLES, 1, "Name the role or team responsible for performing the control."),
-        ("mechanism", _MECHANISMS, 2, "Describe the specific tool, configuration or process that implements it."),
-        ("frequency", _FREQUENCY, 1, "State how often or on what trigger the control operates."),
-        ("evidence", _EVIDENCE, 2, "Say what records or artefacts prove the control operated."),
-    ):
-        c = _signal(name, pattern, text, full_at, WEIGHTS[name])
-        criteria.append(c)
-        if c.score < 0.5 and not (inherited and name in ("frequency", "evidence")):
-            improvements.add(name, tip)
-    if _INHERITED.search(text):
-        _inherited(text, criteria, improvements)
-
-    if statement.requirement:
-        score, note, tips = requirement_coverage(statement.requirement, text)
-        criteria.append(CriterionResult("coverage", score, WEIGHTS["coverage"], note))
-        improvements.extend("coverage", tips)
-
-    caps: list[tuple[float, str]] = []
-    if statement.policy_intent:
-        score, note, intent_tips = _policy_intent(statement.policy_intent, text)
-        criteria.append(CriterionResult("policy_intent", score, WEIGHTS["policy_intent"], note))
-        improvements.extend("policy_intent", intent_tips)
-    if _PLANNED.search(text):
-        caps.append((PLANNED_CAP, "describes planned rather than implemented work"))
-        improvements.add("implemented", "Describe what is implemented today, not what is planned.")
-
-    return _finish(statement, criteria, improvements, ("vague", "modals", "obligations", "examples"), caps,
-                   "Replace the placeholder with a real implementation statement.")
 
 
 # --- Risk statements -------------------------------------------------------------------------
@@ -829,7 +714,10 @@ def assess(statement: Statement) -> Assessment:
         from .control import assess_control_statement  # control builds on this module
 
         return assess_control_statement(statement)
-    return {
-        RISK_STATEMENT: assess_risk_statement,
-        RECOMMENDATION: assess_recommendation,
-    }.get(statement.kind, assess_implementation)(statement)
+    try:
+        return {
+            RISK_STATEMENT: assess_risk_statement,
+            RECOMMENDATION: assess_recommendation,
+        }[statement.kind](statement)
+    except KeyError:
+        raise ValueError(f"unknown statement kind {statement.kind!r}") from None

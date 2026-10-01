@@ -1,25 +1,18 @@
 import pytest
 
 from vitals import heuristic
-from vitals.models import Statement
+from vitals.models import CONTROL_STATEMENT, Statement
 
 BASE = ("The SOC team reviews alerts daily in Splunk for privilege escalation and impossible travel, "
         "and each review is recorded in a ServiceNow ticket.")
 
 
 def assess(text):
-    return heuristic.assess(Statement("au-6", text, "ssp"))
+    return heuristic.assess(Statement("au-6", text, "t", kind=CONTROL_STATEMENT))
 
 
 def test_clean_statement_has_no_wording_penalty():
     assert "wording" not in assess(BASE).rationale
-
-
-@pytest.mark.parametrize("phrase", ["must", "shall", "is required to"])
-def test_obligations_are_penalised(phrase):
-    a = assess(BASE + f" Analysts {phrase} escalate incidents to the CISO.")
-    assert a.confidence < assess(BASE).confidence
-    assert any(f"'{phrase}' restates the requirement" in g for g in a.improvements)
 
 
 @pytest.mark.parametrize("phrase", ["such as", "e.g.", "for example", "including but not limited to", "etc."])

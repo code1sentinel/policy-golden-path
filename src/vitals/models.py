@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-IMPLEMENTATION = "implementation"
 RISK_STATEMENT = "risk-statement"
 RECOMMENDATION = "recommendation"
 IDENTIFIED_RISK = "identified-risk"
@@ -10,14 +9,13 @@ CONTROL_STATEMENT = "control-statement"
 
 KIND_LABELS = {
     CONTROL_STATEMENT: "Control statement",
-    IMPLEMENTATION: "Implementation statement",
     RISK_STATEMENT: "Risk statement",
     RECOMMENDATION: "Recommendation",
     IDENTIFIED_RISK: "Identified risk",
 }
 
 # Kinds written for a control and keyed by control and statement part, rather than by a risk.
-STATEMENT_KINDS = (IMPLEMENTATION, CONTROL_STATEMENT)
+STATEMENT_KINDS = (CONTROL_STATEMENT,)
 
 
 @dataclass
@@ -28,32 +26,30 @@ class Treatment:
     policy_intent: str | None = None
     control_statement: str | None = None
     control_id: str | None = None
-    implementation_statement: str | None = None
 
     @property
     def text(self) -> str:
-        return " ".join(t for t in (self.policy_intent, self.control_statement, self.implementation_statement) if t)
+        return " ".join(t for t in (self.policy_intent, self.control_statement) if t)
 
 
 @dataclass
 class Statement:
     """One piece of OSCAL text to assess.
 
-    An implementation statement comes from an SSP or component definition; a
-    risk statement or recommendation comes from a risk in assessment results
-    or a POA&M.
+    A control statement comes from a catalog; a risk statement or
+    recommendation comes from a risk in assessment results or a POA&M.
     """
 
     control_id: str
     text: str
-    source: str  # "ssp", "component-definition", "assessment-results" or "poam"
+    source: str  # "catalog", "assessment-results" or "poam"
     uuid: str | None = None
     statement_id: str | None = None
     component: str | None = None
     requirement: str | None = None  # control text from the catalog, when one is supplied
     policy_intent: str | None = None  # what the organization's policy says this control must achieve
     policy_ids: list[str] = field(default_factory=list)
-    kind: str = IMPLEMENTATION
+    kind: str = CONTROL_STATEMENT
     title: str | None = None  # risk or remediation title
     risk_title: str | None = None  # for a recommendation: the risk it responds to
     risk_statement: str | None = None

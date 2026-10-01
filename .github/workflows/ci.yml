@@ -17,7 +17,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
       - run: pytest -q
-      - run: vitals examples/component-definition-example.json -c examples/catalog-excerpt.json
-      - run: vitals examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
+      - run: vitals examples/catalog-excerpt.json -p examples/policy-example.json
       - run: vitals examples/assessment-results-example.json
       - run: vitals examples/risk-register-example.csv

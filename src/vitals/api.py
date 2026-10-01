@@ -73,7 +73,7 @@ def treatments(value) -> list[Treatment]:
 def single_statement(item: dict) -> Statement:
     if not isinstance(item, dict):
         raise BadRequest("'item' must be an object")
-    kind = item.get("kind") or "implementation"
+    kind = item.get("kind") or "control-statement"
     if kind not in KIND_LABELS:
         raise BadRequest(f"unknown kind {kind!r}")
     t = {k: _text(item.get(k), k) for k in ("control_id", "statement_id", "component", "title", "text",

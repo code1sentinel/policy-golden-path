@@ -1,7 +1,7 @@
 import pytest
 
 from vitals import heuristic
-from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, RECOMMENDATION, RISK_STATEMENT
 from vitals.tabular import REQUIRED, parse_csv, template
 
 HEADER = "policy intent,control statement,risk statement,recommendation"
@@ -14,11 +14,9 @@ def test_template_has_the_four_columns_first():
 
 def test_each_row_follows_the_policy_path():
     items = parse_csv(template(), source="t.csv")
-    assert [s.kind for s in items] == [IDENTIFIED_RISK] + [CONTROL_STATEMENT, IMPLEMENTATION, RISK_STATEMENT,
-                                                           RECOMMENDATION] * 2
-    identified, control, implementation, risk, rec = items[:5]
-    # the control statement is the requirement; the implementation statement is checked against it
-    assert control.text.startswith("Review user access") and implementation.requirement == control.text
+    assert [s.kind for s in items] == [IDENTIFIED_RISK] + [CONTROL_STATEMENT, RISK_STATEMENT, RECOMMENDATION] * 2
+    identified, control, risk, rec = items[:4]
+    assert control.text.startswith("Review user access")
     # the identified risk it treats is the control's purpose
     assert control.risk_statement == identified.text
     # both rows link risk R-01, so it is assessed once against both rows' intents and controls
@@ -35,7 +33,7 @@ def test_each_row_follows_the_policy_path():
 def test_template_example_rows_score_strong_and_weak():
     items = parse_csv(template())
     scores = [heuristic.assess(s).confidence for s in items]
-    assert min(scores[1:5]) > 0.8 and max(scores[5:]) < 0.45
+    assert min(scores[1:4]) > 0.8 and max(scores[4:]) < 0.5
 
 
 def test_empty_cells_and_blank_rows_are_skipped():
@@ -49,11 +47,11 @@ def test_empty_cells_and_blank_rows_are_skipped():
 
 
 def test_forgiving_headers_delimiters_and_aliases():
-    items = parse_csv("﻿Policy_Intent;Statement;Implementation;RISK-STATEMENT;Recommendation;Control;Deadline\n"
-                      "Reviewed quarterly.;Review access quarterly.;The team reviews access quarterly.;"
+    items = parse_csv("﻿Policy_Intent;Statement;RISK-STATEMENT;Recommendation;Control;Deadline\n"
+                      "Reviewed quarterly.;Review access quarterly.;"
                       "Access not reviewed.;Review it.;ac-2;2026-12-01\n")
-    assert [s.kind for s in items] == [CONTROL_STATEMENT, IMPLEMENTATION, RISK_STATEMENT, RECOMMENDATION]
-    assert items[0].control_id == "ac-2" and items[3].deadline == "2026-12-01"
+    assert [s.kind for s in items] == [CONTROL_STATEMENT, RISK_STATEMENT, RECOMMENDATION]
+    assert items[0].control_id == "ac-2" and items[2].deadline == "2026-12-01"
     tabbed = parse_csv("policy intent\tcontrol statement\trisk statement\trecommendation\nx\tThe team reviews.\t\t\n")
     assert tabbed[0].text == "The team reviews."
 

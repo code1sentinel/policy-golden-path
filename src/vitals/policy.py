@@ -17,7 +17,7 @@ A policy file maps policy statements to the controls that implement them:
 statement ids (matching only that part). A policy without `controls` applies
 to every statement. When several policies match a statement, all of their
 intents apply. Policies apply to risk statements through the controls their
-findings target, as well as to implementation statements.
+findings target, as well as to control statements.
 """
 
 from __future__ import annotations

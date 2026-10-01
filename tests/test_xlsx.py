@@ -5,7 +5,7 @@ import zipfile
 
 import pytest
 
-from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from vitals.models import CONTROL_STATEMENT, IDENTIFIED_RISK, RECOMMENDATION, RISK_STATEMENT
 from vitals.service import parse_document
 from vitals.tabular import parse_xlsx, template_xlsx
 from vitals.xlsx import MAX_UNCOMPRESSED, WorkbookError, read_rows, write_rows
@@ -13,9 +13,8 @@ from vitals.xlsx import MAX_UNCOMPRESSED, WorkbookError, read_rows, write_rows
 
 def test_template_round_trips():
     items = parse_xlsx(template_xlsx(), "t.xlsx")
-    assert [s.kind for s in items] == [IDENTIFIED_RISK] + [CONTROL_STATEMENT, IMPLEMENTATION, RISK_STATEMENT,
-                                                           RECOMMENDATION] * 2
-    assert items[4].deadline == "2026-11-30" and items[3].ratings == {"likelihood": "high", "impact": "high"}
+    assert [s.kind for s in items] == [IDENTIFIED_RISK] + [CONTROL_STATEMENT, RISK_STATEMENT, RECOMMENDATION] * 2
+    assert items[3].deadline == "2026-11-30" and items[2].ratings == {"likelihood": "high", "impact": "high"}
 
 
 def test_writer_escapes_text_and_skips_control_characters():
@@ -27,7 +26,7 @@ def test_writer_escapes_text_and_skips_control_characters():
 
 def test_parse_document_dispatches_by_extension():
     items = parse_document("Policies.XLSX", template_xlsx())
-    assert len(items) == 9
+    assert len(items) == 7
     with pytest.raises(ValueError, match="must be read as bytes"):
         parse_document("p.xlsx", "text")
 

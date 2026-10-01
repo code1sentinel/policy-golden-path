@@ -316,7 +316,6 @@ h3:first-child { margin-top: 0; }
   border: 1px solid var(--border); color: var(--muted); white-space: nowrap;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
-.badge[data-kind="implementation"] { color: #F5C9A8; border-color: rgba(245, 201, 168, 0.35); }
 .badge[data-kind="risk-statement"] { color: #C9D4F5; border-color: rgba(201, 212, 245, 0.35); }
 .badge[data-kind="recommendation"] { color: #CDEBD5; border-color: rgba(205, 235, 213, 0.35); }
 .badge[data-kind="control-statement"] { color: #E3C9F5; border-color: rgba(227, 201, 245, 0.35); }

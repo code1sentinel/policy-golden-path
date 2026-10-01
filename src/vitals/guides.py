@@ -8,7 +8,7 @@ it, and a weak and a strong example.
 
 from __future__ import annotations
 
-from .models import CONTROL_STATEMENT, IDENTIFIED_RISK, IMPLEMENTATION, RECOMMENDATION, RISK_STATEMENT
+from .models import CONTROL_STATEMENT, IDENTIFIED_RISK, RECOMMENDATION, RISK_STATEMENT
 
 # Criterion score at or above which a practice counts as adopted, or partly adopted.
 ADOPTED = 0.8
@@ -99,23 +99,23 @@ GUIDES: dict[str, dict] = {
     CONTROL_STATEMENT: {
         "title": "Control statements",
         "summary": "A control statement is the requirement: what must be done, written the way Singapore's IM8 "
-                   "writes it. It starts with the action and names no tool; who does it, and with what, belongs in "
-                   "the implementation statement.",
+                   "writes it, and to OSCAL's own conventions for a catalog control. It starts with the action and "
+                   "names no tool; who does it, and with what, belongs elsewhere.",
         "practices": {
             "action_first": _p(
                 "Start with the action",
                 "A requirement is an instruction. Leading with the verb makes it short, clear and the same shape "
                 "as every other control.",
                 "Open with the verb for what must be done (Back up, Encrypt, Restrict, Require). Leave out who: "
-                "the implementation statement names the team.",
+                "that belongs with how the control is implemented.",
                 "The IT team backs up the servers.",
                 "Back up all important data and systems at least every [N] day(s).",
             ),
             "tool_neutral": _p(
                 "Name no tool",
                 "Tools change; the requirement should not. A product in the requirement ties every system to it.",
-                "Say what must be achieved. Put the product in the implementation statement, or in guidance "
-                "(IM8 keeps examples like AWS Backup in its guidance).",
+                "Say what must be achieved. Put the product in guidance (IM8 keeps examples like AWS Backup in "
+                "its guidance), or wherever the control is implemented.",
                 "Use Okta to enforce MFA.",
                 "Require phishing-resistant multi-factor authentication for all access to cloud applications.",
             ),
@@ -174,80 +174,24 @@ GUIDES: dict[str, dict] = {
                 "Systems should be patched regularly where possible, e.g. servers.",
                 "Patch critical vulnerabilities on all servers within [14] days.",
             ),
-        },
-    },
-    IMPLEMENTATION: {
-        "title": "Implementation statements",
-        "summary": "An implementation statement shows an assessor how a control is met today: who does what, "
-                   "with which tool, how often, and what record it leaves.",
-        "practices": {
-            "coverage": _p(
-                "Cover the whole requirement",
-                "An assessor tests every part of the control. A part the statement skips is a finding waiting "
-                "to happen.",
-                "Walk through the control text item by item, including organization-defined values, and say how "
-                "each is met.",
-                "Accounts are managed in Okta.",
-                "Account types are defined in the Access Standard; the IAM team is the account manager; access "
-                "reviews run quarterly ...",
+            "labeled_parts": _p(
+                "Label joined parts",
+                "A catalog control gives each requirement its own lettered, referenceable part, so it can be "
+                "assessed and cited on its own (e.g. 'ac-2_smt.j'). Run-on prose loses that.",
+                "When a statement bundles more than two requirements, split it into lettered parts (a., b., c.) "
+                "with stable ids, the way a catalog control does, instead of joining them with commas.",
+                "Back up data daily, encrypt it, test restores quarterly and report failures within 1 day.",
+                "a. Back up data daily; b. encrypt backups; c. test restores quarterly; d. report failures "
+                "within 1 day.",
             ),
-            "policy_intent": _p(
-                "Meet the policy intent",
-                "The control is how your policy is put into practice. A statement that falls short of the policy "
-                "shows the policy is not being followed.",
-                "Keep every commitment the policy makes (frequencies, time limits, retention). Where the policy "
-                "is risk-based, say how risk is rated, give each tier its own schedule, and name who owns the "
-                "tiering.",
-                "Access is reviewed based on risk.",
-                "Tier 1 (privileged and payment) access is reviewed quarterly and Tier 2 annually, as tiered in "
-                "the CISO's annual access risk assessment.",
-            ),
-            "substance": _p(
-                "Give enough detail",
-                "One line rarely shows how a control operates, and leaves the assessor to ask.",
-                "Describe the activity end to end: trigger, steps, outcome and record.",
-                "MFA is enabled.",
-                "Okta enforces phishing-resistant MFA at each login to AWS, GitHub and the admin console; the "
-                "policy is owned by the IAM team and logged to Splunk.",
-            ),
-            "responsibility": _p(
-                "Name who is responsible",
-                "A control with no owner is not operated reliably, and an assessor needs someone to interview.",
-                "Name the role or team that performs, owns or approves the activity. For an inherited control, "
-                "name the provider and the authorization it relies on (a FedRAMP P-ATO, SOC 2 report or MTCS "
-                "certificate), and describe any part the customer still carries out.",
-                "Logs are reviewed daily.",
-                "The Security Operations team reviews logs daily.",
-            ),
-            "mechanism": _p(
-                "Name the mechanism",
-                "The tool, configuration or procedure is what an assessor inspects.",
-                "Name the system and the setting or procedure that implements the control.",
-                "Access is restricted.",
-                "Access is restricted by Okta group policies mapped to AWS IAM roles.",
-            ),
-            "frequency": _p(
-                "Say how often, or what triggers it",
-                "Without a frequency or trigger there is no way to tell whether the control is operating.",
-                "State the schedule (daily, quarterly) or the event that triggers the activity (on termination, "
-                "at each login).",
-                "Accounts are reviewed periodically.",
-                "Accounts are reviewed quarterly, and disabled on termination.",
-            ),
-            "evidence": _p(
-                "Say what evidence it leaves",
-                "Assessment runs on evidence. A statement that points to its records can be verified.",
-                "Name the logs, tickets, reports or approvals produced, and where they are kept.",
-                "Reviews are performed.",
-                "Each review is recorded in a ServiceNow ticket retained for three years.",
-            ),
-            "implemented": _p(
-                "State facts about today",
-                "Plans, hedges and obligations describe what should happen, not what does.",
-                "Write in the present tense about what operates now. Avoid 'will', 'should', 'may', 'must', "
-                "'as needed', and open-ended 'such as' lists.",
-                "Users should be reviewed as needed, such as leavers.",
-                "Managers review all user accounts quarterly.",
+            "determinable": _p(
+                "Make it determinable",
+                "An assessment objective has to be answerable pass or fail. A subjective word like 'adequate' or "
+                "'robust' leaves the call to whoever is assessing it.",
+                "Replace evaluative words (robust, effective, adequate, sufficient, reasonable, appropriate) with "
+                "the setting, threshold or named control that would make it true.",
+                "Apply adequate access controls to production systems.",
+                "Restrict access to production systems to members of the platform-admins group.",
             ),
         },
     },
