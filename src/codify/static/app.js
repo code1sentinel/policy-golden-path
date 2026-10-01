@@ -444,7 +444,7 @@ function renderControlEditor(box, c) {
     el("label", { class: "field" }, el("span", {}, "Risk it treats ", el("em", { text: "gives the control its purpose" })), risk),
     el("div", { class: "grid2" },
       el("label", { class: "field" }, el("span", {}, "Guidance ", el("em", { text: "tools, how-to" })), guidance),
-      el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "for the implementation" })), who)),
+      el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
     el("h3", { text: "Status" }), statuses,
     el("div", { class: "editor__foot" }, add, remove),
   );

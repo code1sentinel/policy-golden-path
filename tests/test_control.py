@@ -28,7 +28,7 @@ def test_im8_style_requirements_score_high(text):
     assert crit(a, "action_first").score == 1.0
 
 
-def test_subject_first_and_tool_specific_text_is_redirected_to_the_implementation_statement():
+def test_subject_first_and_tool_specific_text_is_redirected_away_from_the_requirement():
     a = check("Workday termination events disable the Okta account automatically within 4 hours.")
     assert crit(a, "action_first").score == 0.0 and crit(a, "tool_neutral").score < 1
     assert any("Names okta, workday" in i for i in a.improvements)
@@ -107,3 +107,20 @@ def test_parts_of_a_statement():
     assert parts("Apply rate-limiting to all logins to deter brute-force attacks.")["purpose"] == \
         "to deter brute-force attacks"
     assert parts("The IT team uses Okta to manage access.")["tools"] == "okta"
+
+
+def test_bundled_requirements_are_flagged_for_lettered_parts_too():
+    a = check("Back up data daily, encrypt backups, test restores quarterly and report failures within 1 day.")
+    assert crit(a, "labeled_parts").score < 1
+    assert any("own lettered part" in i for i in a.improvements)
+
+
+def test_already_lettered_parts_are_not_flagged_again():
+    assert crit(check("Back up all important data daily, and store backups in a separate location."),
+               "labeled_parts").score == 1.0  # two closely joined requirements is not "bundled"
+
+
+def test_subjective_wording_is_not_determinable():
+    a = check("Apply adequate access controls to production systems.")
+    assert crit(a, "determinable").score < 1
+    assert any("cannot be objectively tested" in i for i in a.improvements)

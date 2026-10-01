@@ -30,23 +30,23 @@ def _p(title: str, why: str, how: str, weak: str, strong: str) -> dict:
 GUIDE: dict = {
     "title": "Control statements",
     "summary": "A control statement is the requirement: what must be done, written the way Singapore's IM8 "
-               "writes it. It starts with the action and names no tool; who does it, and with what, belongs in "
-               "the implementation statement.",
+               "writes it, and to OSCAL's own conventions for a catalog control. It starts with the action and "
+               "names no tool; who does it, and with what, belongs elsewhere.",
     "practices": {
         "action_first": _p(
             "Start with the action",
             "A requirement is an instruction. Leading with the verb makes it short, clear and the same shape "
             "as every other control.",
             "Open with the verb for what must be done (Back up, Encrypt, Restrict, Require). Leave out who: "
-            "the implementation statement names the team.",
+            "that belongs with how the control is implemented.",
             "The IT team backs up the servers.",
             "Back up all important data and systems at least every [N] day(s).",
         ),
         "tool_neutral": _p(
             "Name no tool",
             "Tools change; the requirement should not. A product in the requirement ties every system to it.",
-            "Say what must be achieved. Put the product in the implementation statement, or in guidance "
-            "(IM8 keeps examples like AWS Backup in its guidance).",
+            "Say what must be achieved. Put the product in guidance (IM8 keeps examples like AWS Backup in "
+            "its guidance), or wherever the control is implemented.",
             "Use Okta to enforce MFA.",
             "Require phishing-resistant multi-factor authentication for all access to cloud applications.",
         ),
@@ -97,6 +97,25 @@ GUIDE: dict = {
             "Carry the policy's frequencies, time limits and retention into the statement, or its risk tiers.",
             "Remove access when no longer needed.",
             "Disable user accounts within [1 business day] of staff leaving.",
+        ),
+        "labeled_parts": _p(
+            "Label joined parts",
+            "A catalog control gives each requirement its own lettered, referenceable part, so it can be "
+            "assessed and cited on its own (e.g. 'ac-2_smt.j'). Run-on prose loses that.",
+            "When a statement bundles more than two requirements, split it into lettered parts (a., b., c.) "
+            "with stable ids, the way a catalog control does, instead of joining them with commas.",
+            "Back up data daily, encrypt it, test restores quarterly and report failures within 1 day.",
+            "a. Back up data daily; b. encrypt backups; c. test restores quarterly; d. report failures "
+            "within 1 day.",
+        ),
+        "determinable": _p(
+            "Make it determinable",
+            "An assessment objective has to be answerable pass or fail. A subjective word like 'adequate' or "
+            "'robust' leaves the call to whoever is assessing it.",
+            "Replace evaluative words (robust, effective, adequate, sufficient, reasonable, appropriate) with "
+            "the setting, threshold or named control that would make it true.",
+            "Apply adequate access controls to production systems.",
+            "Restrict access to production systems to members of the platform-admins group.",
         ),
         "firm": _p(
             "Keep it firm",

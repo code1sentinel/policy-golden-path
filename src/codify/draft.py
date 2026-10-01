@@ -27,7 +27,7 @@ from .control import VERBS as _CONTROL_VERBS
 class Draft:
     text: str
     guidance: str = ""  # tool or "how" wording moved out of the statement
-    who: str = ""  # the role the legacy clause named: the "who" for the implementation statement
+    who: str = ""  # the role the legacy clause named: who implements it, kept out of the requirement
     notes: list[str] = field(default_factory=list)
 
 
@@ -409,7 +409,8 @@ def draft(clause_text: str) -> list[Draft]:
                 if _OPEN_LIST.search(text):
                     d.notes.append("Open-ended list: name the full set, or say where it is defined.")
                 if d.who:
-                    d.notes.append(f"'{d.who}' is who does it: that belongs in the implementation statement.")
+                    d.notes.append(f"'{d.who}' is who does it: that belongs with how the control is implemented, "
+                                   "not the requirement.")
                 d.text = _tidy(text)
                 out.append(d)
     return out

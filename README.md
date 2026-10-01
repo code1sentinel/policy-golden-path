@@ -97,7 +97,9 @@ Every draft carries notes saying what changed and what a person should decide.
 
 ## Checking control statements
 
-Each statement is scored the way IM8 Reform writes controls. IM8's own 137
+Each statement is scored the way IM8 Reform writes controls, and against
+OSCAL's own conventions for a catalog control. Weights are relative: they are
+rescaled to add up to 100%. IM8's own 137
 statements score a median of 95%; tool-specific implementation text scores
 around 60%; weak requirements ("Systems should be patched regularly where
 possible") around 30%.
@@ -110,6 +112,8 @@ possible") around 30%.
 | tool_neutral | 10% | Does it avoid naming products? |
 | purpose | 10% | Does it say why ("to deter brute-force attacks"), or is the risk it treats given? |
 | single | 5% | One requirement, or two closely joined. |
+| labeled_parts | 5% | Is a bundle of three or more requirements split into lettered parts (a., b., c.), the way an OSCAL catalog control gives each its own referenceable part? |
+| determinable | 5% | Can an assessor decide pass or fail? Subjective words ("robust", "adequate", "appropriate") cannot be tested, in the sense of a NIST SP 800-53A assessment objective. |
 
 Hedges ("should", "may"), vague wording and open-ended lists reduce the score.
 A score describes how a statement is written, not whether it is true; the
