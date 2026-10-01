@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 import zipfile
@@ -42,6 +43,12 @@ def test_index_runs_in_browser_mode_with_no_third_parties(site):
     assert '<html lang="en" data-mode="browser">' in html
     assert "Content-Security-Policy" in html and "'wasm-unsafe-eval'" in html
     assert "fonts.googleapis.com" not in html and "https://cdn" not in html
+    # the only other origins it may reach are the AI providers, for AI drafting the person turns on
+    csp = re.search(r'Content-Security-Policy" content="([^"]+)"', html).group(1)
+    connect = next(d for d in csp.split("; ") if d.startswith("connect-src")).split()[1:]
+    assert connect == ["'self'", "https://api.anthropic.com", "https://api.openai.com",
+                       "https://generativelanguage.googleapis.com"]
+    assert "script-src 'self' 'wasm-unsafe-eval'" in csp
 
 
 def test_browser_package_works_without_server_modules(site, tmp_path):

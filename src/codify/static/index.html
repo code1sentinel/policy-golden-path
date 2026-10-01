@@ -25,6 +25,7 @@
       <nav class="views" aria-label="Views">
         <button type="button" class="view-btn" data-view="work" aria-pressed="true">Workspace</button>
         <button type="button" class="view-btn" data-view="guide" aria-pressed="false">Guide</button>
+        <button type="button" class="view-btn" id="ai-open" aria-haspopup="dialog">AI drafting: off</button>
       </nav>
     </div>
   </header>
@@ -121,10 +122,16 @@
         <div class="bulk" role="group" aria-label="Bulk actions">
           <span id="selected-count" class="muted">0 selected</span>
           <button type="button" class="btn btn--small" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
+          <button type="button" class="btn btn--small" id="select-shown" title="Every control the filter shows">Select shown</button>
           <button type="button" class="btn btn--small" data-bulk="reviewed" disabled>Mark reviewed</button>
           <button type="button" class="btn btn--small" data-bulk="accepted" disabled>Mark accepted</button>
+          <button type="button" class="btn btn--small" id="ai-bulk" hidden disabled title="Draft the clauses of the selected controls again with AI, one request per clause">Draft with AI</button>
           <button type="button" class="btn btn--small btn--quiet" id="select-none" disabled>Clear</button>
         </div>
+      </div>
+      <div id="ai-progress" class="loading ai-progress" role="status" hidden>
+        <span id="ai-progress-text"></span>
+        <button type="button" class="btn btn--small" id="ai-stop">Stop</button>
       </div>
 
       <div class="workspace">
@@ -154,6 +161,39 @@
       <p class="guide-foot">A practice counts as <strong>adopted</strong> when it scores <span id="adopted-at"></span> or more with no outstanding area for improvement, and <strong>partly adopted</strong> from <span id="partly-at"></span>. Scores describe how a statement is written, not whether it is true.</p>
     </section>
   </main>
+
+  <dialog id="ai-dialog" class="dialog" aria-labelledby="ai-title">
+    <form id="ai-form" method="dialog" novalidate>
+      <h2 id="ai-title">AI drafting</h2>
+      <p class="hint">Off unless you turn it on. Codify drafts with rules; with AI drafting on, you can also ask an AI model to draft a clause's controls, with your own API key. Every AI draft is scored like any other, marked as drafted by AI, and stays a draft until you review it.</p>
+      <div class="notice">
+        <strong>What is sent.</strong> One clause per request: its text, its section heading and Codify's rule drafts for it. It goes straight from this browser to the provider you choose, under your account and that provider's terms. It does not pass through Codify, and your key stays in this browser.
+      </div>
+      <div class="notice notice--warn">
+        <strong>Do not send classified or sensitive text.</strong> Use AI drafting only for policy text your organisation allows you to send to this provider. If in doubt, leave it off: the rule drafts need no AI.
+      </div>
+      <div class="grid2">
+        <label class="field"><span>Provider</span>
+          <select name="provider" id="ai-provider"></select>
+        </label>
+        <label class="field"><span>Model <em>any model your account has</em></span>
+          <input name="model" id="ai-model" list="ai-models" autocomplete="off" spellcheck="false">
+          <datalist id="ai-models"></datalist>
+        </label>
+      </div>
+      <label class="field"><span>API key</span>
+        <input name="key" id="ai-key" type="password" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="check"><input type="checkbox" name="remember" id="ai-remember"> <span>Remember the key on this device <em>(otherwise it is forgotten when you close the tab)</em></span></label>
+      <label class="check"><input type="checkbox" name="ack" id="ai-ack"> <span>I have read what is sent, and I will not send classified or sensitive text.</span></label>
+      <p id="ai-form-error" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button type="submit" class="btn btn--primary" value="on" id="ai-on">Turn on</button>
+        <button type="submit" class="btn" value="off" id="ai-off">Turn off and forget the key</button>
+        <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
 
   <footer class="wrap foot">
     <p>Codify is open source (MIT) from the GRC Engineering Club Singapore. Control statements follow the style of Singapore's IM8 Reform catalog; this tool is not affiliated with GovTech. <span id="version"></span></p>

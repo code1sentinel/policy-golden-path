@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from codify import api  # noqa: E402
+from codify.webapp import AI_ORIGINS  # noqa: E402
 
 PACKAGE = ROOT / "src" / "codify"
 STATIC = PACKAGE / "static"
@@ -33,9 +34,10 @@ STATIC = PACKAGE / "static"
 SERVER_ONLY = {"webapp.py", "cli.py", "__main__.py"}
 PYODIDE_FILES = ("pyodide.mjs", "pyodide.asm.mjs", "pyodide.asm.wasm", "python_stdlib.zip", "pyodide-lock.json")
 
-# No third-party origins: fonts fall back to the system font, and Pyodide is served from the site.
+# Fonts fall back to the system font and Pyodide is served from the site. The only other origins are the
+# AI providers, which the page calls only when the person turns AI drafting on, with their own key.
 CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; "
-       "connect-src 'self'; base-uri 'none'; form-action 'none'")
+       f"connect-src 'self' {AI_ORIGINS}; base-uri 'none'; form-action 'none'")
 
 
 def build_index() -> str:

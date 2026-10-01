@@ -9,6 +9,8 @@ the project lives in the page: each call is given what it needs.
     score     a whole project -> scores for every control
     redraft   one clause -> rule-based control drafts
     export    a project -> OSCAL catalog, Excel, CSV or Markdown report
+    ai_prompt one clause -> the prompt the page sends to the person's AI provider
+    ai_reply  the provider's reply -> control drafts marked as drafted by AI, with scores
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import binascii
 import json
 import re
 
-from . import __version__
+from . import __version__, ai
 from .classify import TYPE_LABELS, TYPES
 from .clauses import read_policy
 from .control import assess_control_statement, parts
@@ -163,6 +165,22 @@ def redraft(body: dict) -> dict:
     return {"controls": controls, "scores": _scores({"controls": controls})}
 
 
+def ai_prompt(body: dict) -> dict:
+    text = _text(body.get("text"), "text")
+    if not text:
+        raise BadRequest("the clause has no text")
+    return ai.prompt(_text(body.get("clause_id"), "clause_id", 64), text, _text(body.get("heading"), "heading", 500))
+
+
+def ai_reply(body: dict) -> dict:
+    try:
+        controls = ai.from_reply(_text(body.get("clause_id"), "clause_id", 64),
+                                 _text(body.get("reply"), "reply", ai.MAX_REPLY), _text(body.get("model"), "model", 100))
+    except ValueError as exc:
+        raise BadRequest(str(exc)) from None
+    return {"controls": controls, "scores": _scores({"controls": controls})}
+
+
 def _filename(project: dict, suffix: str) -> str:
     stem = re.sub(r"[^A-Za-z0-9]+", "-", project.get("title") or "policy").strip("-").lower()[:60] or "policy"
     return f"{stem}-{suffix}"
@@ -197,7 +215,8 @@ def guide() -> dict:
     return {"guide": GUIDE, "statuses": STATUS_LABELS, "adopted": ADOPTED, "partly": PARTLY}
 
 
-ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export}
+ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export,
+           "ai_prompt": ai_prompt, "ai_reply": ai_reply}
 
 
 def call(body: dict) -> dict:

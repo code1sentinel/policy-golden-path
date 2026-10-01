@@ -24,9 +24,11 @@ and Codify:
     -> Remove access that is no longer required within [N] days.
 ```
 
-No AI is involved: the drafts come from rules, so the same policy always gives
-the same drafts, and your policy never leaves your device. The drafts are a
-starting point to edit, not finished controls.
+The drafts come from rules, not AI: the same policy always gives the same
+drafts, and your policy never leaves your device. The drafts are a starting
+point to edit, not finished controls. If you want, you can also
+[draft with AI](#ai-drafting-optional) using your own API key, one clause at a
+time.
 
 ## Use it
 
@@ -39,8 +41,9 @@ starting point to edit, not finished controls.
 The online version runs entirely in your browser: Codify's Python runs there
 through [Pyodide](https://pyodide.org), served from the site itself. Your
 policy is read on your device and never uploaded, and the site makes no
-requests to any third party. The first visit loads about 13 MB, which the
-browser then caches. All three ways run the same code.
+requests to any third party unless you turn on AI drafting. The first visit
+loads about 13 MB, which the browser then caches. All three ways run the same
+code.
 
 To see it work, open the **Acme demo policy**
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
@@ -119,6 +122,36 @@ Hedges ("should", "may"), vague wording and open-ended lists reduce the score.
 A score describes how a statement is written, not whether it is true; the
 Guide in the app explains each practice with a weak and a strong example.
 
+## AI drafting (optional)
+
+AI drafting is off unless you turn it on (**AI drafting** at the top of the
+page). Bring your own API key from Anthropic (Claude), OpenAI or Google
+(Gemini), and use any model your account has.
+
+- **What is sent**: one clause per request: its text, its section heading and
+  Codify's rule drafts for it. Nothing else from the policy. The request goes
+  straight from your browser to the provider, under your account and its
+  terms; there is no Codify server in between.
+- **Do not send classified or sensitive text.** Turning AI drafting on asks you
+  to confirm this, and drafting several clauses at once asks once more, naming
+  the provider and how many clauses will be sent.
+- **Your key** stays in your browser: kept for the tab only, unless you choose
+  to remember it on that device. It is never put in the project, the autosave
+  or any export. "Turn off" forgets it.
+- **What comes back**: the AI fills in the parts of each statement (action,
+  scope, limit, purpose) plus guidance and the risk; Codify joins the parts,
+  scores the statement like any other draft and marks it **drafted by AI**
+  (`origin: ai` in the catalog), with a note to check it against the legacy
+  clause. AI drafts stay drafts, and the note keeps them out of "Select ready
+  drafts", so a person reviews each one.
+- **Where**: "Draft with AI" on a clause replaces its controls; with controls
+  selected, the bulk "Draft with AI" redrafts their clauses one by one, and can
+  be stopped. Clauses whose controls you have edited, reviewed or accepted are
+  left alone in bulk.
+
+The prompt is in [`src/codify/ai.py`](src/codify/ai.py). The command line and
+the rule drafts never use AI.
+
 ## Reviewing
 
 The workspace lists every clause, with its controls under it. Select a
@@ -130,7 +163,8 @@ or **accepted**.
 - **Filters**: drafts, reviewed, accepted, below 80%, or the clauses that did
   not become controls.
 - **Bulk**: "Select ready drafts" ticks drafts scoring 80% or more with no
-  notes left to decide; then mark them reviewed or accepted.
+  notes left to decide, and "Select shown" every control the filter shows;
+  then mark them reviewed or accepted, or draft them again with AI.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.
 - **Saving**: work is kept in your browser as you go. **Save OSCAL catalog**
@@ -216,6 +250,7 @@ src/codify/
   control.py    the control statement check, and the parts of a statement
   text.py       shared wording, commitment and coverage checks
   project.py    the project, the OSCAL catalog (save and open), Excel, CSV, report
+  ai.py         the AI drafting prompt, and the reply turned into drafts
   api.py        the request API, shared by the local server and the browser
   webapp.py     local web server (codify-web)
   cli.py        command line (codify)

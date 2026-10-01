@@ -10,6 +10,7 @@ const TYPE_LABELS = {
   "exception": "Exception", "not-a-control": "Not a control",
 };
 const STATUS_LABELS = { draft: "Draft", reviewed: "Reviewed", accepted: "Accepted" };
+const ORIGIN_LABELS = { rules: "drafted by rules", ai: "drafted by AI", catalog: "from the catalog", person: "edited" };
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
 const SAVE_KEY = "codify:project";
 
@@ -153,6 +154,209 @@ function loadLocal() {
 
 function clearLocal() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------- AI drafting, with the person's own key
+//
+// Off unless turned on. The prompt comes from Codify's Python (ai_prompt), goes from this browser straight to
+// the provider, and the reply goes back through Python (ai_reply), which builds the drafts and scores them.
+// One clause per request. The key is kept in sessionStorage, or localStorage if the person asks; never in
+// the project, the autosave or an export.
+
+const AI_SETTINGS = "codify:ai";
+const AI_KEY = "codify:ai-key";
+
+async function providerJson(res, name) {
+  let data = null;
+  try { data = await res.json(); } catch { /* fall through */ }
+  if (!res.ok) {
+    const detail = data && data.error && (data.error.message || data.error);
+    if (res.status === 401 || res.status === 403) throw new Error(`${name} did not accept the API key${detail ? `: ${detail}` : "."}`);
+    throw new Error(`${name} returned an error (${res.status})${detail ? `: ${detail}` : ""}`);
+  }
+  if (!data) throw new Error(`${name} sent a reply Codify could not read.`);
+  return data;
+}
+
+const PROVIDERS = {
+  anthropic: {
+    label: "Anthropic (Claude)",
+    models: ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-4-5"],
+    async send(key, model, p) {
+      const headers = {
+        "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      };
+      const body = { model, max_tokens: 16000, system: p.system, messages: [{ role: "user", content: p.user }],
+        output_config: { format: { type: "json_schema", schema: p.schema } } };
+      if (/^claude-(opus-5|sonnet-5-5|fable)/.test(model)) {
+        // if a safety classifier declines, the API retries on a fallback model in the same call
+        headers["anthropic-beta"] = "server-side-fallback-2026-07-01";
+        body.fallbacks = "default";
+      }
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: JSON.stringify(body) });
+      const data = await providerJson(res, "Anthropic");
+      if (data.stop_reason === "refusal") throw new Error("Claude declined to draft this clause.");
+      if (data.stop_reason === "max_tokens") throw new Error("Claude's reply was cut off; try again.");
+      return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+    },
+  },
+  openai: {
+    label: "OpenAI",
+    models: ["gpt-5-mini", "gpt-5"],
+    async send(key, model, p) {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
+          response_format: { type: "json_schema", json_schema: { name: "controls", strict: true, schema: p.schema } } }),
+      });
+      const data = await providerJson(res, "OpenAI");
+      const message = data.choices && data.choices[0] && data.choices[0].message;
+      if (message && message.refusal) throw new Error(`OpenAI declined to draft this clause: ${message.refusal}`);
+      return (message && message.content) || "";
+    },
+  },
+  gemini: {
+    label: "Google (Gemini)",
+    models: ["gemini-2.5-flash", "gemini-2.5-pro"],
+    async send(key, model, p) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: p.system }] },
+          contents: [{ role: "user", parts: [{ text: p.user }] }],
+          generationConfig: { responseMimeType: "application/json" } }),
+      });
+      const data = await providerJson(res, "Gemini");
+      const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+      if (!parts.length) throw new Error("Gemini returned no draft for this clause.");
+      return parts.map((x) => x.text || "").join("");
+    },
+  },
+};
+
+const ai = { on: false, provider: "anthropic", model: PROVIDERS.anthropic.models[0], key: "", remember: false, stop: false };
+
+function loadAi() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AI_SETTINGS) || "null");
+    if (saved && PROVIDERS[saved.provider]) Object.assign(ai, { on: !!saved.on, provider: saved.provider, model: String(saved.model || ""), remember: !!saved.remember });
+  } catch { /* defaults */ }
+  try { ai.key = (ai.remember ? localStorage : sessionStorage).getItem(AI_KEY) || ""; } catch { ai.key = ""; }
+  if (!ai.model) ai.model = PROVIDERS[ai.provider].models[0];
+}
+
+function saveAi() {
+  try {
+    localStorage.setItem(AI_SETTINGS, JSON.stringify({ on: ai.on, provider: ai.provider, model: ai.model, remember: ai.remember }));
+    localStorage.removeItem(AI_KEY);
+    sessionStorage.removeItem(AI_KEY);
+    if (ai.key) (ai.remember ? localStorage : sessionStorage).setItem(AI_KEY, ai.key);
+  } catch { /* storage unavailable: the settings last for this page only */ }
+}
+
+const aiReady = () => ai.on && !!ai.key;
+const aiName = () => `${PROVIDERS[ai.provider].label}, ${ai.model}`;
+
+function renderAiButton() {
+  const b = $("#ai-open");
+  b.textContent = aiReady() ? "AI drafting: on" : ai.on ? "AI drafting: needs a key" : "AI drafting: off";
+  b.setAttribute("aria-pressed", String(aiReady()));
+  $("#ai-bulk").hidden = !aiReady();
+}
+
+function fillModels(provider) {
+  $("#ai-models").replaceChildren(...PROVIDERS[provider].models.map((m) => el("option", { value: m })));
+}
+
+function openAiDialog() {
+  $("#ai-provider").replaceChildren(...Object.entries(PROVIDERS).map(([k, v]) => el("option", { value: k, text: v.label })));
+  $("#ai-provider").value = ai.provider;
+  fillModels(ai.provider);
+  $("#ai-model").value = ai.model;
+  $("#ai-key").value = ai.key;
+  $("#ai-key").placeholder = ai.key ? "" : "Paste your API key";
+  $("#ai-remember").checked = ai.remember;
+  $("#ai-ack").checked = false;
+  $("#ai-off").hidden = !ai.on && !ai.key;
+  $("#ai-form-error").hidden = true;
+  $("#ai-dialog").showModal();
+}
+
+function aiFormSubmit(e) {
+  const action = e.submitter ? e.submitter.value : "cancel";
+  const fail = (message) => {
+    e.preventDefault();
+    const box = $("#ai-form-error");
+    box.textContent = message;
+    box.hidden = false;
+  };
+  if (action === "off") {
+    Object.assign(ai, { on: false, key: "", remember: false });
+  } else if (action === "on") {
+    const model = $("#ai-model").value.trim();
+    const key = $("#ai-key").value.trim();
+    if (!$("#ai-ack").checked) return fail("Tick the box to confirm you have read what is sent.");
+    if (!model) return fail("Enter a model.");
+    if (!key) return fail("Enter your API key.");
+    Object.assign(ai, { on: true, provider: $("#ai-provider").value, model, key, remember: $("#ai-remember").checked });
+  } else {
+    return;
+  }
+  saveAi();
+  renderAiButton();
+  if (state.project) render();
+}
+
+async function aiDraftClause(clause) {
+  const prompt = await call({ action: "ai_prompt", clause_id: clause.id, text: clause.text, heading: clause.heading || "" });
+  const reply = await PROVIDERS[ai.provider].send(ai.key, ai.model, prompt);
+  return call({ action: "ai_reply", clause_id: clause.id, reply, model: ai.model });
+}
+
+function needsConfirm(clause) {
+  // the person has worked on this clause's controls
+  return controlsOf(clause.id).some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai"));
+}
+
+async function aiRedraft(clause, button) {
+  if (!aiReady()) return openAiDialog();
+  const existing = controlsOf(clause.id);
+  if (needsConfirm(clause) && !confirm(`Replace the ${plural(existing.length, "control")} from clause ${clause.id}, including your edits, with AI drafts?`)) return;
+  await busy(button, "Drafting with AI…", async () => replaceControls(clause, await aiDraftClause(clause)));
+}
+
+async function aiBulk() {
+  if (!aiReady()) return openAiDialog();
+  const ids = new Set([...state.checked].map((id) => controlById(id)?.clause).filter(Boolean));
+  const clauses = state.project.clauses.filter((c) => ids.has(c.id));
+  const todo = clauses.filter((c) => !needsConfirm(c));
+  const skipped = clauses.length - todo.length;
+  if (!todo.length) return showError("The selected controls have all been edited, reviewed or accepted, so AI drafting leaves them alone. Use \"Draft with AI\" on a clause to replace its controls.");
+  const note = skipped ? `\n\n${plural(skipped, "clause")} with edited, reviewed or accepted controls will be left alone.` : "";
+  if (!confirm(`Send ${plural(todo.length, "clause")} to ${aiName()}, one request per clause?\n\nEach request holds one clause's text, section heading and rule drafts. Their controls are replaced with AI drafts.${note}`)) return;
+  ai.stop = false;
+  showError("");
+  const bar = $("#ai-progress");
+  bar.hidden = false;
+  let done = 0;
+  try {
+    for (const clause of todo) {
+      if (ai.stop) break;
+      $("#ai-progress-text").textContent = `Drafting with AI: clause ${clause.id} (${done + 1} of ${todo.length})…`;
+      replaceControls(clause, await aiDraftClause(clause), false);
+      done += 1;
+    }
+  } catch (err) {
+    showError(`Stopped after ${plural(done, "clause")}: ${err.message}`);
+  } finally {
+    bar.hidden = true;
+    state.checked.clear();
+    saveLocal();
+    render();
+  }
 }
 
 // ---------------------------------------------------------------- views
@@ -327,6 +531,7 @@ function renderBulk() {
   $("#selected-count").textContent = `${n} selected`;
   for (const b of $$("[data-bulk]")) b.disabled = n === 0;
   $("#select-none").disabled = n === 0;
+  $("#ai-bulk").disabled = n === 0;
 }
 
 // ---------------------------------------------------------------- the editor
@@ -411,7 +616,7 @@ function renderControlEditor(box, c) {
 
   statement.addEventListener("input", () => {
     c.text = statement.value.trim();
-    if (c.origin === "rules" || c.origin === "catalog") c.origin = "person";
+    if (c.origin !== "person") c.origin = "person";  // the drafting notes still say how it began
     const row = $(`#ctl-${CSS.escape(c.id)} .ctl__text`);
     if (row) row.textContent = c.text || "(empty)";
     if (c.text) check();
@@ -432,10 +637,15 @@ function renderControlEditor(box, c) {
   add.addEventListener("click", () => addControl(clause));
   const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Delete this control" });
   remove.addEventListener("click", () => deleteControl(c));
+  let aiBtn = null;
+  if (aiReady() && clause.text) {
+    aiBtn = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Draft this clause with AI" });
+    aiBtn.addEventListener("click", () => aiRedraft(clause, aiBtn));
+  }
 
   put(box,
     el("div", { class: "editor__nav" },
-      el("p", { class: "editor__where" }, "Control ", el("strong", { text: c.id }), ` · ${c.origin === "rules" ? "drafted by rules" : c.origin === "catalog" ? "from the catalog" : "edited"}`),
+      el("p", { class: "editor__where" }, "Control ", el("strong", { text: c.id }), ` · ${ORIGIN_LABELS[c.origin] || "edited"}`),
       el("div", { class: "actions" }, prev, next)),
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field" }, el("span", { text: "Control statement" }), statement),
@@ -446,7 +656,7 @@ function renderControlEditor(box, c) {
       el("label", { class: "field" }, el("span", {}, "Guidance ", el("em", { text: "tools, how-to" })), guidance),
       el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
     el("h3", { text: "Status" }), statuses,
-    el("div", { class: "editor__foot" }, add, remove),
+    el("div", { class: "editor__foot" }, add, aiBtn, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
   call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => showResult(result, data)).catch((err) => {
@@ -465,12 +675,14 @@ function renderClauseEditor(box, clause) {
   type.addEventListener("change", () => changeType(clause, type.value, type));
   const draftBtn = el("button", { type: "button", class: "btn btn--small", text: controls.length ? "Draft again from this clause" : "Draft controls from this clause" });
   draftBtn.addEventListener("click", () => redraftClause(clause, draftBtn));
+  const aiBtn = el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" });
+  aiBtn.addEventListener("click", () => aiRedraft(clause, aiBtn));
   put(box,
     el("p", { class: "editor__where" }, "Clause ", el("strong", { text: clause.id }), clause.heading ? ` · ${clause.heading}` : ""),
     legacyBox(clause),
     el("label", { class: "field" }, el("span", { text: "Type" }), type),
     el("p", { class: "hint", text: clause.duplicate_of ? `Repeats ${clause.duplicate_of}, so no control was drafted from it.` : `Sorted as ${TYPE_LABELS[clause.type].toLowerCase()}: ${clause.reason}.` }),
-    clause.type === "requirement" ? el("div", { class: "actions" }, draftBtn) : null,
+    clause.type === "requirement" ? el("div", { class: "actions" }, draftBtn, aiReady() ? aiBtn : null) : null,
     controls.length ? el("div", {}, el("h3", { text: `Controls from this clause (${controls.length})` }), controls.map(controlRow)) : null,
   );
 }
@@ -497,17 +709,20 @@ function setStatus(ids, status) {
 async function redraftClause(clause, button) {
   const existing = controlsOf(clause.id);
   if (existing.some((c) => c.origin !== "rules") && !confirm(`Replace the ${plural(existing.length, "control")} from clause ${clause.id}, including your edits?`)) return;
-  await busy(button, "Drafting…", async () => {
-    const data = await call({ action: "redraft", clause_id: clause.id, text: clause.text });
-    const at = state.project.controls.findIndex((c) => c.clause === clause.id);
-    state.project.controls = state.project.controls.filter((c) => c.clause !== clause.id);
-    const insertAt = at >= 0 ? at : insertionPoint(clause);
-    state.project.controls.splice(insertAt, 0, ...data.controls);
-    Object.assign(state.scores, data.scores);
-    state.selected = data.controls[0] ? { control: data.controls[0].id } : { clause: clause.id };
-    saveLocal();
-    render();
-  });
+  await busy(button, "Drafting…", async () => replaceControls(clause, await call({ action: "redraft", clause_id: clause.id, text: clause.text })));
+}
+
+function replaceControls(clause, data, show = true) {
+  // put new drafts where the clause's controls were
+  const at = state.project.controls.findIndex((c) => c.clause === clause.id);
+  for (const c of controlsOf(clause.id)) { delete state.scores[c.id]; state.checked.delete(c.id); }
+  state.project.controls = state.project.controls.filter((c) => c.clause !== clause.id);
+  state.project.controls.splice(at >= 0 ? at : insertionPoint(clause), 0, ...data.controls);
+  Object.assign(state.scores, data.scores);
+  if (!show) return;
+  state.selected = data.controls[0] ? { control: data.controls[0].id } : { clause: clause.id };
+  saveLocal();
+  render();
 }
 
 function insertionPoint(clause) {
@@ -676,6 +891,28 @@ function init() {
     renderBulk();
   });
   $("#select-none").addEventListener("click", () => { state.checked.clear(); renderList(); renderBulk(); });
+  $("#select-shown").addEventListener("click", () => {
+    for (const c of visibleControls()) state.checked.add(c.id);
+    renderList();
+    renderBulk();
+  });
+
+  loadAi();
+  renderAiButton();
+  $("#ai-open").addEventListener("click", openAiDialog);
+  $("#ai-provider").addEventListener("change", () => {
+    const p = $("#ai-provider").value;
+    fillModels(p);
+    $("#ai-model").value = p === ai.provider ? ai.model : PROVIDERS[p].models[0];
+    $("#ai-key").value = p === ai.provider ? ai.key : "";  // a key belongs to one provider
+  });
+  $("#ai-form").addEventListener("submit", aiFormSubmit);
+  $("#ai-form").addEventListener("input", () => { $("#ai-form-error").hidden = true; });
+  $("#ai-bulk").addEventListener("click", aiBulk);
+  $("#ai-stop").addEventListener("click", () => {
+    ai.stop = true;
+    $("#ai-progress-text").textContent = "Stopping after this clause…";
+  });
   for (const b of $$("[data-bulk]")) {
     b.addEventListener("click", () => {
       setStatus([...state.checked], b.dataset.bulk);
