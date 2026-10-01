@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codify</title>
+  <meta name="description" content="Turn legacy policy clauses into OSCAL control statements.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F1F1F'/%3E%3Cpath d='M0 0h32L0 32z' fill='%23E8650A'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap top__row">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <div>
+          <h1 class="brand__name">Codify</h1>
+          <p class="brand__tag">Turn legacy policy clauses into OSCAL control statements.</p>
+        </div>
+      </div>
+      <nav class="views" aria-label="Views">
+        <button type="button" class="view-btn" data-view="work" aria-pressed="true">Workspace</button>
+        <button type="button" class="view-btn" data-view="guide" aria-pressed="false">Guide</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <p class="local-note" data-browser-only hidden>Runs in your browser: your policy never leaves this device.</p>
+    <p id="loading" class="loading" role="status" hidden>Loading Codify in your browser. This takes a few seconds on the first visit only.</p>
+    <div id="error" class="error" role="alert" hidden></div>
+
+    <!-- Start: no project open -->
+    <section id="start" class="start" aria-labelledby="start-title">
+      <h2 id="start-title" class="section-title section-title--first">Start with a legacy policy</h2>
+      <ol class="steps" aria-label="How it works">
+        <li><strong>Sort</strong> each clause: requirement, scope, definition, role, exception, or not a control.</li>
+        <li><strong>Draft</strong> control statements from the requirements, IM8 style: the action first, no tools, testable.</li>
+        <li><strong>Review</strong> each draft against the checks, edit it, and mark it reviewed or accepted.</li>
+        <li><strong>Export</strong> an OSCAL catalog (also your save file), Excel, CSV or a report.</li>
+      </ol>
+
+      <div id="resume" class="card resume" hidden>
+        <p class="resume__text"><strong>Continue where you left off:</strong> <span id="resume-title"></span> <span id="resume-when" class="muted"></span></p>
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="resume-open">Continue</button>
+          <button type="button" class="btn btn--quiet" id="resume-discard">Discard</button>
+        </div>
+      </div>
+
+      <div class="start__grid">
+        <form id="paste-form" class="card" novalidate>
+          <h3>Paste policy text</h3>
+          <label class="field">
+            <span>Policy title <em>optional</em></span>
+            <input name="title" autocomplete="off" placeholder="Information Security Policy v3">
+          </label>
+          <label class="field">
+            <span>Clauses</span>
+            <textarea name="text" rows="10" placeholder="5. Access Control&#10;5.1 Access to systems shall be granted on a need-to-know basis.&#10;5.2 User accounts shall be reviewed regularly."></textarea>
+          </label>
+          <p class="hint">Numbered clauses (5.1, 5.2, (a) …) are kept as they are; unnumbered paragraphs are numbered for you.</p>
+          <div class="actions">
+            <button type="submit" class="btn btn--primary" id="paste-submit">Codify</button>
+          </div>
+        </form>
+
+        <div class="card">
+          <h3>Open a file</h3>
+          <label class="drop" id="drop">
+            <input type="file" id="file" accept=".docx,.csv,.xlsx,.json,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/json,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            <span class="drop__title">Drop a file here, or <u>browse</u></span>
+            <span class="drop__hint">Word (.docx); CSV or Excel with one clause per row (columns: clause id, clause text); text; or a Codify OSCAL catalog (.json) to continue your work. PDF: copy the text and paste it.</span>
+          </label>
+          <h3>Or try the demo</h3>
+          <p class="hint">A fictional 2016 agency policy with typical legacy problems: bundled clauses, vague timing, hedges, tools named, a duplicate.</p>
+          <div class="actions">
+            <button type="button" class="btn" id="demo">Open the Acme demo policy</button>
+            <a class="btn btn--quiet btn--small" href="acme-policy.docx" download="acme-information-security-policy-2016.docx">Download it as Word</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace: a project is open -->
+    <section id="work" class="work" aria-labelledby="work-title" hidden>
+      <div class="work__head">
+        <div class="work__title">
+          <h2 id="work-title" class="section-title section-title--first"></h2>
+          <p id="work-summary" class="work__summary"></p>
+          <div id="work-progress" class="progress" aria-label="Review progress"></div>
+        </div>
+        <div class="actions work__actions">
+          <button type="button" class="btn btn--primary" data-export="oscal">Save OSCAL catalog</button>
+          <div class="menu">
+            <button type="button" class="btn" id="export-more" aria-haspopup="true" aria-expanded="false">Export</button>
+            <div class="menu__list" id="export-menu" role="menu" hidden>
+              <button type="button" role="menuitem" data-export="xlsx">Excel (.xlsx)</button>
+              <button type="button" role="menuitem" data-export="csv">CSV</button>
+              <button type="button" role="menuitem" data-export="report">Conversion report (.md)</button>
+              <button type="button" role="menuitem" data-export="oscal">OSCAL catalog (.json)</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn--quiet" id="close-project">Close</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="filters" role="group" aria-label="Show">
+          <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-filter="draft" aria-pressed="false">Drafts</button>
+          <button type="button" class="chip" data-filter="reviewed" aria-pressed="false">Reviewed</button>
+          <button type="button" class="chip" data-filter="accepted" aria-pressed="false">Accepted</button>
+          <button type="button" class="chip" data-filter="low" aria-pressed="false">Below 80%</button>
+          <button type="button" class="chip" data-filter="other" aria-pressed="false">Not converted</button>
+        </div>
+        <div class="bulk" role="group" aria-label="Bulk actions">
+          <span id="selected-count" class="muted">0 selected</span>
+          <button type="button" class="btn btn--small" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
+          <button type="button" class="btn btn--small" data-bulk="reviewed" disabled>Mark reviewed</button>
+          <button type="button" class="btn btn--small" data-bulk="accepted" disabled>Mark accepted</button>
+          <button type="button" class="btn btn--small btn--quiet" id="select-none" disabled>Clear</button>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div id="list" class="list" aria-label="Clauses and controls"></div>
+        <aside id="editor" class="editor card" aria-live="polite">
+          <p class="placeholder">Select a control to review it. Keyboard: <kbd>j</kbd>/<kbd>k</kbd> next and previous, <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Guide -->
+    <section id="guide" class="guide-view" aria-labelledby="guide-title" hidden>
+      <h2 id="guide-title" class="section-title section-title--first">Writing control statements</h2>
+      <p id="guide-summary" class="guide-summary"></p>
+      <div class="anatomy card">
+        <h3>The parts of a control statement</h3>
+        <p class="anatomy__example"><span class="part part--action">Review</span> <span class="part part--scope">privileged and payment access</span> <span class="part part--limit">at least every [90] days</span> <span class="part part--purpose">to remove access that is no longer needed</span>.</p>
+        <ul class="anatomy__key">
+          <li><span class="part part--action">Action</span> first: what must be done, not who does it.</li>
+          <li><span class="part part--scope">Scope</span>: exactly what it applies to.</li>
+          <li><span class="part part--limit">Limit</span>: how often, how fast, or when; a [parameter] where the organisation sets the value.</li>
+          <li><span class="part part--purpose">Purpose</span>: why, or the risk it treats.</li>
+        </ul>
+        <p class="hint">Tools (Okta, Veritas, Symantec) belong in guidance or the implementation statement, so the control outlives them.</p>
+      </div>
+      <div id="guide-list" class="guide-list"></div>
+      <p class="guide-foot">A practice counts as <strong>adopted</strong> when it scores <span id="adopted-at"></span> or more with no outstanding area for improvement, and <strong>partly adopted</strong> from <span id="partly-at"></span>. Scores describe how a statement is written, not whether it is true.</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Codify is open source (MIT) from the GRC Engineering Club Singapore. Control statements follow the style of Singapore's IM8 Reform catalog; this tool is not affiliated with GovTech. <span id="version"></span></p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

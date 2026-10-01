@@ -1,15 +1,15 @@
-"""Build the browser-only Vitals site for GitHub Pages.
+"""Build the browser-only Codify site for GitHub Pages.
 
     python scripts/build_site.py --pyodide path/to/pyodide/package --out site
 
-The site is static: the page runs Vitals's Python in the browser with
+The site is static: the page runs Codify's Python in the browser with
 Pyodide, which is served from the site itself, so nothing is uploaded and no
 third party is contacted. Output:
 
     index.html, app.css, app.js   the web app, in browser mode
-    vitals.zip                  the Vitals package, unpacked into Pyodide
-    config.json, guides.json      what the local server returns from /api/*
-    template.csv, template.xlsx   the upload templates
+    codify.zip                    the Codify package, unpacked into Pyodide
+    config.json, guide.json       what the local server returns from /api/*
+    acme-policy.md, .docx         the demo policy
     pyodide/                      the Pyodide runtime
 """
 
@@ -25,10 +25,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from vitals import api  # noqa: E402
-from vitals.tabular import template, template_xlsx  # noqa: E402
+from codify import api  # noqa: E402
 
-PACKAGE = ROOT / "src" / "vitals"
+PACKAGE = ROOT / "src" / "codify"
 STATIC = PACKAGE / "static"
 # Modules only the local server and command line need.
 SERVER_ONLY = {"webapp.py", "cli.py", "__main__.py"}
@@ -53,7 +52,7 @@ def build_package_zip(dest: Path) -> None:
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(PACKAGE.glob("*.py")):
             if path.name not in SERVER_ONLY:
-                zf.write(path, f"vitals/{path.name}")
+                zf.write(path, f"codify/{path.name}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,13 +71,11 @@ def main(argv: list[str] | None = None) -> int:
     (out / "pyodide").mkdir(parents=True)
 
     (out / "index.html").write_text(build_index(), encoding="utf-8")
-    for name in ("app.css", "app.js"):
+    for name in ("app.css", "app.js", "acme-policy.md", "acme-policy.docx"):
         shutil.copy2(STATIC / name, out / name)
-    build_package_zip(out / "vitals.zip")
+    build_package_zip(out / "codify.zip")
     (out / "config.json").write_text(json.dumps(api.config()), encoding="utf-8")
-    (out / "guides.json").write_text(json.dumps(api.guides()), encoding="utf-8")
-    (out / "template.csv").write_text(template(), encoding="utf-8")
-    (out / "template.xlsx").write_bytes(template_xlsx())
+    (out / "guide.json").write_text(json.dumps(api.guide()), encoding="utf-8")
     for name in PYODIDE_FILES:
         shutil.copy2(args.pyodide / name, out / "pyodide" / name)
     (out / ".nojekyll").write_text("")

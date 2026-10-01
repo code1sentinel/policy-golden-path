@@ -1,11 +1,11 @@
 import pytest
 
-from vitals import heuristic
-from vitals.models import CONTROL_STATEMENT, Statement
+from codify.control import assess_control_statement, parts
+from codify.models import Statement
 
 
 def check(text, **kw):
-    return heuristic.assess(Statement("x", text, "t", kind=CONTROL_STATEMENT, **kw))
+    return assess_control_statement(Statement("x", text, **kw))
 
 
 def crit(a, name):
@@ -83,7 +83,7 @@ AU6 = ("a. Review and analyze system audit records [Assignment: frequency] for i
 
 
 def test_every_part_of_the_control_is_assessed():
-    from vitals.heuristic import requirement_parts
+    from codify.text import requirement_parts
 
     assert [label for label, _ in requirement_parts(AU6)] == ["a", "b", "c"]
     assert requirement_parts("Validate all inputs.") == [("", "Validate all inputs.")]
@@ -99,9 +99,11 @@ def test_every_part_of_the_control_is_assessed():
     assert crit(whole, "coverage").score == 1.0
 
 
-def test_implementation_statements_are_checked_against_every_part_too():
-    from vitals.models import IMPLEMENTATION
-
-    a = heuristic.assess(Statement("au-6", "The SOC reviews Splunk audit records daily for unusual activity.",
-                                   "t", kind=IMPLEMENTATION, requirement=AU6))
-    assert next(c for c in a.criteria if c.name == "coverage").note == "1 of 3 parts addressed (a)"
+def test_parts_of_a_statement():
+    p = parts("Review privileged access at least every [90] days to remove access that is no longer needed.")
+    assert p["action"] == "review" and p["scope"] == "privileged access"
+    assert p["limit"] == "at least every [90] days" and p["purpose"] is None
+    assert parts("Back up all servers nightly.")["action"] == "back up"
+    assert parts("Apply rate-limiting to all logins to deter brute-force attacks.")["purpose"] == \
+        "to deter brute-force attacks"
+    assert parts("The IT team uses Okta to manage access.")["tools"] == "okta"

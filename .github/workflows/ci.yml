@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+env:
+  OSCAL_VERSION: "1.1.2"
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,7 +20,30 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
       - run: pytest -q
-      - run: vitals examples/component-definition-example.json -c examples/catalog-excerpt.json
-      - run: vitals examples/ssp-example.json -c examples/catalog-excerpt.json -p examples/policy-example.json
-      - run: vitals examples/assessment-results-example.json
-      - run: vitals examples/risk-register-example.csv
+      - run: codify examples/acme-information-security-policy-2016.docx
+      - run: codify examples/acme-information-security-policy-2016.md -f report
+
+  oscal-schema:
+    # The catalog Codify writes must be valid OSCAL, checked against NIST's own schema.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: pip install -e .
+      - name: Write catalogs
+        run: |
+          mkdir -p out
+          codify examples/acme-information-security-policy-2016.md -f oscal -o out/acme-md.json
+          codify examples/acme-information-security-policy-2016.docx -f oscal -o out/acme-docx.json
+          codify out/acme-md.json -f oscal -o out/acme-reopened.json
+      - name: Validate against the OSCAL ${{ env.OSCAL_VERSION }} catalog schema
+        run: |
+          curl -sSLf -o out/schema.json \
+            "https://github.com/usnistgov/OSCAL/releases/download/v${OSCAL_VERSION}/oscal_catalog_schema.json"
+          npm install --no-save --silent ajv@8 ajv-formats@3
+          node scripts/validate_oscal.mjs out/schema.json out/acme-md.json out/acme-docx.json out/acme-reopened.json

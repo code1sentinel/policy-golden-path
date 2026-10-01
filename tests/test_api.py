@@ -1,0 +1,68 @@
+import base64
+import json
+
+import pytest
+
+from codify import api
+
+
+@pytest.fixture
+def opened(examples):
+    return api.call({"action": "open", "name": "acme.md",
+                     "content": (examples / "acme-information-security-policy-2016.md").read_text()})
+
+
+def test_open_text_word_and_saved_catalog(opened, examples):
+    assert opened["summary"]["clauses"] == 43 and set(opened["scores"]) == {c["id"] for c in opened["project"]["controls"]}
+    word = api.call({"action": "open", "name": "acme.docx", "content_base64": base64.b64encode(
+        (examples / "acme-information-security-policy-2016.docx").read_bytes()).decode()})
+    assert word["summary"]["controls"] == opened["summary"]["controls"]
+    pasted = api.call({"action": "open", "text": "1.1 Users shall lock screens.", "title": "Screens"})
+    assert pasted["project"]["title"] == "Screens" and pasted["project"]["source"] == ""
+    saved = api.call({"action": "export", "format": "oscal", "project": opened["project"]})
+    again = api.call({"action": "open", "name": saved["name"], "content": saved["content"]})
+    assert [c["text"] for c in again["project"]["controls"]] == [c["text"] for c in opened["project"]["controls"]]
+
+
+def test_check_scores_and_breaks_down_a_statement():
+    out = api.call({"action": "check", "text": "Review user accounts at least every [90] days.",
+                    "risk": "Leavers keep access."})
+    assert out["assessment"]["confidence"] > 0.9 and out["parts"]["limit"] == "at least every [90] days"
+
+
+def test_redraft_and_score(opened):
+    out = api.call({"action": "redraft", "clause_id": "12.1", "text": "The use of USB drives is discouraged."})
+    assert [c["text"] for c in out["controls"]] == ["Prohibit the use of USB drives."] and "12.1" in out["scores"]
+    scored = api.call({"action": "score", "project": opened["project"]})
+    assert scored["scores"] == opened["scores"]
+
+
+def test_exports(opened):
+    project = opened["project"]
+    xlsx = api.call({"action": "export", "format": "xlsx", "project": project})
+    assert xlsx["name"] == "acme-agency-information-security-policy-controls.xlsx"
+    assert base64.b64decode(xlsx["content_base64"])[:2] == b"PK"
+    assert api.call({"action": "export", "format": "csv", "project": project})["content"].startswith("control id,")
+    assert "conversion report" in api.call({"action": "export", "format": "report", "project": project})["content"]
+
+
+@pytest.mark.parametrize("body, message", [
+    ({"action": "nope"}, "'action' must be one of"),
+    ({"action": "check", "text": ""}, "enter a control statement"),
+    ({"action": "open"}, "send a file"),
+    ({"action": "open", "name": "x.json", "content": "{"}, "not valid JSON"),
+    ({"action": "open", "name": "x.docx", "content_base64": "!!"}, "not valid base64"),
+    ({"action": "export", "format": "pdf", "project": {"clauses": [], "controls": []}}, "'format' must be"),
+    ({"action": "export", "format": "csv", "project": {"clauses": [{"type": "bad"}], "controls": []}},
+     "unknown clause type"),
+    ({"action": "score", "project": "x"}, "'project' must be an object"),
+])
+def test_bad_requests_say_what_to_fix(body, message):
+    with pytest.raises(api.BadRequest, match=message):
+        api.call(body)
+
+
+def test_handle_returns_json_errors():
+    assert json.loads(api.handle("{not json"))["status"] == 400
+    assert json.loads(api.handle(json.dumps({"action": "check", "text": ""}))) == {
+        "error": "enter a control statement to check", "status": 400}
