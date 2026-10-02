@@ -140,7 +140,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--orange); outline
 
 /* Workspace --------------------------------------------------------------- */
 
-.work.has-selection { padding-bottom: 88px; }
 .work__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
 .work__title { min-width: 0; flex: 1 1 420px; }
 .work__summary { margin: 6px 0 10px; color: var(--muted); font-size: 13px; }
@@ -162,14 +161,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--orange); outline
 .workspace {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; align-items: stretch;
   border: 1px solid var(--border-soft); border-radius: 16px; overflow: hidden; background: var(--surface);
-  min-height: calc(100vh - 250px);
+  height: calc(100vh - 198px); min-height: 360px;
 }
 .list {
   display: grid; gap: 8px; min-width: 0; align-content: start;
   padding: 16px; background: var(--bg); border-right: 1px solid var(--border-soft);
+  overflow: auto; overscroll-behavior: contain;
 }
 .editor {
-  position: sticky; top: 61px; max-height: calc(100vh - 73px); overflow: auto;
+  overflow: auto; overscroll-behavior: contain; max-height: none;
   padding: 24px 26px 28px; background: var(--surface); border: 0; border-radius: 0;
 }
 
@@ -272,9 +272,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--orange); outline
 .foot a { color: var(--orange-bright); }
 
 @media (max-width: 980px) {
-  .workspace { grid-template-columns: 1fr; min-height: 0; }
-  .list { border-right: 0; border-top: 1px solid var(--border-soft); min-height: 0; }
-  .editor { position: static; max-height: none; order: -1; }
+  .workspace { grid-template-columns: 1fr; height: auto; min-height: 0; overflow: visible; }
+  .list { border-right: 0; border-top: 1px solid var(--border-soft); min-height: 0; overflow: visible; }
+  .editor { position: static; max-height: none; overflow: visible; order: -1; }
   .start__grid { grid-template-columns: 1fr; }
   .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

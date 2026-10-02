@@ -636,6 +636,10 @@ function openProject(data) {
   saveLocal();
   showView("work");
   render();
+  if (state.selected) {
+    const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
+    document.getElementById(id)?.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function readFile(file) {
