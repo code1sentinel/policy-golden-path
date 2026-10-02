@@ -59,7 +59,7 @@ def test_demo_opens_with_drafts_scored(demo):
     expect(demo.locator("#clause-3\\.3")).to_have_count(0)
     expect(demo.locator("#work-more .filters")).to_be_hidden()
     expect(demo.locator("#select-shown")).to_be_hidden()
-    expect(demo.locator("#im8-fold")).not_to_have_attribute("open")
+    expect(demo.locator(".im8__list")).to_be_hidden()
 
 
 def test_start_is_a_short_cta_not_a_wall(page):

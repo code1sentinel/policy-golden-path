@@ -125,7 +125,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--orange); outline
 
 /* Start ------------------------------------------------------------------- */
 
-.start { max-width: 640px; }
+.start { max-width: 640px; margin: 0 auto; }
 .start__lede { color: var(--muted); margin: 0 0 22px; font-size: 15px; }
 .start__cta { margin: 0 0 22px; }
 .start__load { border-style: dashed; }
@@ -240,7 +240,7 @@ body:has(#work:not([hidden])) #work { flex: 1; min-height: 0; display: flex; fle
 .editor__where strong { color: var(--text); font-family: var(--mono); }
 .legacy { margin: 0 0 18px; padding: 0 0 0 12px; border: 0; border-left: 2px solid var(--border); font-size: 12px; line-height: 1.45; color: var(--muted); background: transparent; }
 .legacy__label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7A7A7A; margin-bottom: 2px; }
-.editor .field > span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.editor .field > span { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0; text-transform: none; }
 .statement { font-size: 18px; line-height: 1.5; letter-spacing: -0.02em; min-height: 7.5em; padding: 14px 16px; }
 .editor__primary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 16px; }
 .editor__primary .btn { min-height: 36px; }
