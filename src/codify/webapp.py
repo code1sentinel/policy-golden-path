@@ -24,7 +24,7 @@ STATIC = {"index.html": "text/html", "app.css": "text/css", "app.js": "text/java
           "acme-policy.md": "text/markdown", "acme-policy.docx":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
 # AI drafting (off unless the person turns it on) calls these providers from the page with the person's own key.
-AI_ORIGINS = "https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com"
+AI_ORIGINS = "https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com http://localhost:11434 http://127.0.0.1:11434"
 CSP = ("default-src 'self'; style-src 'self' https://fonts.googleapis.com; "
        "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' " + AI_ORIGINS + "; "
        "frame-ancestors 'none'; base-uri 'none'; form-action 'none'")

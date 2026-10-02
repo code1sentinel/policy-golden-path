@@ -47,7 +47,8 @@ def test_index_runs_in_browser_mode_with_no_third_parties(site):
     csp = re.search(r'Content-Security-Policy" content="([^"]+)"', html).group(1)
     connect = next(d for d in csp.split("; ") if d.startswith("connect-src")).split()[1:]
     assert connect == ["'self'", "https://api.anthropic.com", "https://api.openai.com",
-                       "https://generativelanguage.googleapis.com"]
+                       "https://generativelanguage.googleapis.com", "http://localhost:11434",
+                       "http://127.0.0.1:11434"]
     assert "script-src 'self' 'wasm-unsafe-eval'" in csp
 
 

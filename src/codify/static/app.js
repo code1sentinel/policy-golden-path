@@ -189,6 +189,25 @@ async function providerJson(res, name) {
 }
 
 const PROVIDERS = {
+  ollama: {
+    label: "Ollama (Local / Air-gapped)",
+    models: ["llama3.2", "mistral", "qwen2.5"],
+    requiresKey: false,
+    async send(key, model, p) {
+      const res = await fetch("http://localhost:11434/v1/chat/completions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
+          response_format: { type: "json_object" },
+        }),
+      });
+      const data = await providerJson(res, "Ollama");
+      const message = data.choices && data.choices[0] && data.choices[0].message;
+      return (message && message.content) || "";
+    },
+  },
   anthropic: {
     label: "Anthropic (Claude)",
     models: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-4-5"],
@@ -279,6 +298,12 @@ function renderAiButton() {
 
 function fillModels(provider) {
   $("#ai-models").replaceChildren(...PROVIDERS[provider].models.map((m) => el("option", { value: m })));
+  const p = PROVIDERS[provider];
+  if (p && p.requiresKey === false) {
+    $("#ai-key").placeholder = "Not required for local Ollama";
+  } else {
+    $("#ai-key").placeholder = ai.key ? "" : "Paste your API key";
+  }
 }
 
 function openAiDialog() {
@@ -287,7 +312,8 @@ function openAiDialog() {
   fillModels(ai.provider);
   $("#ai-model").value = ai.model;
   $("#ai-key").value = ai.key;
-  $("#ai-key").placeholder = ai.key ? "" : "Paste your API key";
+  const pInfo = PROVIDERS[ai.provider];
+  $("#ai-key").placeholder = (pInfo && pInfo.requiresKey === false) ? "Not required for local Ollama" : (ai.key ? "" : "Paste your API key");
   $("#ai-remember").checked = ai.remember;
   $("#ai-ack").checked = false;
   $("#ai-off").hidden = !ai.on && !ai.key;
@@ -310,7 +336,8 @@ function aiFormSubmit(e) {
     const key = $("#ai-key").value.trim();
     if (!$("#ai-ack").checked) return fail("Tick the box to confirm you have read what is sent.");
     if (!model) return fail("Enter a model.");
-    if (!key) return fail("Enter your API key.");
+    const prov = PROVIDERS[$("#ai-provider").value];
+    if ((!prov || prov.requiresKey !== false) && !key) return fail("Enter your API key.");
     Object.assign(ai, { on: true, provider: $("#ai-provider").value, model, key, remember: $("#ai-remember").checked });
   } else {
     return;
@@ -683,6 +710,7 @@ function renderList() {
 function renderBulk() {
   const n = state.checked.size;
   $("#selected-count").textContent = `${n} selected`;
+  $(".bulk")?.classList.toggle("is-active", n > 0);
   for (const b of $$("[data-bulk]")) b.disabled = n === 0;
   $("#select-none").disabled = n === 0;
   $("#ai-bulk").disabled = n === 0;
