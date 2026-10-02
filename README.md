@@ -13,7 +13,9 @@ and Codify:
    catalog: the action first, no tools, testable.
 3. **Checks** each draft as you edit it, and shows its parts (action, scope,
    limit, purpose), so a missing one is easy to see.
-4. **Exports** an OSCAL catalog, which is also your save file, plus Excel, CSV
+4. **Maps** each control to Singapore's IM8 Reform catalog, and shows which
+   IM8 controls your policy covers and where the gaps are.
+5. **Exports** an OSCAL catalog, which is also your save file, plus Excel, CSV
    and a conversion report.
 
 ```
@@ -122,6 +124,36 @@ Hedges ("should", "may"), vague wording and open-ended lists reduce the score.
 A score describes how a statement is written, not whether it is true; the
 Guide in the app explains each practice with a weak and a strong example.
 
+## Mapping to IM8 Reform
+
+Codify ships with Singapore's [IM8 Reform](https://github.com/GovTechSG/tech-standards)
+catalog (version 2025.05.13, 137 controls in 15 domains; MIT licence, GovTech)
+and its risk profiles: for low-risk and medium-risk systems, each IM8 control is
+Level 0 (must-have), 1 (should-have) or 2 (good-to-have).
+
+- **Suggestions**: the editor suggests the IM8 controls whose wording is
+  closest to the statement and its legacy clause, with their levels. Map one
+  with a click, or find any IM8 control by id or title. Suggestions come from
+  shared words, weighted so telling words ("backup", "MFA", "sanitise") count
+  for more than common ones; a mapping counts only once you add it.
+- **In bulk**: "Map to top IM8 suggestion" maps the selected controls that have
+  no mapping yet to their best match, after asking. Controls with no close
+  match stay unmapped; the "Not mapped to IM8" filter shows them.
+- **Coverage**: the **IM8 coverage** view lists every IM8 control by domain,
+  covered (with the controls that map to it) or a gap, and counts coverage for
+  each level, for low-risk or medium-risk systems. "Gaps only" shows what the
+  policy does not address. Covered means a control maps to it, not that it is
+  implemented.
+- **In the outputs**: each mapping is an `im8-reform` prop and a `related` link
+  on the control in the OSCAL catalog, with the IM8 catalog in the back matter;
+  an "IM8 Reform" column in Excel and CSV; and an IM8 coverage section in the
+  report, listing the Level 0 controls not covered. Opening the IM8 Reform
+  catalog itself maps each control to itself.
+
+`scripts/make_im8.py` rebuilds the bundled data from a checkout of GovTech's
+repository when it changes; GovTech's licence is kept beside it
+([`src/codify/data/LICENSE-im8-reform.txt`](src/codify/data/LICENSE-im8-reform.txt)).
+
 ## AI drafting (optional)
 
 AI drafting is off unless you turn it on (**AI drafting** at the top of the
@@ -160,8 +192,8 @@ the areas for improvement updating as you type. Add the risk it treats (its
 purpose), guidance and who implements it, and mark it **draft**, **reviewed**
 or **accepted**.
 
-- **Filters**: drafts, reviewed, accepted, below 80%, or the clauses that did
-  not become controls.
+- **Filters**: drafts, reviewed, accepted, below 80%, not mapped to IM8, or the
+  clauses that did not become controls.
 - **Bulk**: "Select ready drafts" ticks drafts scoring 80% or more with no
   notes left to decide, and "Select shown" every control the filter shows;
   then mark them reviewed or accepted, or draft them again with AI.
@@ -184,17 +216,18 @@ schema). One group per policy section and one control per statement:
 | `parts[name=drafting-notes]` | what the rules changed, and what to decide |
 | `props`: `legacy-clause`, `status`, `origin`, `risk-statement`, `responsible-role` | traceability and review state |
 | `links[rel=derived-from]` | the legacy clause, kept in `back-matter` |
+| `props[name=im8-reform]`, `links[rel=related]` | the IM8 Reform controls it maps to; the IM8 catalog is in `back-matter` |
 | `back-matter.resources` | every legacy clause, with its type and the reason |
 
 Codify's own names are in the namespace `https://grcengineering.club/ns/codify`.
 
 **Excel and CSV**: one row per control (legacy clause, statement, parameters,
-guidance, risk, who, status, score, notes), then the clauses that did not
+guidance, risk, who, IM8 Reform, status, score, notes), then the clauses that did not
 become controls. Cells that would run as spreadsheet formulas are escaped.
 
 **Conversion report** (Markdown): "43 clauses → 38 controls", the status, every
-control with its score, what still needs attention, and the clauses that are
-not controls, with the reason.
+control with its score, what still needs attention, IM8 Reform coverage (once
+controls are mapped), and the clauses that are not controls, with the reason.
 
 ## Command line
 
@@ -254,10 +287,12 @@ src/codify/
   api.py        the request API, shared by the local server and the browser
   webapp.py     local web server (codify-web)
   cli.py        command line (codify)
+  im8.py        IM8 Reform: suggested mappings and coverage
   guides.py     the best-practice guide
   xlsx.py       Excel reader and writer, standard library only
+  data/         the IM8 Reform catalog, trimmed for mapping
   static/       the web app, and the Acme demo policy
-scripts/        build the online site; make a .docx; validate OSCAL
+scripts/        build the online site; make a .docx; validate OSCAL; rebuild the IM8 data
 examples/       the Acme demo policy (Markdown and Word) and its key
 ```
 

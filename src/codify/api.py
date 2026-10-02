@@ -11,6 +11,8 @@ the project lives in the page: each call is given what it needs.
     export    a project -> OSCAL catalog, Excel, CSV or Markdown report
     ai_prompt one clause -> the prompt the page sends to the person's AI provider
     ai_reply  the provider's reply -> control drafts marked as drafted by AI, with scores
+    im8       one control statement -> suggested IM8 Reform controls; with no text, the whole IM8 list
+    coverage  a whole project -> IM8 Reform coverage from its confirmed mappings, and the gaps
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ import binascii
 import json
 import re
 
-from . import __version__, ai
+from . import __version__, ai, im8
 from .classify import TYPE_LABELS, TYPES
 from .clauses import read_policy
 from .control import assess_control_statement, parts
@@ -108,6 +110,9 @@ def _clean_project(value) -> dict:
         notes = c.get("notes") or []
         if not isinstance(notes, list):
             raise BadRequest("'notes' must be a list")
+        mapped = c.get("im8") or []
+        if not isinstance(mapped, list) or not all(isinstance(m, str) for m in mapped):
+            raise BadRequest("'im8' must be a list of IM8 control ids")
         out["controls"].append({
             "id": _text(c.get("id"), "control id", 64) or "?", "clause": _text(c.get("clause"), "clause", 64),
             "text": _text(c.get("text"), "text"), "guidance": _text(c.get("guidance"), "guidance"),
@@ -115,6 +120,7 @@ def _clean_project(value) -> dict:
             "notes": [_text(n, "note", 2000) for n in notes[:50]],
             "status": c.get("status") if c.get("status") in STATUSES else "draft",
             "origin": c.get("origin") if c.get("origin") in ORIGINS else "person",
+            "im8": list(dict.fromkeys(m for m in mapped[:50] if im8.known(m))),
         })
     return out
 
@@ -181,6 +187,23 @@ def ai_reply(body: dict) -> dict:
     return {"controls": controls, "scores": _scores({"controls": controls})}
 
 
+def im8_suggest(body: dict) -> dict:
+    text = _text(body.get("text"), "text")
+    data = im8.catalog()
+    if not text:
+        return {"title": data["title"], "version": data["version"], "domains": data["domains"],
+                "controls": [im8.brief(c["id"]) for c in data["controls"]]}
+    exclude = body.get("exclude") or []
+    if not isinstance(exclude, list):
+        raise BadRequest("'exclude' must be a list")
+    return {"suggestions": im8.suggest(text, _text(body.get("context"), "context"),
+                                       exclude=tuple(str(x) for x in exclude[:50]))}
+
+
+def coverage(body: dict) -> dict:
+    return im8.coverage(_clean_project(body.get("project")))
+
+
 def _filename(project: dict, suffix: str) -> str:
     stem = re.sub(r"[^A-Za-z0-9]+", "-", project.get("title") or "policy").strip("-").lower()[:60] or "policy"
     return f"{stem}-{suffix}"
@@ -216,7 +239,7 @@ def guide() -> dict:
 
 
 ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export,
-           "ai_prompt": ai_prompt, "ai_reply": ai_reply}
+           "ai_prompt": ai_prompt, "ai_reply": ai_reply, "im8": im8_suggest, "coverage": coverage}
 
 
 def call(body: dict) -> dict:

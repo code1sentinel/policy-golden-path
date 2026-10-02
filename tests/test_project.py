@@ -62,7 +62,7 @@ def test_any_catalog_opens_as_a_starting_point():
     p = from_oscal(catalog)
     assert p["controls"] == [{"id": "br-1", "clause": "br-1", "text": "Back up data every [N] day(s).",
                               "guidance": "Use AWS Backup.", "risk": "Data could be lost.", "who": "", "notes": [],
-                              "status": "draft", "origin": "catalog"}]
+                              "status": "draft", "origin": "catalog", "im8": []}]
     assert p["clauses"][0]["heading"] == "Backup and Recovery"
     with pytest.raises(ValueError, match="no controls"):
         from_oscal({"catalog": {"metadata": {"title": "empty"}}})

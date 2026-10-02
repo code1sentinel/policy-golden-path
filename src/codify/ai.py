@@ -144,7 +144,7 @@ def from_reply(clause_id: str, reply: str, model: str = "") -> list[dict]:
         notes += [n for n in (_part(x) for x in raw[:10]) if n]
         controls.append({"clause": clause_id, "text": text, "guidance": _part(item.get("guidance")),
                          "risk": _part(item.get("risk")), "who": "", "notes": notes,
-                         "status": "draft", "origin": "ai"})
+                         "status": "draft", "origin": "ai", "im8": []})
     if not controls:
         raise ValueError("the AI returned no control statements")
     return [{"id": cid, **c} for cid, c in zip(_control_ids(clause_id, len(controls)), controls)]

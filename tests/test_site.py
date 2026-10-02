@@ -55,7 +55,7 @@ def test_browser_package_works_without_server_modules(site, tmp_path):
     with zipfile.ZipFile(site / "codify.zip") as zf:
         names = set(zf.namelist())
         zf.extractall(tmp_path / "unpacked")
-    assert {"codify/api.py", "codify/xlsx.py", "codify/draft.py"} <= names
+    assert {"codify/api.py", "codify/xlsx.py", "codify/draft.py", "codify/data/im8-reform.json"} <= names
     assert not {"codify/webapp.py", "codify/cli.py"} & names
     # Import and run it in a clean interpreter that can only see the unpacked archive, as Pyodide does.
     # -I -S: no environment, no site-packages, so the installed codify cannot be picked up instead.
@@ -63,11 +63,13 @@ def test_browser_package_works_without_server_modules(site, tmp_path):
     code = ("import sys; sys.path.insert(0, sys.argv[1]); import json, codify.api as a; "
             "print(a.__file__); "
             "print(json.loads(a.handle(json.dumps({'action': 'open', 'text': '1.1 Logs shall be reviewed.'})))"
-            "['summary']['controls'])")
+            "['summary']['controls']); "
+            "print(json.loads(a.handle(json.dumps({'action': 'im8', 'text': 'Back up all servers nightly.'})))"
+            "['suggestions'][0]['id'])")
     out = subprocess.run([sys.executable, "-I", "-S", "-c", code, str(unpacked)],
                          capture_output=True, text=True, check=True)
-    module_file, total = out.stdout.split()
-    assert Path(module_file).is_relative_to(unpacked) and total == "1"
+    module_file, total, im8 = out.stdout.split()
+    assert Path(module_file).is_relative_to(unpacked) and total == "1" and im8 == "br-1"
 
 
 def test_build_refuses_incomplete_pyodide(tmp_path):
