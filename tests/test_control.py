@@ -102,11 +102,28 @@ def test_every_part_of_the_control_is_assessed():
 def test_parts_of_a_statement():
     p = parts("Review privileged access at least every [90] days to remove access that is no longer needed.")
     assert p["action"] == "review" and p["scope"] == "privileged access"
-    assert p["limit"] == "at least every [90] days" and p["purpose"] is None
+    assert p["limit"] == "at least every [90] days" and p["purpose"] == "to remove access that is no longer needed"
     assert parts("Back up all servers nightly.")["action"] == "back up"
     assert parts("Apply rate-limiting to all logins to deter brute-force attacks.")["purpose"] == \
         "to deter brute-force attacks"
     assert parts("The IT team uses Okta to manage access.")["tools"] == "okta"
+
+
+@pytest.mark.parametrize("text, purpose", [
+    # the Guide's own example: a "to ..." phrase after the limit says why
+    ("Review privileged and payment access at least every [90] days to remove access that is no longer needed.",
+     "to remove access that is no longer needed"),
+    ("Rotate API keys every [90] days, to shorten the life of a leaked key.", "to shorten the life of a leaked key"),
+    # a "to ..." that is part of the requirement is not a purpose
+    ("Require users to change passwords at least every [90] days.", None),
+    ("Require the line manager to approve access before it is granted.", None),
+    ("Back up all servers nightly.", None),
+    ("Generate alerts to inform appointed administrators on changes to firewall rules.", None),  # IM8 ns-11
+    ("Remediate true positives before deploying to production.", None),  # IM8 sd-4
+])
+def test_purpose_after_the_limit(text, purpose):
+    assert parts(text)["purpose"] == purpose
+    assert (crit(check(text), "purpose").score == 1.0) == (purpose is not None)
 
 
 def test_bundled_requirements_are_flagged_for_lettered_parts_too():

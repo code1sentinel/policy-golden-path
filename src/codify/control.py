@@ -197,7 +197,7 @@ def assess_control_statement(statement: Statement) -> Assessment:
     criteria.append(CriterionResult("testable", testable, WEIGHTS["testable"], note))
 
     # purpose: why, in the text or through the risk it treats.
-    why = sorted(_distinct(_PURPOSE, text))
+    why = sorted(_distinct(_PURPOSE, text)) or ([after] if (after := _purpose_after_limit(text)) else [])
     if why:
         purpose, note = 1.0, ", ".join(why)
     elif statement.risk_statement:
@@ -280,6 +280,18 @@ _SCOPE_END = re.compile(r"\s+(at least|within|every|each|daily|nightly|weekly|mo
                         r"mitigate|stop|block))\b|[,;.]", re.I)
 
 
+_PURPOSE_VERBS = VERBS | {"shorten", "catch", "find", "spot", "cut", "lower", "speed", "show", "prove", "know"}
+
+
+def _purpose_after_limit(text: str) -> str | None:
+    """A "to ..." phrase straight after the limit says why: "every [90] days to remove stale access"."""
+    for m in _LIMIT.finditer(text):
+        after = re.match(r"\s*,?\s*(to ([a-z]+)\b.*)", text[m.end():], re.I)
+        if after and after.group(2).lower() in _PURPOSE_VERBS:  # "to remove ...", not "to production"
+            return after.group(1).strip().rstrip(".")
+    return None
+
+
 def parts(text: str) -> dict[str, str | None]:
     """The parts of a control statement, as found in its text: action, scope, limit, purpose, and any tools.
 
@@ -300,6 +312,6 @@ def parts(text: str) -> dict[str, str | None]:
         "action": action,
         "scope": scope,
         "limit": limit.group(0) if limit else None,
-        "purpose": text[purpose.start():].rstrip(".") if purpose else None,
+        "purpose": text[purpose.start():].rstrip(".") if purpose else _purpose_after_limit(text),
         "tools": ", ".join(sorted(_distinct(_PRODUCTS, text))) or None,
     }

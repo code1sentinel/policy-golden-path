@@ -327,8 +327,9 @@ async function aiDraftClause(clause) {
 }
 
 function needsConfirm(clause) {
-  // the person has worked on this clause's controls
-  return controlsOf(clause.id).some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai"));
+  // the person has worked on this clause's controls: edited, reviewed, accepted or mapped them
+  return controlsOf(clause.id).some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai") ||
+    (c.im8 || []).length);
 }
 
 async function aiRedraft(clause, button) {
@@ -344,8 +345,8 @@ async function aiBulk() {
   const clauses = state.project.clauses.filter((c) => ids.has(c.id));
   const todo = clauses.filter((c) => !needsConfirm(c));
   const skipped = clauses.length - todo.length;
-  if (!todo.length) return showError("The selected controls have all been edited, reviewed or accepted, so AI drafting leaves them alone. Use \"Draft with AI\" on a clause to replace its controls.");
-  const note = skipped ? `\n\n${plural(skipped, "clause")} with edited, reviewed or accepted controls will be left alone.` : "";
+  if (!todo.length) return showError("The selected controls have all been edited, reviewed, accepted or mapped, so AI drafting leaves them alone. Use \"Draft with AI\" on a clause to replace its controls.");
+  const note = skipped ? `\n\n${plural(skipped, "clause")} with edited, reviewed, accepted or mapped controls will be left alone.` : "";
   if (!confirm(`Send ${plural(todo.length, "clause")} to ${aiName()}, one request per clause?\n\nEach request holds one clause's text, section heading and rule drafts. Their controls are replaced with AI drafts.${note}`)) return;
   ai.stop = false;
   showError("");
@@ -530,6 +531,7 @@ function renderResume() {
 // ---------------------------------------------------------------- opening a project
 
 function openProject(data) {
+  showNotice("");
   state.project = data.project;
   state.scores = data.scores || {};
   state.checked.clear();
@@ -622,7 +624,7 @@ function scorePill(id) {
   return el("span", { class: `score ${s >= READY ? "score--high" : "score--low"}`, text: pct(s), title: "Check score" });
 }
 
-function controlRow(c) {
+function controlRow(c, inEditor = false) {
   const box = el("input", { type: "checkbox", "aria-label": `Select ${c.id}` });
   box.checked = state.checked.has(c.id);
   box.addEventListener("change", () => {
@@ -634,7 +636,7 @@ function controlRow(c) {
     el("span", { class: "ctl__id", text: c.id }), el("span", { class: "ctl__text", text: c.text || "(empty)" }),
     mapped.length ? el("span", { class: "im8-tag", title: "Mapped to IM8 Reform", text: `IM8 ${mapped.join(", ")}` }) : null);
   open.addEventListener("click", () => select({ control: c.id }));
-  const row = el("div", { class: "ctl", id: `ctl-${c.id}`, "aria-current": String(state.selected?.control === c.id) },
+  const row = el("div", { class: "ctl", id: inEditor ? null : `ctl-${c.id}`, "aria-current": String(state.selected?.control === c.id) },
     box, open, scorePill(c.id), el("span", { class: `state state--${c.status}`, text: STATUS_LABELS[c.status] }));
   return row;
 }
@@ -653,7 +655,7 @@ function clauseCard(clause, controls) {
   el("div", { class: "clause__head" }, el("span", { class: "clause__id", text: clause.id }), type,
     other ? el("span", { class: "clause__reason", text: clause.duplicate_of ? label : clause.reason }) : null),
   open,
-  controls.map(controlRow));
+  controls.map((c) => controlRow(c)));
 }
 
 function renderList() {
@@ -837,7 +839,7 @@ function renderClauseEditor(box, clause) {
     el("label", { class: "field" }, el("span", { text: "Type" }), type),
     el("p", { class: "hint", text: clause.duplicate_of ? `Repeats ${clause.duplicate_of}, so no control was drafted from it.` : `Sorted as ${TYPE_LABELS[clause.type].toLowerCase()}: ${clause.reason}.` }),
     clause.type === "requirement" ? el("div", { class: "actions" }, draftBtn, aiReady() ? aiBtn : null) : null,
-    controls.length ? el("div", {}, el("h3", { text: `Controls from this clause (${controls.length})` }), controls.map(controlRow)) : null,
+    controls.length ? el("div", {}, el("h3", { text: `Controls from this clause (${controls.length})` }), controls.map((c) => controlRow(c, true))) : null,
   );
 }
 
@@ -869,6 +871,7 @@ async function redraftClause(clause, button) {
 function replaceControls(clause, data, show = true) {
   // put new drafts where the clause's controls were
   const at = state.project.controls.findIndex((c) => c.clause === clause.id);
+  keepMappings(controlsOf(clause.id), data.controls);
   for (const c of controlsOf(clause.id)) { delete state.scores[c.id]; state.checked.delete(c.id); }
   state.project.controls = state.project.controls.filter((c) => c.clause !== clause.id);
   state.project.controls.splice(at >= 0 ? at : insertionPoint(clause), 0, ...data.controls);
@@ -877,6 +880,17 @@ function replaceControls(clause, data, show = true) {
   state.selected = data.controls[0] ? { control: data.controls[0].id } : { clause: clause.id };
   saveLocal();
   render();
+}
+
+function keepMappings(before, after) {
+  // IM8 mappings are a person's work: a new draft with the same id keeps them, and the rest go to the first draft
+  if (!after.length) return;
+  const byId = new Map(after.map((c) => [c.id, c]));
+  for (const old of before) {
+    if (!(old.im8 || []).length) continue;
+    const to = byId.get(old.id) || after[0];
+    to.im8 = [...new Set([...(to.im8 || []), ...old.im8])];
+  }
 }
 
 function insertionPoint(clause) {
@@ -1024,6 +1038,7 @@ function init() {
 
   $("#close-project").addEventListener("click", () => {
     saveLocal();
+    showNotice("");
     state.project = null;
     state.selected = null;
     showView("work");

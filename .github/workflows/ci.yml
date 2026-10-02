@@ -6,6 +6,7 @@ on:
 
 env:
   OSCAL_VERSION: "1.1.2"
+  PYODIDE_VERSION: "314.0.7"
 
 jobs:
   test:
@@ -22,6 +23,29 @@ jobs:
       - run: pytest -q
       - run: codify examples/acme-information-security-policy-2016.docx
       - run: codify examples/acme-information-security-policy-2016.md -f report
+
+  e2e:
+    # The web app in a real browser: as codify-web serves it, and as the browser-only site (Pyodide).
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [server, site]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[e2e]"
+      - run: python -m playwright install --with-deps chromium
+      - name: Build the site with Pyodide ${{ env.PYODIDE_VERSION }}
+        if: matrix.mode == 'site'
+        run: |
+          npm pack "pyodide@${PYODIDE_VERSION}" --silent
+          tar xzf "pyodide-${PYODIDE_VERSION}.tgz"
+          python scripts/build_site.py --pyodide package --out site
+          echo "CODIFY_SITE=$PWD/site" >> "$GITHUB_ENV"
+      - run: pytest -q tests/e2e
 
   oscal-schema:
     # The catalog Codify writes must be valid OSCAL, checked against NIST's own schema.

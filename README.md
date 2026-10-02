@@ -179,7 +179,8 @@ page). Bring your own API key from Anthropic (Claude), OpenAI or Google
 - **Where**: "Draft with AI" on a clause replaces its controls; with controls
   selected, the bulk "Draft with AI" redrafts their clauses one by one, and can
   be stopped. Clauses whose controls you have edited, reviewed or accepted are
-  left alone in bulk.
+  left alone in bulk, and so are clauses with controls mapped to IM8. Redrafting a
+  clause keeps its IM8 mappings.
 
 The prompt is in [`src/codify/ai.py`](src/codify/ai.py). The command line and
 the rule drafts never use AI.
@@ -257,6 +258,18 @@ cross-site requests and keeps nothing on disk.
 pip install -e ".[dev]"
 pytest
 ```
+
+The browser tests in `tests/e2e` drive the web app in Chromium, with the AI
+providers faked; they are skipped unless Playwright is installed:
+
+```
+pip install -e ".[e2e]"
+python -m playwright install chromium
+pytest tests/e2e                                   # against codify-web
+CODIFY_SITE=site pytest tests/e2e                  # against a site built with build_site.py
+```
+
+CI runs them both ways.
 
 `tests/test_acme.py` holds Codify to the Acme key: every clause sorted as the
 key says, the duplicate found, every requirement drafted, and every draft
