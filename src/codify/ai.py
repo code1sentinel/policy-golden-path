@@ -44,8 +44,8 @@ SCHEMA = {
     "additionalProperties": False,
 }
 
-SYSTEM = """You help GRC professionals turn legacy policy clauses into control statements, in the style of \
-Singapore's IM8 Reform control catalog.
+SYSTEM = """You help GRC professionals turn legacy policy clauses into control statements: action first, \
+tool-neutral, and testable.
 
 A control statement says what must be done, testably, and nothing about who does it or with which product. \
 You give each statement in parts, which Codify joins in this order:
@@ -144,7 +144,7 @@ def from_reply(clause_id: str, reply: str, model: str = "") -> list[dict]:
         notes += [n for n in (_part(x) for x in raw[:10]) if n]
         controls.append({"clause": clause_id, "text": text, "guidance": _part(item.get("guidance")),
                          "risk": _part(item.get("risk")), "who": "", "notes": notes,
-                         "status": "draft", "origin": "ai", "im8": []})
+                         "status": "draft", "origin": "ai"})
     if not controls:
         raise ValueError("the AI returned no control statements")
     return [{"id": cid, **c} for cid, c in zip(_control_ids(clause_id, len(controls)), controls)]

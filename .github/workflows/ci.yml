@@ -65,14 +65,9 @@ jobs:
           codify examples/acme-information-security-policy-2016.md -f oscal -o out/acme-md.json
           codify examples/acme-information-security-policy-2016.docx -f oscal -o out/acme-docx.json
           codify out/acme-md.json -f oscal -o out/acme-reopened.json
-          # with IM8 Reform mappings: each control mapped to its top suggestion
-          python -c "import json; from codify import api, im8; from codify.project import to_oscal
-          p = api.call({'action': 'open', 'name': 'a.md', 'content': open('examples/acme-information-security-policy-2016.md').read()})['project']
-          for c in p['controls']: c['im8'] = [s['id'] for s in im8.suggest(c['text'])[:1]]
-          json.dump(to_oscal(p), open('out/acme-im8.json', 'w'))"
       - name: Validate against the OSCAL ${{ env.OSCAL_VERSION }} catalog schema
         run: |
           curl -sSLf -o out/schema.json \
             "https://github.com/usnistgov/OSCAL/releases/download/v${OSCAL_VERSION}/oscal_catalog_schema.json"
           npm install --no-save --silent ajv@8 ajv-formats@3
-          node scripts/validate_oscal.mjs out/schema.json out/acme-md.json out/acme-docx.json out/acme-reopened.json out/acme-im8.json
+          node scripts/validate_oscal.mjs out/schema.json out/acme-md.json out/acme-docx.json out/acme-reopened.json

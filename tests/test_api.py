@@ -42,12 +42,25 @@ def test_exports(opened):
     xlsx = api.call({"action": "export", "format": "xlsx", "project": project})
     assert xlsx["name"] == "acme-agency-information-security-policy-controls.xlsx"
     assert base64.b64decode(xlsx["content_base64"])[:2] == b"PK"
-    assert api.call({"action": "export", "format": "csv", "project": project})["content"].startswith("control id,")
-    assert "conversion report" in api.call({"action": "export", "format": "report", "project": project})["content"]
+    csv = api.call({"action": "export", "format": "csv", "project": project})["content"]
+    assert csv.startswith("control id,") and "IM8 Reform" not in csv.splitlines()[0]
+    report = api.call({"action": "export", "format": "report", "project": project})["content"]
+    assert "conversion report" in report and "IM8 Reform" not in report
+
+
+def test_legacy_im8_mappings_are_dropped_on_export(opened):
+    project = opened["project"]
+    project["controls"][0]["im8"] = ["br-1"]
+    saved = api.call({"action": "export", "format": "oscal", "project": project})
+    assert "im8-reform" not in saved["content"]
+    again = api.call({"action": "open", "name": saved["name"], "content": saved["content"]})["project"]
+    assert "im8" not in again["controls"][0]
 
 
 @pytest.mark.parametrize("body, message", [
     ({"action": "nope"}, "'action' must be one of"),
+    ({"action": "im8"}, "'action' must be one of"),
+    ({"action": "coverage"}, "'action' must be one of"),
     ({"action": "check", "text": ""}, "enter a control statement"),
     ({"action": "open"}, "send a file"),
     ({"action": "open", "name": "x.json", "content": "{"}, "not valid JSON"),

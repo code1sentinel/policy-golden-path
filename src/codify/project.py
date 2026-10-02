@@ -4,16 +4,14 @@ The project is plain data (JSON), shared with the web page:
 
     {"uuid", "title", "source", "clauses": [clause...], "controls": [control...]}
     clause:  {"id", "text", "section", "heading", "type", "reason", "duplicate_of"}
-    control: {"id", "clause", "text", "guidance", "risk", "who", "notes", "status", "origin", "im8"}
-
-"im8" lists the IM8 Reform controls a person has confirmed the control maps to.
+    control: {"id", "clause", "text", "guidance", "risk", "who", "notes", "status", "origin"}
 
 Its file form is an OSCAL catalog: the deliverable and the save file in one.
 Each control carries its status, origin and the legacy wording it came from;
 every legacy clause, with its type, is kept in the catalog's back matter, so
 opening the catalog again resumes the work exactly. A catalog that Codify did
-not make (IM8 Reform, say) opens too: each of its controls becomes a clause
-and a control to work on.
+not make opens too: each of its controls becomes a clause and a control to
+work on.
 """
 
 from __future__ import annotations
@@ -27,7 +25,6 @@ from datetime import datetime, timezone
 from . import __version__
 from .classify import REQUIREMENT, SCOPE, TYPE_LABELS, TYPES, sort_clauses
 from .clauses import Clause, Policy
-from . import im8
 from .draft import draft
 
 NS = "https://grcengineering.club/ns/codify"
@@ -62,7 +59,7 @@ def draft_controls(clause_id: str, text: str) -> list[dict]:
     """Rule-based drafts for one requirement clause, as project controls."""
     drafts = draft(text)
     return [{"id": cid, "clause": clause_id, "text": d.text, "guidance": d.guidance, "risk": "", "who": d.who,
-             "notes": d.notes, "status": "draft", "origin": "rules", "im8": []}
+             "notes": d.notes, "status": "draft", "origin": "rules"}
             for cid, d in zip(_control_ids(clause_id, len(drafts)), drafts)]
 
 
@@ -171,8 +168,6 @@ def to_oscal(project: dict) -> dict:
     clause_uuid = {c["id"]: str(uuid.uuid5(uuid.UUID(pid), "clause:" + c["id"])) for c in project["clauses"]}
     clauses = {c["id"]: c for c in project["clauses"]}
 
-    im8_uuid = im8.catalog()["uuid"]
-    used_im8 = False
     groups: dict[str, dict] = {}
     for control in project["controls"]:
         clause = clauses.get(control["clause"], {})
@@ -180,8 +175,6 @@ def to_oscal(project: dict) -> dict:
         group = groups.setdefault(section, {"id": _token(section, "s-"),
                                             "title": clause.get("heading") or f"Section {section}", "controls": []})
         cid = _token(control["id"], "c-")
-        mapped = [m for m in control.get("im8") or [] if im8.known(m)]
-        used_im8 = used_im8 or bool(mapped)
         prose, params = to_params(cid, control["text"])
         parts = [{"id": f"{cid}_smt", "name": "statement", "prose": prose}]
         if control.get("guidance"):
@@ -198,20 +191,13 @@ def to_oscal(project: dict) -> dict:
                             _prop("status", control.get("status", "draft")),
                             _prop("origin", control.get("origin", "rules")),
                             _prop("risk-statement", control.get("risk")),
-                            _prop("responsible-role", control.get("who")),
-                            *(_prop("im8-reform", m) for m in mapped)),
+                            _prop("responsible-role", control.get("who"))),
             "parts": parts,
         }
         if params:
             entry["params"] = params
-        links = []
         if control["clause"] in clause_uuid:
-            links.append({"href": "#" + clause_uuid[control["clause"]], "rel": "derived-from"})
-        for m in mapped:
-            links.append({"href": "#" + im8_uuid, "rel": "related",
-                          "text": f"IM8 Reform {m}: {im8.catalog()['by_id'][m]['title']}"})
-        if links:
-            entry["links"] = links
+            entry["links"] = [{"href": "#" + clause_uuid[control["clause"]], "rel": "derived-from"}]
         group["controls"].append(entry)
 
     scope = [c["text"] for c in project["clauses"] if c["type"] == SCOPE]
@@ -235,11 +221,6 @@ def to_oscal(project: dict) -> dict:
                             _prop("section", c.get("section")), _prop("heading", c.get("heading")),
                             _prop("reason", c.get("reason")), _prop("duplicate-of", c.get("duplicate_of"))),
         })
-    if used_im8:
-        data = im8.catalog()
-        resources.append({"uuid": im8_uuid, "title": f"{data['title']} (IM8 Reform catalog)",
-                          "description": f"Version {data['version']}. {data['license']}.",
-                          "rlinks": [{"href": im8.CATALOG_URL}]})
     catalog = {"uuid": pid, "metadata": metadata}
     if groups:
         catalog["groups"] = [groups[k] for k in sorted(groups, key=_section_key)]
@@ -306,10 +287,7 @@ def from_oscal(data: dict) -> dict:
         notes = [n[2:] if n.startswith("- ") else n
                  for n in _part_text(control, "drafting-notes").split("\n- ") if n.strip()] if ours else []
         clause_id = p.get("legacy-clause") or label
-        mapped = [x["value"] for x in control.get("props", []) if x.get("name") == "im8-reform" and x.get("ns") == NS]
-        if root.get("uuid") == im8.catalog()["uuid"] and im8.known(control.get("id", "")):
-            mapped = [control["id"]]  # the IM8 Reform catalog itself: each control maps to itself
-        controls.append({"id": label, "clause": clause_id, "text": text, "im8": [m for m in mapped if im8.known(m)],
+        controls.append({"id": label, "clause": clause_id, "text": text,
                          "guidance": _part_text(control, "guidance"), "risk": risk,
                          "who": p.get("responsible-role", ""), "notes": notes,
                          "status": p.get("status", "draft") if p.get("status") in STATUSES else "draft",
@@ -328,7 +306,7 @@ def from_oscal(data: dict) -> dict:
 # --- Spreadsheet and report ---------------------------------------------------------------------------
 
 COLUMNS = ("control id", "legacy clause", "clause type", "legacy text", "control statement", "parameters",
-           "guidance", "risk it treats", "who", "IM8 Reform", "status", "origin", "score", "notes")
+           "guidance", "risk it treats", "who", "status", "origin", "score", "notes")
 
 
 def to_rows(project: dict, scores: dict[str, float] | None = None) -> list[list[str]]:
@@ -343,14 +321,14 @@ def to_rows(project: dict, scores: dict[str, float] | None = None) -> list[list[
         score = (scores or {}).get(c["id"])
         rows.append([c["id"], c["clause"], TYPE_LABELS.get(clause.get("type", ""), ""), clause.get("text", ""),
                      c["text"], params, c.get("guidance", ""), c.get("risk", ""), c.get("who", ""),
-                     "; ".join(c.get("im8") or []), c["status"],
-                     c.get("origin", ""), f"{score:.0%}" if score is not None else "", " ".join(c.get("notes", []))])
+                     c["status"], c.get("origin", ""), f"{score:.0%}" if score is not None else "",
+                     " ".join(c.get("notes", []))])
     for clause in project["clauses"]:
         if clause["id"] in used:
             continue
         note = f"Duplicate of {clause['duplicate_of']}" if clause.get("duplicate_of") else clause.get("reason", "")
         rows.append(["", clause["id"], TYPE_LABELS.get(clause["type"], clause["type"]), clause["text"],
-                     "", "", "", "", "", "", "", "", "", note])
+                     "", "", "", "", "", "", "", "", note])
     return rows
 
 
@@ -367,7 +345,7 @@ def to_xlsx(project: dict, scores: dict[str, float] | None = None) -> bytes:
     from .xlsx import write_rows
 
     return write_rows(to_rows(project, scores), sheet_name="Controls",
-                      widths=[10, 10, 14, 60, 60, 16, 30, 40, 20, 14, 10, 10, 8, 50])
+                      widths=[10, 10, 14, 60, 60, 16, 30, 40, 20, 10, 10, 8, 50])
 
 
 def to_report(project: dict, scores: dict[str, float] | None = None,
@@ -397,7 +375,6 @@ def to_report(project: dict, scores: dict[str, float] | None = None,
             lines.append(f"**{c['id']}** {c['text']}")
             lines += [f"- {i}" for i in dict.fromkeys(items)]
             lines.append("")
-    lines += _im8_report(project)
     others = [c for c in project["clauses"] if c["type"] != REQUIREMENT or c.get("duplicate_of")]
     if others:
         lines += ["", "## Clauses that are not controls", "", "| Clause | Type | Why |", "| --- | --- | --- |"]
@@ -405,29 +382,6 @@ def to_report(project: dict, scores: dict[str, float] | None = None,
             kind = "Duplicate" if c.get("duplicate_of") else TYPE_LABELS.get(c["type"], c["type"])
             lines.append(f"| {c['id']} | {kind} | {c.get('reason', '')} |")
     return "\n".join(lines).rstrip() + "\n"
-
-
-def _im8_report(project: dict) -> list[str]:
-    """IM8 Reform coverage from the confirmed mappings, with the must-have (Level 0) controls not covered."""
-    if not any(c.get("im8") for c in project["controls"]):
-        return []
-    cov = im8.coverage(project)
-    lines = ["", "## IM8 Reform coverage", "",
-             f"The confirmed mappings cover **{cov['covered']} of {cov['total']}** controls in {cov['title']} "
-             f"(version {cov['version']}). Coverage means a control here maps to it, not that it is implemented.", "",
-             "| Domain | Covered | IM8 controls | Mapped from |", "| --- | --- | --- | --- |"]
-    for d in cov["domains"]:
-        hits = [f"{r['id']} ← {', '.join(r['controls'])}" for r in d["controls"] if r["controls"]]
-        lines.append(f"| {d['title']} | {d['covered']} of {len(d['controls'])} | "
-                     f"{', '.join(r['id'] for r in d['controls'] if r['controls']) or '–'} | {'; '.join(hits) or '–'} |")
-    for risk in im8.RISKS:
-        level = cov["levels"][f"{risk}-0"]
-        lines += ["", f"**{risk.capitalize()}-risk systems, Level 0 (must-have):** {level['covered']} of "
-                  f"{level['total']} covered."]
-        for cid in level["gaps"]:
-            c = im8.brief(cid)
-            lines.append(f"- Not covered: {cid} {c['title']}: {c['statement']}")
-    return lines
 
 
 def clause_from(project: dict, clause_id: str) -> Clause | None:

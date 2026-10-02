@@ -55,8 +55,6 @@ def build_package_zip(dest: Path) -> None:
         for path in sorted(PACKAGE.glob("*.py")):
             if path.name not in SERVER_ONLY:
                 zf.write(path, f"codify/{path.name}")
-        for path in sorted((PACKAGE / "data").glob("*.*")):
-            zf.write(path, f"codify/data/{path.name}")
 
 
 def main(argv: list[str] | None = None) -> int:

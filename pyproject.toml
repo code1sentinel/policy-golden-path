@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "codify"
 version = "1.2.1"
-description = "Codify: turn legacy policy clauses into OSCAL control statements, IM8 style, with checks and an OSCAL catalog as the save file."
+description = "Codify: turn legacy policy clauses into OSCAL control statements, with checks and an OSCAL catalog as the save file."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -27,7 +27,7 @@ codify-web = "codify.webapp:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-codify = ["static/*", "data/*.json", "data/*.txt"]
+codify = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

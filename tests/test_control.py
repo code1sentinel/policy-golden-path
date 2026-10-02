@@ -13,7 +13,7 @@ def crit(a, name):
 
 
 @pytest.mark.parametrize("text", [
-    # IM8 Reform statements, as published
+    # well-written action-first statements
     "Backup all important data and systems at least every [Assignment: time period (days)] day(s), and store "
     "backups in a secure and separate location.",
     "Validate all application inputs to ensure that they match the expected type, structure, or format.",
@@ -22,7 +22,7 @@ def crit(a, name):
     "Only allow access to production systems from managed devices.",
     "Where a service is internet-facing, restrict inbound traffic to the ports it needs.",
 ])
-def test_im8_style_requirements_score_high(text):
+def test_well_written_requirements_score_high(text):
     a = check(text, risk_statement="Linked risk.")
     assert a.confidence >= 0.85, a.improvements
     assert crit(a, "action_first").score == 1.0
@@ -118,8 +118,8 @@ def test_parts_of_a_statement():
     ("Require users to change passwords at least every [90] days.", None),
     ("Require the line manager to approve access before it is granted.", None),
     ("Back up all servers nightly.", None),
-    ("Generate alerts to inform appointed administrators on changes to firewall rules.", None),  # IM8 ns-11
-    ("Remediate true positives before deploying to production.", None),  # IM8 sd-4
+    ("Generate alerts to inform appointed administrators on changes to firewall rules.", None),
+    ("Remediate true positives before deploying to production.", None),
 ])
 def test_purpose_after_the_limit(text, purpose):
     assert parts(text)["purpose"] == purpose

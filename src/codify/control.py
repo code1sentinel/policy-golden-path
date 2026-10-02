@@ -1,21 +1,21 @@
-"""Control statements: the requirement itself, written the way IM8 writes it.
+"""Control statements: the requirement itself, written action-first and testable.
 
 A control statement says what must be done, not who does it or with what:
 
     Back up all important data and systems at least every [N] day(s), and store
-    backups in a secure and separate location.                    (IM8 BR-1)
+    backups in a secure and separate location.
 
 It starts with the action, names no product (tools belong in guidance, or
 with however the organization implements it), says what it applies to, can
 be tested, and says why. How the organization meets it, with which tools and
 people, is a separate concern, checked elsewhere.
 
-Alongside IM8's house style, a handful of criteria draw on OSCAL's own
-authoring conventions for a catalog control: joined requirements get their
-own lettered, referenceable parts (`labeled_parts`), as a catalog's own
-`statement`/`item` parts do; and a requirement should be written so an
-assessor can determine pass or fail, not left to a subjective judgment call
-(`determinable`), the way a NIST SP 800-53A assessment objective is.
+A handful of criteria draw on OSCAL's own authoring conventions for a catalog
+control: joined requirements get their own lettered, referenceable parts
+(`labeled_parts`), as a catalog's own `statement`/`item` parts do; and a
+requirement should be written so an assessor can determine pass or fail, not
+left to a subjective judgment call (`determinable`), the way a NIST SP 800-53A
+assessment objective is.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ WEIGHTS = {
     "labeled_parts": 0.05, "determinable": 0.05,
 }
 
-# Verbs a requirement can open with: IM8's own openers and the usual control verbs.
+# Verbs a requirement can open with: the usual control verbs.
 VERBS = set("""
     adopt allow analyse analyze apply approve archive assess assign audit authenticate authorise authorize automate
     back backup block build calibrate centralise centralize change check classify collect conduct configure confirm
