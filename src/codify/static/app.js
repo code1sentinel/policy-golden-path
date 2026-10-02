@@ -189,25 +189,6 @@ async function providerJson(res, name) {
 }
 
 const PROVIDERS = {
-  ollama: {
-    label: "Ollama (Local / Air-gapped)",
-    models: ["llama3.2", "mistral", "qwen2.5"],
-    requiresKey: false,
-    async send(key, model, p) {
-      const res = await fetch("http://localhost:11434/v1/chat/completions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
-          response_format: { type: "json_object" },
-        }),
-      });
-      const data = await providerJson(res, "Ollama");
-      const message = data.choices && data.choices[0] && data.choices[0].message;
-      return (message && message.content) || "";
-    },
-  },
   anthropic: {
     label: "Anthropic (Claude)",
     models: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-4-5"],
@@ -264,6 +245,35 @@ const PROVIDERS = {
       return parts.map((x) => x.text || "").join("");
     },
   },
+  ollama: {
+    label: "Ollama (local)",
+    models: ["llama3.2", "mistral", "qwen2.5"],
+    requiresKey: false,
+    async send(key, model, p) {
+      let res;
+      try {
+        res = await fetch("http://localhost:11434/v1/chat/completions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
+            response_format: { type: "json_object" },
+          }),
+        });
+      } catch {
+        if (location.protocol === "https:") {
+          throw new Error("Ollama is local (http://localhost:11434). Browsers block that from this HTTPS page. Run codify-web --open on this machine to draft with Ollama.");
+        }
+        throw new Error("Could not reach Ollama at http://localhost:11434. Is it running?");
+      }
+      const data = await providerJson(res, "Ollama");
+      const message = data.choices && data.choices[0] && data.choices[0].message;
+      const text = (message && message.content) || "";
+      if (!text) throw new Error("Ollama returned no draft for this clause.");
+      return text;
+    },
+  },
 };
 
 const ai = { on: false, provider: "anthropic", model: PROVIDERS.anthropic.models[0], key: "", remember: false, stop: false };
@@ -286,7 +296,12 @@ function saveAi() {
   } catch { /* storage unavailable: the settings last for this page only */ }
 }
 
-const aiReady = () => ai.on && !!ai.key;
+function providerNeedsKey(name = ai.provider) {
+  const p = PROVIDERS[name];
+  return !p || p.requiresKey !== false;
+}
+
+const aiReady = () => ai.on && (!providerNeedsKey() || !!ai.key);
 const aiName = () => `${PROVIDERS[ai.provider].label}, ${ai.model}`;
 
 function renderAiButton() {
@@ -296,14 +311,25 @@ function renderAiButton() {
   $("#ai-bulk").hidden = !aiReady();
 }
 
+function syncAiProviderForm(provider) {
+  const local = !providerNeedsKey(provider);
+  $("#ai-key-field").hidden = local;
+  $("#ai-remember-row").hidden = local;
+  $("#ai-key").disabled = local;
+  $("#ai-key").placeholder = local ? "Not required for local Ollama" : (ai.key && provider === ai.provider ? "" : "Paste your API key");
+  $("#ai-model-hint").textContent = local ? "any model you have pulled" : "any model your account has";
+  const note = $("#ai-local-note");
+  note.hidden = !local;
+  if (local) {
+    note.textContent = location.protocol === "https:"
+      ? "Ollama runs on this machine at http://localhost:11434. Browsers block that from this HTTPS page, so run codify-web --open on this machine to draft with Ollama."
+      : "Talks to Ollama on this machine at http://localhost:11434. No API key. The clause is sent only to that local model.";
+  }
+}
+
 function fillModels(provider) {
   $("#ai-models").replaceChildren(...PROVIDERS[provider].models.map((m) => el("option", { value: m })));
-  const p = PROVIDERS[provider];
-  if (p && p.requiresKey === false) {
-    $("#ai-key").placeholder = "Not required for local Ollama";
-  } else {
-    $("#ai-key").placeholder = ai.key ? "" : "Paste your API key";
-  }
+  syncAiProviderForm(provider);
 }
 
 function openAiDialog() {
@@ -311,12 +337,11 @@ function openAiDialog() {
   $("#ai-provider").value = ai.provider;
   fillModels(ai.provider);
   $("#ai-model").value = ai.model;
-  $("#ai-key").value = ai.key;
-  const pInfo = PROVIDERS[ai.provider];
-  $("#ai-key").placeholder = (pInfo && pInfo.requiresKey === false) ? "Not required for local Ollama" : (ai.key ? "" : "Paste your API key");
+  $("#ai-key").value = providerNeedsKey(ai.provider) ? ai.key : "";
   $("#ai-remember").checked = ai.remember;
   $("#ai-ack").checked = false;
   $("#ai-off").hidden = !ai.on && !ai.key;
+  $("#ai-off").textContent = ai.key ? "Turn off and forget the key" : "Turn off";
   $("#ai-form-error").hidden = true;
   $("#ai-dialog").showModal();
 }
@@ -333,12 +358,13 @@ function aiFormSubmit(e) {
     Object.assign(ai, { on: false, key: "", remember: false });
   } else if (action === "on") {
     const model = $("#ai-model").value.trim();
+    const name = $("#ai-provider").value;
     const key = $("#ai-key").value.trim();
+    const needsKey = providerNeedsKey(name);
     if (!$("#ai-ack").checked) return fail("Tick the box to confirm you have read what is sent.");
     if (!model) return fail("Enter a model.");
-    const prov = PROVIDERS[$("#ai-provider").value];
-    if ((!prov || prov.requiresKey !== false) && !key) return fail("Enter your API key.");
-    Object.assign(ai, { on: true, provider: $("#ai-provider").value, model, key, remember: $("#ai-remember").checked });
+    if (needsKey && !key) return fail("Enter your API key.");
+    Object.assign(ai, { on: true, provider: name, model, key: needsKey ? key : "", remember: needsKey && $("#ai-remember").checked });
   } else {
     return;
   }
@@ -1101,7 +1127,7 @@ function init() {
     const p = $("#ai-provider").value;
     fillModels(p);
     $("#ai-model").value = p === ai.provider ? ai.model : PROVIDERS[p].models[0];
-    $("#ai-key").value = p === ai.provider ? ai.key : "";  // a key belongs to one provider
+    $("#ai-key").value = p === ai.provider && providerNeedsKey(p) ? ai.key : "";  // a key belongs to one provider
   });
   $("#ai-form").addEventListener("submit", aiFormSubmit);
   $("#ai-form").addEventListener("input", () => { $("#ai-form-error").hidden = true; });
@@ -1140,7 +1166,7 @@ function init() {
 
   document.addEventListener("keydown", (e) => {
     if (!state.project || $("#work").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+    if (e.target.closest("dialog, input, textarea, select, [contenteditable]")) return;
     const c = state.selected?.control && controlById(state.selected.control);
     if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
     else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }

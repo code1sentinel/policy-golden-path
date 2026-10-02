@@ -20,7 +20,8 @@ from playwright import sync_api
 from codify.webapp import make_server
 
 PROVIDER_HOSTS = ("https://api.anthropic.com/**", "https://api.openai.com/**",
-                  "https://generativelanguage.googleapis.com/**")
+                  "https://generativelanguage.googleapis.com/**",
+                  "http://localhost:11434/**", "http://127.0.0.1:11434/**")
 
 
 class _Static(SimpleHTTPRequestHandler):
@@ -69,8 +70,14 @@ class FakeProvider:
             return route.fulfill(status=self.status, headers=cors, content_type="application/json",
                                  body=json.dumps({"error": {"message": "invalid x-api-key"}}))
         text = json.dumps({"controls": self.controls})
-        return route.fulfill(status=200, headers=cors, content_type="application/json", body=json.dumps(
-            {"type": "message", "stop_reason": "end_turn", "content": [{"type": "text", "text": text}]}))
+        url = req.url
+        if "localhost:11434" in url or "127.0.0.1:11434" in url or "api.openai.com" in url:
+            body = {"choices": [{"message": {"content": text}}]}
+        elif "generativelanguage" in url:
+            body = {"candidates": [{"content": {"parts": [{"text": text}]}}]}
+        else:
+            body = {"type": "message", "stop_reason": "end_turn", "content": [{"type": "text", "text": text}]}
+        return route.fulfill(status=200, headers=cors, content_type="application/json", body=json.dumps(body))
 
 
 @pytest.fixture

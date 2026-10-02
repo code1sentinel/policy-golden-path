@@ -158,7 +158,10 @@ repository when it changes; GovTech's licence is kept beside it
 
 AI drafting is off unless you turn it on (**AI drafting** at the top of the
 page). Bring your own API key from Anthropic (Claude), OpenAI or Google
-(Gemini), and use any model your account has.
+(Gemini), and use any model your account has. Or choose **Ollama** to draft
+with a model running on this machine at `http://localhost:11434`: no API key,
+and the clause never leaves this device. Ollama works with `codify-web`;
+browsers block `http://localhost` from the HTTPS online site.
 
 - **What is sent**: one clause per request: its text, its section heading and
   Codify's rule drafts for it. Nothing else from the policy. The request goes

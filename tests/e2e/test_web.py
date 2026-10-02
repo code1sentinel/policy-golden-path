@@ -1,6 +1,7 @@
 """The web app, end to end: open a policy, review, AI drafting, IM8 mapping and coverage, exports."""
 
 import json
+import re
 
 from playwright.sync_api import expect
 
@@ -24,6 +25,15 @@ def control(page, cid):
 def turn_on_ai(page):
     page.click("#ai-open")
     page.fill("#ai-key", "sk-test")
+    page.check("#ai-ack")
+    page.click("#ai-on")
+    expect(page.locator("#ai-open")).to_have_text("AI drafting: on")
+
+
+def turn_on_ollama(page):
+    page.click("#ai-open")
+    page.select_option("#ai-provider", "ollama")
+    expect(page.locator("#ai-key-field")).to_be_hidden()
     page.check("#ai-ack")
     page.click("#ai-on")
     expect(page.locator("#ai-open")).to_have_text("AI drafting: on")
@@ -117,6 +127,54 @@ def test_turning_ai_off_forgets_the_key(demo):
     demo.click("#ai-open")
     demo.click("#ai-off")
     assert demo.evaluate("[sessionStorage.getItem('codify:ai-key'), localStorage.getItem('codify:ai-key')]") == [None, None]
+
+
+def test_ollama_turns_on_without_a_key_and_drafts(demo, provider):
+    turn_on_ollama(demo)
+    expect(demo.locator("#ai-bulk")).to_be_visible()
+    demo.click(clause("5.1") + " .clause__select")
+    demo.click("#editor >> text=Draft with AI")
+    expect(demo.locator(".editor__where")).to_contain_text("drafted by AI")
+    (sent,) = provider.requests
+    assert "localhost:11434" in sent["url"]
+    assert "authorization" not in sent["headers"] and "x-api-key" not in sent["headers"]
+    assert sent["body"]["model"] == "llama3.2"
+    assert control(demo, "5.1")["origin"] == "ai"
+
+
+def test_ollama_unreachable_is_reported(demo):
+    turn_on_ollama(demo)
+    demo.context.unroute("http://localhost:11434/**")
+    demo.context.unroute("http://127.0.0.1:11434/**")
+    demo.context.route("http://localhost:11434/**", lambda route: route.abort())
+    demo.context.route("http://127.0.0.1:11434/**", lambda route: route.abort())
+    demo.click(clause("5.1") + " .clause__select")
+    demo.click("#editor >> text=Draft with AI")
+    expect(demo.locator("#error")).to_contain_text("Could not reach Ollama")
+
+
+def test_shortcuts_do_not_fire_while_ai_dialog_is_open(demo):
+    demo.click(ctl("5.1a") + " .ctl__open")
+    demo.click("#ai-open")
+    demo.locator("#ai-on").focus()
+    demo.keyboard.press("r")
+    expect(demo.locator(ctl("5.1a") + " .state")).to_have_text("Draft")
+    demo.keyboard.press("Escape")
+    expect(demo.locator("#ai-dialog")).to_be_hidden()
+
+
+def test_bulk_toolbar_activates_with_a_selection(demo):
+    bulk = demo.locator(".bulk")
+    expect(bulk).not_to_have_class(re.compile(r"\bis-active\b"))
+    expect(demo.locator("#selected-count")).to_have_text("0 selected")
+    expect(demo.locator("[data-bulk='reviewed']")).to_be_disabled()
+    demo.click(ctl("5.1a") + " input[type=checkbox]")
+    expect(bulk).to_have_class(re.compile(r"\bis-active\b"))
+    expect(demo.locator("#selected-count")).to_have_text("1 selected")
+    expect(demo.locator("[data-bulk='reviewed']")).to_be_enabled()
+    demo.click("#select-none")
+    expect(bulk).not_to_have_class(re.compile(r"\bis-active\b"))
+    expect(demo.locator("#selected-count")).to_have_text("0 selected")
 
 
 # --- IM8 Reform mapping -----------------------------------------------------------------------------------

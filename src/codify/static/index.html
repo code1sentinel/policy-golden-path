@@ -123,7 +123,7 @@
           <button type="button" class="chip" data-filter="other" aria-pressed="false">Not converted</button>
         </div>
         <div class="bulk" role="group" aria-label="Bulk actions">
-          <span id="selected-count" class="muted">0 selected</span>
+          <span id="selected-count" class="muted" aria-live="polite">0 selected</span>
           <button type="button" class="btn btn--small" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
           <button type="button" class="btn btn--small" id="select-shown" title="Every control the filter shows">Select shown</button>
           <button type="button" class="btn btn--small" data-bulk="reviewed" disabled>Mark reviewed</button>
@@ -189,7 +189,7 @@
   <dialog id="ai-dialog" class="dialog" aria-labelledby="ai-title">
     <form id="ai-form" method="dialog" novalidate>
       <h2 id="ai-title">AI drafting</h2>
-      <p class="hint">Off unless you turn it on. Codify drafts with rules; with AI drafting on, you can also ask an AI model to draft a clause's controls, with your own API key. Every AI draft is scored like any other, marked as drafted by AI, and stays a draft until you review it.</p>
+      <p class="hint">Off unless you turn it on. Codify drafts with rules; with AI drafting on, you can also ask an AI model to draft a clause's controls, with your own API key or with Ollama on this machine (no key). Every AI draft is scored like any other, marked as drafted by AI, and stays a draft until you review it.</p>
       <div class="notice">
         <strong>What is sent.</strong> One clause per request: its text, its section heading and Codify's rule drafts for it. It goes straight from this browser to the provider you choose, under your account and that provider's terms. It does not pass through Codify, and your key stays in this browser.
       </div>
@@ -200,15 +200,16 @@
         <label class="field"><span>Provider</span>
           <select name="provider" id="ai-provider"></select>
         </label>
-        <label class="field"><span>Model <em>any model your account has</em></span>
+        <label class="field"><span>Model <em id="ai-model-hint">any model your account has</em></span>
           <input name="model" id="ai-model" list="ai-models" autocomplete="off" spellcheck="false">
           <datalist id="ai-models"></datalist>
         </label>
       </div>
-      <label class="field"><span>API key</span>
+      <p id="ai-local-note" class="hint" hidden></p>
+      <label class="field" id="ai-key-field"><span>API key</span>
         <input name="key" id="ai-key" type="password" autocomplete="off" spellcheck="false">
       </label>
-      <label class="check"><input type="checkbox" name="remember" id="ai-remember"> <span>Remember the key on this device <em>(otherwise it is forgotten when you close the tab)</em></span></label>
+      <label class="check" id="ai-remember-row"><input type="checkbox" name="remember" id="ai-remember"> <span>Remember the key on this device <em>(otherwise it is forgotten when you close the tab)</em></span></label>
       <label class="check"><input type="checkbox" name="ack" id="ai-ack"> <span>I have read what is sent, and I will not send classified or sensitive text.</span></label>
       <p id="ai-form-error" class="error" role="alert" hidden></p>
       <div class="actions">
