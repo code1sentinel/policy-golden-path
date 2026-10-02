@@ -59,6 +59,22 @@ def test_app_js_treats_ollama_as_ready_without_a_key():
     assert "const aiReady = () => ai.on && !!ai.key;" not in js
 
 
+def test_workspace_html_is_a_short_happy_path():
+    html = (ROOT / "src/codify/static/index.html").read_text()
+    assert "Turn a policy into control statements" in html
+    assert 'id="demo"' in html and "Try the Acme demo" in html
+    assert 'class="steps"' not in html
+    assert "Start with a legacy policy" not in html
+    assert 'id="work-more"' in html
+    assert "Select ready drafts" in html and "Not mapped to IM8" in html
+    js = (ROOT / "src/codify/static/app.js").read_text()
+    assert "Select a clause to draft its control." in js
+    assert "Keyboard:" not in js
+    assert 'class: "editor__primary"' in js
+    css = (ROOT / "src/codify/static/app.css").read_text()
+    assert ".list .score { display: none; }" in css
+
+
 def test_browser_package_works_without_server_modules(site, tmp_path):
     with zipfile.ZipFile(site / "codify.zip") as zf:
         names = set(zf.namelist())
