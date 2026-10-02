@@ -131,7 +131,10 @@ def test_turning_ai_off_forgets_the_key(demo):
 
 def test_ollama_turns_on_without_a_key_and_drafts(demo, provider):
     turn_on_ollama(demo)
+    expect(demo.locator("#ai-open")).to_have_class(re.compile(r"\bis-on\b"))
+    demo.click(ctl("5.1a") + " input[type=checkbox]")
     expect(demo.locator("#ai-bulk")).to_be_visible()
+    demo.click("#select-none")
     demo.click(clause("5.1") + " .clause__select")
     demo.click("#editor >> text=Draft with AI")
     expect(demo.locator(".editor__where")).to_contain_text("drafted by AI")
@@ -163,18 +166,36 @@ def test_shortcuts_do_not_fire_while_ai_dialog_is_open(demo):
     expect(demo.locator("#ai-dialog")).to_be_hidden()
 
 
-def test_bulk_toolbar_activates_with_a_selection(demo):
-    bulk = demo.locator(".bulk")
-    expect(bulk).not_to_have_class(re.compile(r"\bis-active\b"))
-    expect(demo.locator("#selected-count")).to_have_text("0 selected")
-    expect(demo.locator("[data-bulk='reviewed']")).to_be_disabled()
+def test_selection_bar_appears_with_a_selection(demo):
+    bar = demo.locator("#selection-bar")
+    expect(bar).to_be_hidden()
+    expect(demo.locator("[data-bulk='reviewed']")).to_be_hidden()
     demo.click(ctl("5.1a") + " input[type=checkbox]")
-    expect(bulk).to_have_class(re.compile(r"\bis-active\b"))
+    expect(bar).to_be_visible()
     expect(demo.locator("#selected-count")).to_have_text("1 selected")
     expect(demo.locator("[data-bulk='reviewed']")).to_be_enabled()
-    demo.click("#select-none")
-    expect(bulk).not_to_have_class(re.compile(r"\bis-active\b"))
-    expect(demo.locator("#selected-count")).to_have_text("0 selected")
+    expect(demo.locator(ctl("5.1a"))).to_have_class(re.compile(r"\bis-checked\b"))
+    demo.click(ctl("8.1") + " input[type=checkbox]")
+    expect(demo.locator("#selected-count")).to_have_text("2 selected")
+    demo.click("[data-bulk='reviewed']")
+    expect(demo.locator(ctl("5.1a") + " .state")).to_have_text("Reviewed")
+    expect(demo.locator(ctl("8.1") + " .state")).to_have_text("Reviewed")
+    expect(bar).to_be_hidden()
+
+
+def test_ai_dialog_shows_ready_or_needs_key(demo):
+    demo.click("#ai-open")
+    expect(demo.locator("#ai-ready-chip")).to_have_text("Needs a key")
+    expect(demo.locator("#ai-key-field")).to_be_visible()
+    expect(demo.locator("#ai-remember-row")).to_be_visible()
+    demo.fill("#ai-key", "sk-test")
+    expect(demo.locator("#ai-ready-chip")).to_have_text("Ready")
+    demo.select_option("#ai-provider", "ollama")
+    expect(demo.locator("#ai-key-field")).to_be_hidden()
+    expect(demo.locator("#ai-remember-row")).to_be_hidden()
+    expect(demo.locator("#ai-ready-chip")).to_have_text("Ready · no key")
+    expect(demo.locator("#ai-local-note")).to_be_visible()
+    expect(demo.locator("#ai-local-note")).to_contain_text("localhost:11434")
 
 
 # --- IM8 Reform mapping -----------------------------------------------------------------------------------
