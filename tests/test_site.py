@@ -52,6 +52,13 @@ def test_index_runs_in_browser_mode_with_no_third_parties(site):
     assert "script-src 'self' 'wasm-unsafe-eval'" in csp
 
 
+def test_app_js_treats_ollama_as_ready_without_a_key():
+    js = (ROOT / "src/codify/static/app.js").read_text()
+    assert "requiresKey: false" in js and "localhost:11434" in js
+    # the merge left AI drafting "on" but not ready unless a key was set
+    assert "const aiReady = () => ai.on && !!ai.key;" not in js
+
+
 def test_browser_package_works_without_server_modules(site, tmp_path):
     with zipfile.ZipFile(site / "codify.zip") as zf:
         names = set(zf.namelist())

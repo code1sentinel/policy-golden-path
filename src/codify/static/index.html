@@ -112,7 +112,7 @@
         </div>
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar work__toolbar">
         <div class="filters" role="group" aria-label="Show">
           <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
           <button type="button" class="chip" data-filter="draft" aria-pressed="false">Drafts</button>
@@ -122,15 +122,9 @@
           <button type="button" class="chip" data-filter="unmapped" aria-pressed="false">Not mapped to IM8</button>
           <button type="button" class="chip" data-filter="other" aria-pressed="false">Not converted</button>
         </div>
-        <div class="bulk" role="group" aria-label="Bulk actions">
-          <span id="selected-count" class="muted">0 selected</span>
-          <button type="button" class="btn btn--small" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
-          <button type="button" class="btn btn--small" id="select-shown" title="Every control the filter shows">Select shown</button>
-          <button type="button" class="btn btn--small" data-bulk="reviewed" disabled>Mark reviewed</button>
-          <button type="button" class="btn btn--small" data-bulk="accepted" disabled>Mark accepted</button>
-          <button type="button" class="btn btn--small" id="im8-bulk" disabled title="Map each selected control that has no IM8 mapping yet to its top IM8 Reform suggestion">Map to top IM8 suggestion</button>
-          <button type="button" class="btn btn--small" id="ai-bulk" hidden disabled title="Draft the clauses of the selected controls again with AI, one request per clause">Draft with AI</button>
-          <button type="button" class="btn btn--small btn--quiet" id="select-none" disabled>Clear</button>
+        <div class="select-tools" role="group" aria-label="Select">
+          <button type="button" class="btn btn--small btn--quiet" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
+          <button type="button" class="btn btn--small btn--quiet" id="select-shown" title="Every control the filter shows">Select shown</button>
         </div>
       </div>
       <div id="ai-progress" class="loading ai-progress" role="status" hidden>
@@ -140,9 +134,20 @@
 
       <div class="workspace">
         <div id="list" class="list" aria-label="Clauses and controls"></div>
-        <aside id="editor" class="editor card" aria-live="polite">
+        <aside id="editor" class="editor" aria-live="polite">
           <p class="placeholder">Select a control to review it. Keyboard: <kbd>j</kbd>/<kbd>k</kbd> next and previous, <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.</p>
         </aside>
+      </div>
+
+      <div id="selection-bar" class="selection-bar" hidden role="toolbar" aria-label="Bulk actions">
+        <span id="selected-count" class="selection-bar__count" aria-live="polite">0 selected</span>
+        <div class="selection-bar__actions">
+          <button type="button" class="btn btn--small" data-bulk="reviewed">Mark reviewed</button>
+          <button type="button" class="btn btn--small btn--primary" data-bulk="accepted">Mark accepted</button>
+          <button type="button" class="btn btn--small" id="im8-bulk" title="Map each selected control that has no IM8 mapping yet to its top IM8 Reform suggestion">Map to top IM8 suggestion</button>
+          <button type="button" class="btn btn--small" id="ai-bulk" hidden title="Draft the clauses of the selected controls again with AI, one request per clause">Draft with AI</button>
+        </div>
+        <button type="button" class="btn btn--small btn--quiet" id="select-none">Clear</button>
       </div>
     </section>
 
@@ -188,8 +193,14 @@
 
   <dialog id="ai-dialog" class="dialog" aria-labelledby="ai-title">
     <form id="ai-form" method="dialog" novalidate>
-      <h2 id="ai-title">AI drafting</h2>
-      <p class="hint">Off unless you turn it on. Codify drafts with rules; with AI drafting on, you can also ask an AI model to draft a clause's controls, with your own API key. Every AI draft is scored like any other, marked as drafted by AI, and stays a draft until you review it.</p>
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="ai-title">AI drafting</h2>
+          <span id="ai-ready-chip" class="ready-chip is-off">Off</span>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" formnovalidate aria-label="Close">×</button>
+      </div>
+      <p class="dialog__lede">Off unless you turn it on. Codify still drafts with rules. With AI on, you can also ask a model to draft a clause's controls, with your own API key or with Ollama on this machine (no key). Every AI draft is scored like any other, marked as drafted by AI, and stays a draft until you review it.</p>
       <div class="notice">
         <strong>What is sent.</strong> One clause per request: its text, its section heading and Codify's rule drafts for it. It goes straight from this browser to the provider you choose, under your account and that provider's terms. It does not pass through Codify, and your key stays in this browser.
       </div>
@@ -200,21 +211,23 @@
         <label class="field"><span>Provider</span>
           <select name="provider" id="ai-provider"></select>
         </label>
-        <label class="field"><span>Model <em>any model your account has</em></span>
+        <label class="field"><span>Model <em id="ai-model-hint">any model your account has</em></span>
           <input name="model" id="ai-model" list="ai-models" autocomplete="off" spellcheck="false">
           <datalist id="ai-models"></datalist>
         </label>
       </div>
-      <label class="field"><span>API key</span>
+      <p id="ai-local-note" class="notice" hidden></p>
+      <label class="field" id="ai-key-field"><span>API key <em>required for this provider</em></span>
         <input name="key" id="ai-key" type="password" autocomplete="off" spellcheck="false">
+        <span class="field__help">Kept in this browser only. Not sent to Codify.</span>
       </label>
-      <label class="check"><input type="checkbox" name="remember" id="ai-remember"> <span>Remember the key on this device <em>(otherwise it is forgotten when you close the tab)</em></span></label>
+      <label class="check" id="ai-remember-row"><input type="checkbox" name="remember" id="ai-remember"> <span>Remember the key on this device <em>(otherwise it is forgotten when you close the tab)</em></span></label>
       <label class="check"><input type="checkbox" name="ack" id="ai-ack"> <span>I have read what is sent, and I will not send classified or sensitive text.</span></label>
       <p id="ai-form-error" class="error" role="alert" hidden></p>
-      <div class="actions">
-        <button type="submit" class="btn btn--primary" value="on" id="ai-on">Turn on</button>
-        <button type="submit" class="btn" value="off" id="ai-off">Turn off and forget the key</button>
+      <div class="dialog__actions actions">
         <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
+        <button type="submit" class="btn" value="off" id="ai-off">Turn off and forget the key</button>
+        <button type="submit" class="btn btn--primary" value="on" id="ai-on">Turn on</button>
       </div>
     </form>
   </dialog>

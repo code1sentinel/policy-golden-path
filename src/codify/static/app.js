@@ -53,11 +53,20 @@ function showNotice(message) {
   box.hidden = !message;
 }
 
+function friendlyNetworkMessage(message) {
+  const text = (message || "").trim();
+  if (!text || /^failed to fetch$/i.test(text) || /networkerror when attempting to fetch/i.test(text) || /^load failed$/i.test(text)) {
+    return "Could not reach the service. Check the connection and try again.";
+  }
+  return text;
+}
+
 function showError(message) {
   const box = $("#error");
-  box.textContent = message || "";
-  box.hidden = !message;
-  if (message) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  const text = message ? friendlyNetworkMessage(message) : "";
+  box.textContent = text;
+  box.hidden = !text;
+  if (text) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
 // Fill a node, leaving out the parts that are not there (null, false).
@@ -176,6 +185,14 @@ function clearLocal() {
 const AI_SETTINGS = "codify:ai";
 const AI_KEY = "codify:ai-key";
 
+async function providerFetch(url, options, name) {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error(`Could not reach ${name}. Check the connection and try again.`);
+  }
+}
+
 async function providerJson(res, name) {
   let data = null;
   try { data = await res.json(); } catch { /* fall through */ }
@@ -189,25 +206,6 @@ async function providerJson(res, name) {
 }
 
 const PROVIDERS = {
-  ollama: {
-    label: "Ollama (Local / Air-gapped)",
-    models: ["llama3.2", "mistral", "qwen2.5"],
-    requiresKey: false,
-    async send(key, model, p) {
-      const res = await fetch("http://localhost:11434/v1/chat/completions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
-          response_format: { type: "json_object" },
-        }),
-      });
-      const data = await providerJson(res, "Ollama");
-      const message = data.choices && data.choices[0] && data.choices[0].message;
-      return (message && message.content) || "";
-    },
-  },
   anthropic: {
     label: "Anthropic (Claude)",
     models: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-4-5"],
@@ -223,7 +221,7 @@ const PROVIDERS = {
         headers["anthropic-beta"] = "server-side-fallback-2026-07-01";
         body.fallbacks = "default";
       }
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: JSON.stringify(body) });
+      const res = await providerFetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: JSON.stringify(body) }, "Anthropic");
       const data = await providerJson(res, "Anthropic");
       if (data.stop_reason === "refusal") throw new Error("Claude declined to draft this clause.");
       if (data.stop_reason === "max_tokens") throw new Error("Claude's reply was cut off; try again.");
@@ -234,12 +232,12 @@ const PROVIDERS = {
     label: "OpenAI",
     models: ["gpt-5-mini", "gpt-5"],
     async send(key, model, p) {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const res = await providerFetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
         body: JSON.stringify({ model, messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
           response_format: { type: "json_schema", json_schema: { name: "controls", strict: true, schema: p.schema } } }),
-      });
+      }, "OpenAI");
       const data = await providerJson(res, "OpenAI");
       const message = data.choices && data.choices[0] && data.choices[0].message;
       if (message && message.refusal) throw new Error(`OpenAI declined to draft this clause: ${message.refusal}`);
@@ -251,17 +249,46 @@ const PROVIDERS = {
     models: ["gemini-2.5-flash", "gemini-2.5-pro"],
     async send(key, model, p) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-      const res = await fetch(url, {
+      const res = await providerFetch(url, {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": key },
         body: JSON.stringify({ systemInstruction: { parts: [{ text: p.system }] },
           contents: [{ role: "user", parts: [{ text: p.user }] }],
           generationConfig: { responseMimeType: "application/json" } }),
-      });
+      }, "Gemini");
       const data = await providerJson(res, "Gemini");
       const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
       if (!parts.length) throw new Error("Gemini returned no draft for this clause.");
       return parts.map((x) => x.text || "").join("");
+    },
+  },
+  ollama: {
+    label: "Ollama (local)",
+    models: ["llama3.2", "mistral", "qwen2.5"],
+    requiresKey: false,
+    async send(key, model, p) {
+      let res;
+      try {
+        res = await fetch("http://localhost:11434/v1/chat/completions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
+            response_format: { type: "json_object" },
+          }),
+        });
+      } catch {
+        if (location.protocol === "https:") {
+          throw new Error("Ollama is local (http://localhost:11434). Browsers block that from this HTTPS page. Run codify-web --open on this machine to draft with Ollama.");
+        }
+        throw new Error("Could not reach Ollama at http://localhost:11434. Is it running?");
+      }
+      const data = await providerJson(res, "Ollama");
+      const message = data.choices && data.choices[0] && data.choices[0].message;
+      const text = (message && message.content) || "";
+      if (!text) throw new Error("Ollama returned no draft for this clause.");
+      return text;
     },
   },
 };
@@ -286,24 +313,63 @@ function saveAi() {
   } catch { /* storage unavailable: the settings last for this page only */ }
 }
 
-const aiReady = () => ai.on && !!ai.key;
+function providerNeedsKey(name = ai.provider) {
+  const p = PROVIDERS[name];
+  return !p || p.requiresKey !== false;
+}
+
+const aiReady = () => ai.on && (!providerNeedsKey() || !!ai.key);
 const aiName = () => `${PROVIDERS[ai.provider].label}, ${ai.model}`;
 
 function renderAiButton() {
   const b = $("#ai-open");
-  b.textContent = aiReady() ? "AI drafting: on" : ai.on ? "AI drafting: needs a key" : "AI drafting: off";
-  b.setAttribute("aria-pressed", String(aiReady()));
-  $("#ai-bulk").hidden = !aiReady();
+  const ready = aiReady();
+  b.textContent = ready ? "AI drafting: on" : ai.on ? "AI drafting: needs a key" : "AI drafting: off";
+  b.setAttribute("aria-pressed", String(ready));
+  b.classList.toggle("is-on", ready);
+  b.classList.toggle("is-needs", ai.on && !ready);
+  $("#ai-bulk").hidden = !ready;
+}
+
+function updateAiDialogStatus() {
+  const chip = $("#ai-ready-chip");
+  if (!chip) return;
+  const name = $("#ai-provider")?.value || ai.provider;
+  const local = !providerNeedsKey(name);
+  const key = ($("#ai-key")?.value || "").trim() || (name === ai.provider ? ai.key : "");
+  chip.classList.remove("is-ready", "is-needs", "is-off");
+  if (local) {
+    chip.textContent = "Ready · no key";
+    chip.classList.add("is-ready");
+  } else if (key) {
+    chip.textContent = "Ready";
+    chip.classList.add("is-ready");
+  } else {
+    chip.textContent = "Needs a key";
+    chip.classList.add("is-needs");
+  }
+}
+
+function syncAiProviderForm(provider) {
+  const local = !providerNeedsKey(provider);
+  $("#ai-key-field").hidden = local;
+  $("#ai-remember-row").hidden = local;
+  $("#ai-key").disabled = local;
+  $("#ai-key").placeholder = local ? "" : (ai.key && provider === ai.provider ? "" : "Paste your API key");
+  $("#ai-model-hint").textContent = local ? "any model you have pulled" : "any model your account has";
+  const note = $("#ai-local-note");
+  note.hidden = !local;
+  if (local) {
+    note.textContent = location.protocol === "https:"
+      ? "Ollama runs on this machine at http://localhost:11434. Browsers block that from this HTTPS page, so run codify-web --open on this machine to draft with Ollama."
+      : "Talks to Ollama on this machine at http://localhost:11434. No API key. The clause is sent only to that local model.";
+  }
+  updateAiDialogStatus();
 }
 
 function fillModels(provider) {
   $("#ai-models").replaceChildren(...PROVIDERS[provider].models.map((m) => el("option", { value: m })));
-  const p = PROVIDERS[provider];
-  if (p && p.requiresKey === false) {
-    $("#ai-key").placeholder = "Not required for local Ollama";
-  } else {
-    $("#ai-key").placeholder = ai.key ? "" : "Paste your API key";
-  }
+  syncAiProviderForm(provider);
 }
 
 function openAiDialog() {
@@ -311,13 +377,13 @@ function openAiDialog() {
   $("#ai-provider").value = ai.provider;
   fillModels(ai.provider);
   $("#ai-model").value = ai.model;
-  $("#ai-key").value = ai.key;
-  const pInfo = PROVIDERS[ai.provider];
-  $("#ai-key").placeholder = (pInfo && pInfo.requiresKey === false) ? "Not required for local Ollama" : (ai.key ? "" : "Paste your API key");
+  $("#ai-key").value = providerNeedsKey(ai.provider) ? ai.key : "";
   $("#ai-remember").checked = ai.remember;
   $("#ai-ack").checked = false;
   $("#ai-off").hidden = !ai.on && !ai.key;
+  $("#ai-off").textContent = ai.key ? "Turn off and forget the key" : "Turn off";
   $("#ai-form-error").hidden = true;
+  updateAiDialogStatus();
   $("#ai-dialog").showModal();
 }
 
@@ -326,19 +392,20 @@ function aiFormSubmit(e) {
   const fail = (message) => {
     e.preventDefault();
     const box = $("#ai-form-error");
-    box.textContent = message;
+    box.textContent = friendlyNetworkMessage(message);
     box.hidden = false;
   };
   if (action === "off") {
     Object.assign(ai, { on: false, key: "", remember: false });
   } else if (action === "on") {
     const model = $("#ai-model").value.trim();
+    const name = $("#ai-provider").value;
     const key = $("#ai-key").value.trim();
+    const needsKey = providerNeedsKey(name);
     if (!$("#ai-ack").checked) return fail("Tick the box to confirm you have read what is sent.");
     if (!model) return fail("Enter a model.");
-    const prov = PROVIDERS[$("#ai-provider").value];
-    if ((!prov || prov.requiresKey !== false) && !key) return fail("Enter your API key.");
-    Object.assign(ai, { on: true, provider: $("#ai-provider").value, model, key, remember: $("#ai-remember").checked });
+    if (needsKey && !key) return fail("Enter your API key.");
+    Object.assign(ai, { on: true, provider: name, model, key: needsKey ? key : "", remember: needsKey && $("#ai-remember").checked });
   } else {
     return;
   }
@@ -569,6 +636,10 @@ function openProject(data) {
   saveLocal();
   showView("work");
   render();
+  if (state.selected) {
+    const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
+    document.getElementById(id)?.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function readFile(file) {
@@ -654,17 +725,21 @@ function scorePill(id) {
 function controlRow(c, inEditor = false) {
   const box = el("input", { type: "checkbox", "aria-label": `Select ${c.id}` });
   box.checked = state.checked.has(c.id);
-  box.addEventListener("change", () => {
-    if (box.checked) state.checked.add(c.id); else state.checked.delete(c.id);
-    renderBulk();
-  });
   const mapped = c.im8 || [];
   const open = el("button", { type: "button", class: "ctl__open" },
     el("span", { class: "ctl__id", text: c.id }), el("span", { class: "ctl__text", text: c.text || "(empty)" }),
     mapped.length ? el("span", { class: "im8-tag", title: "Mapped to IM8 Reform", text: `IM8 ${mapped.join(", ")}` }) : null);
   open.addEventListener("click", () => select({ control: c.id }));
-  const row = el("div", { class: "ctl", id: inEditor ? null : `ctl-${c.id}`, "aria-current": String(state.selected?.control === c.id) },
-    box, open, scorePill(c.id), el("span", { class: `state state--${c.status}`, text: STATUS_LABELS[c.status] }));
+  const row = el("div", {
+    class: `ctl${state.checked.has(c.id) ? " is-checked" : ""}`,
+    id: inEditor ? null : `ctl-${c.id}`,
+    "aria-current": String(state.selected?.control === c.id),
+  }, box, open, scorePill(c.id), el("span", { class: `state state--${c.status}`, text: STATUS_LABELS[c.status] }));
+  box.addEventListener("change", () => {
+    if (box.checked) state.checked.add(c.id); else state.checked.delete(c.id);
+    row.classList.toggle("is-checked", box.checked);
+    renderBulk();
+  });
   return row;
 }
 
@@ -709,8 +784,10 @@ function renderList() {
 
 function renderBulk() {
   const n = state.checked.size;
+  const bar = $("#selection-bar");
   $("#selected-count").textContent = `${n} selected`;
-  $(".bulk")?.classList.toggle("is-active", n > 0);
+  if (bar) bar.hidden = n === 0;
+  $("#work")?.classList.toggle("has-selection", n > 0);
   for (const b of $$("[data-bulk]")) b.disabled = n === 0;
   $("#select-none").disabled = n === 0;
   $("#ai-bulk").disabled = n === 0;
@@ -1101,10 +1178,13 @@ function init() {
     const p = $("#ai-provider").value;
     fillModels(p);
     $("#ai-model").value = p === ai.provider ? ai.model : PROVIDERS[p].models[0];
-    $("#ai-key").value = p === ai.provider ? ai.key : "";  // a key belongs to one provider
+    $("#ai-key").value = p === ai.provider && providerNeedsKey(p) ? ai.key : "";  // a key belongs to one provider
   });
   $("#ai-form").addEventListener("submit", aiFormSubmit);
-  $("#ai-form").addEventListener("input", () => { $("#ai-form-error").hidden = true; });
+  $("#ai-form").addEventListener("input", () => {
+    $("#ai-form-error").hidden = true;
+    updateAiDialogStatus();
+  });
   $("#ai-bulk").addEventListener("click", aiBulk);
   $("#im8-bulk").addEventListener("click", im8Bulk);
   $("#im8-risk").addEventListener("change", () => { state.im8Risk = $("#im8-risk").value; renderCoverage(); });
@@ -1121,9 +1201,9 @@ function init() {
   });
   for (const b of $$("[data-bulk]")) {
     b.addEventListener("click", () => {
-      setStatus([...state.checked], b.dataset.bulk);
+      const ids = [...state.checked];
       state.checked.clear();
-      renderBulk();
+      setStatus(ids, b.dataset.bulk);
     });
   }
 
@@ -1140,7 +1220,7 @@ function init() {
 
   document.addEventListener("keydown", (e) => {
     if (!state.project || $("#work").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+    if (e.target.closest("dialog, input, textarea, select, [contenteditable]")) return;
     const c = state.selected?.control && controlById(state.selected.control);
     if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
     else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }
