@@ -30,13 +30,13 @@ def test_reply_becomes_ai_drafts():
         {"action": "Review", "scope": "user accounts", "limit": "at least every [N] days",
          "purpose": "to identify access that is no longer needed", "guidance": "e.g. SailPoint",
          "risk": "Leavers keep access.", "notes": ["Set N."]},
-        {"action": "Remove", "scope": "access that is no longer required", "limit": "within [N] days."}), model="claude-opus-5-5")
+        {"action": "Remove", "scope": "access that is no longer required", "limit": "within [N] days."}), model="claude-sonnet-5-5")
     assert [c["id"] for c in out] == ["4.1a", "4.1b"]
     first = out[0]
     assert first["text"] == ("Review user accounts at least every [N] days "
                              "to identify access that is no longer needed.")
     assert first["origin"] == "ai" and first["status"] == "draft" and first["guidance"] == "e.g. SailPoint"
-    assert first["notes"][0].startswith("Drafted by AI (claude-opus-5-5)") and first["notes"][-1] == "Set N."
+    assert first["notes"][0].startswith("Drafted by AI (claude-sonnet-5-5)") and first["notes"][-1] == "Set N."
     assert out[1]["text"] == "Remove access that is no longer required within [N] days."
 
 

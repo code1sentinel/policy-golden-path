@@ -181,7 +181,7 @@ async function providerJson(res, name) {
 const PROVIDERS = {
   anthropic: {
     label: "Anthropic (Claude)",
-    models: ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-4-5"],
+    models: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-4-5"],
     async send(key, model, p) {
       const headers = {
         "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01",
