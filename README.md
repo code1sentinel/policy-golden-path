@@ -190,17 +190,16 @@ the rule drafts never use AI.
 
 ## Reviewing
 
-The workspace lists every clause, with its controls under it. Select a
-control to edit it next to its legacy clause, with the score, the parts and
-the areas for improvement updating as you type. Add the risk it treats (its
-purpose), guidance and who implements it, and mark it **draft**, **reviewed**
-or **accepted**.
+The workspace lists requirement clauses, with their controls under each. Select a
+control to edit the statement next to its legacy clause. Mark it **reviewed** or
+**accepted**, then go to the next clause. Add the risk it treats (its purpose);
+guidance, who implements it, and IM8 mapping sit under disclosure in the editor.
 
-- **Filters**: drafts, reviewed, accepted, below 80%, not mapped to IM8, or the
-  clauses that did not become controls.
-- **Bulk**: "Select ready drafts" ticks drafts scoring 80% or more with no
-  notes left to decide, and "Select shown" every control the filter shows;
-  then mark them reviewed or accepted, or draft them again with AI.
+- **Filters and bulk** sit under **More** in the clause list: drafts, reviewed,
+  accepted, below 80%, not mapped to IM8, or the clauses that did not become
+  controls. "Select ready drafts" ticks drafts scoring 80% or more with no notes
+  left to decide, and "Select shown" every control the filter shows; then mark
+  them reviewed or accepted, or draft them again with AI.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.
 - **Saving**: work is kept in your browser as you go. **Save OSCAL catalog**

@@ -690,6 +690,15 @@ function render() {
   renderList();
   renderEditor();
   renderBulk();
+  renderMoreLabel();
+}
+
+function renderMoreLabel() {
+  const summary = $("#work-more summary");
+  if (!summary) return;
+  const names = { all: "More", draft: "Drafts", reviewed: "Reviewed", accepted: "Accepted",
+    low: "Below 80%", unmapped: "Not mapped to IM8", other: "Not converted" };
+  summary.textContent = names[state.filter] || "More";
 }
 
 function renderHead() {
@@ -701,8 +710,8 @@ function renderHead() {
   const summary = $("#work-summary");
   summary.replaceChildren(
     el("strong", { text: `${plural(p.clauses.length, "clause")} → ${plural(p.controls.length, "control")}` }),
-    ` · ${n("requirement")} requirement clauses (${dup} duplicate) · ${context} context · ${n("not-a-control")} not controls`,
   );
+  summary.title = `${n("requirement")} requirement clauses (${dup} duplicate) · ${context} context · ${n("not-a-control")} not controls`;
   const counts = { draft: 0, reviewed: 0, accepted: 0 };
   for (const c of p.controls) counts[c.status] = (counts[c.status] || 0) + 1;
   const total = p.controls.length || 1;
@@ -746,16 +755,18 @@ function controlRow(c, inEditor = false) {
 function clauseCard(clause, controls) {
   const other = clause.type !== "requirement" || clause.duplicate_of;
   const label = clause.duplicate_of ? `Duplicate of ${clause.duplicate_of}` : TYPE_LABELS[clause.type];
-  const type = el("select", { class: "clause__type", "aria-label": `Type of clause ${clause.id}` },
-    Object.entries(TYPE_LABELS).map(([k, v]) => el("option", { value: k, text: v })));
-  type.value = clause.type;
-  type.addEventListener("change", () => changeType(clause, type.value, type));
   const open = el("button", { type: "button", class: "clause__select" }, el("span", { class: "clause__text", text: clause.text }));
-  open.addEventListener("click", () => select({ clause: clause.id }));
+  open.addEventListener("click", () => {
+    const first = controlsOf(clause.id)[0];
+    select(first ? { control: first.id } : { clause: clause.id });
+  });
+  const current = state.selected?.clause === clause.id ||
+    (state.selected?.control && controlById(state.selected.control)?.clause === clause.id);
   return el("div", { class: `clause${other ? " is-other" : ""}`, id: `clause-${clause.id}`,
-    "aria-current": String(state.selected?.clause === clause.id) },
-  el("div", { class: "clause__head" }, el("span", { class: "clause__id", text: clause.id }), type,
-    other ? el("span", { class: "clause__reason", text: clause.duplicate_of ? label : clause.reason }) : null),
+    "aria-current": String(!!current) },
+  el("div", { class: "clause__head" }, el("span", { class: "clause__id", text: clause.id }),
+    el("span", { class: "clause__type", text: label }),
+    other && !clause.duplicate_of ? el("span", { class: "clause__reason", text: clause.reason }) : null),
   open,
   controls.map((c) => controlRow(c)));
 }
@@ -768,7 +779,7 @@ function renderList() {
   for (const clause of state.project.clauses) {
     const other = clause.type !== "requirement" || clause.duplicate_of;
     const controls = controlsOf(clause.id).filter((c) => visible.has(c.id));
-    const show = state.filter === "all" || (state.filter === "other" ? other : controls.length > 0);
+    const show = state.filter === "other" ? other : !other && (state.filter === "all" || controls.length > 0);
     if (!show) continue;
     const heading = clause.section && clause.heading ? `${clause.section}. ${clause.heading}`
       : clause.heading || (clause.section ? `Section ${clause.section}` : "");
@@ -810,9 +821,7 @@ function renderEditor() {
   const sel = state.selected;
   if (sel?.control && controlById(sel.control)) return renderControlEditor(box, controlById(sel.control));
   if (sel?.clause && clauseById(sel.clause)) return renderClauseEditor(box, clauseById(sel.clause));
-  box.replaceChildren(el("p", { class: "placeholder" }, "Select a control to review it. Keyboard: ",
-    el("kbd", { text: "j" }), "/", el("kbd", { text: "k" }), " next and previous, ", el("kbd", { text: "r" }), " reviewed, ",
-    el("kbd", { text: "a" }), " accepted."));
+  box.replaceChildren(el("p", { class: "placeholder", text: "Select a clause to draft its control." }));
 }
 
 function legacyBox(clause) {
@@ -838,7 +847,7 @@ function scoreLine(assessment) {
 }
 
 function improvementsList(items) {
-  if (!items.length) return el("p", { class: "none", text: "No areas for improvement found." });
+  if (!items.length) return null;
   return el("ul", { class: "improvements" }, items.map((i) => el("li", { text: i })));
 }
 
@@ -846,14 +855,8 @@ function renderControlEditor(box, c) {
   const clause = clauseById(c.clause) || { id: c.clause, text: "" };
   const visible = visibleControls();
   const index = visible.findIndex((x) => x.id === c.id);
-  const prev = el("button", { type: "button", class: "btn btn--small", text: "← Previous" });
-  const next = el("button", { type: "button", class: "btn btn--small", text: "Next →" });
-  prev.disabled = index <= 0;
-  next.disabled = index < 0 || index >= visible.length - 1;
-  prev.addEventListener("click", () => step(-1));
-  next.addEventListener("click", () => step(1));
 
-  const statement = el("textarea", { class: "statement", rows: "4", "aria-label": "Control statement" });
+  const statement = el("textarea", { class: "statement", rows: "5", "aria-label": "Control statement" });
   statement.value = c.text;
   const result = el("div", { class: "result" });
   const guidance = el("textarea", { rows: "2", placeholder: "Tools or how-to examples, e.g. AWS Backup" });
@@ -886,38 +889,52 @@ function renderControlEditor(box, c) {
   risk.addEventListener("input", () => { c.risk = risk.value.trim(); check(); saveSoon(); });
   who.addEventListener("input", () => { c.who = who.value.trim(); saveSoon(); });
 
-  const statuses = el("div", { class: "statuses", role: "group", "aria-label": "Status" },
-    Object.entries(STATUS_LABELS).map(([k, label]) => {
-      const b = el("button", { type: "button", class: "btn btn--small", "aria-pressed": String(c.status === k), text: label });
-      b.addEventListener("click", () => setStatus([c.id], k));
-      return b;
-    }));
-
-  const add = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Add a control from this clause" });
-  add.addEventListener("click", () => addControl(clause));
-  const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Delete this control" });
-  remove.addEventListener("click", () => deleteControl(c));
+  const reviewed = el("button", { type: "button", class: "btn", "aria-pressed": String(c.status === "reviewed"), text: "Reviewed" });
+  reviewed.addEventListener("click", () => setStatus([c.id], "reviewed"));
+  const accept = el("button", { type: "button", class: "btn btn--primary", "aria-pressed": String(c.status === "accepted"), text: "Accept" });
+  accept.addEventListener("click", () => setStatus([c.id], "accepted"));
+  const next = el("button", { type: "button", class: "btn", text: "Next" });
+  next.disabled = index < 0 || index >= visible.length - 1;
+  next.addEventListener("click", () => step(1));
   let aiBtn = null;
   if (aiReady() && clause.text) {
-    aiBtn = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Draft this clause with AI" });
+    aiBtn = el("button", { type: "button", class: "btn", text: "Draft with AI" });
     aiBtn.addEventListener("click", () => aiRedraft(clause, aiBtn));
   }
 
+  const add = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Add a control from this clause" });
+  add.addEventListener("click", () => addControl(clause));
+  const redraft = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Draft again from this clause" });
+  redraft.addEventListener("click", () => redraftClause(clause, redraft));
+  const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Delete this control" });
+  remove.addEventListener("click", () => deleteControl(c));
+  const openClause = el("button", { type: "button", class: "btn btn--small btn--quiet", text: `Clause ${clause.id}` });
+  openClause.addEventListener("click", () => select({ clause: clause.id }));
+
+  const extras = el("details", { class: "fold fold--block" },
+    el("summary", { text: "Guidance, who, notes" }),
+    el("div", { class: "fold__body" },
+      el("div", { class: "grid2" },
+        el("label", { class: "field" }, el("span", {}, "Guidance ", el("em", { text: "tools, how-to" })), guidance),
+        el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
+      c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
+
+  const mapped = c.im8 || [];
+  const im8Fold = el("details", { class: "fold fold--block", id: "im8-fold", open: mapped.length > 0 },
+    el("summary", { text: mapped.length ? `IM8 · ${mapped.join(", ")}` : "Map to IM8" }),
+    el("div", { class: "fold__body" }, im8Panel(c, clause)));
+
   put(box,
     el("div", { class: "editor__nav" },
-      el("p", { class: "editor__where" }, "Control ", el("strong", { text: c.id }), ` · ${ORIGIN_LABELS[c.origin] || "edited"}`),
-      el("div", { class: "actions" }, prev, next)),
+      el("p", { class: "editor__where" }, "Control ", el("strong", { text: c.id }), ` · ${ORIGIN_LABELS[c.origin] || "edited"}`)),
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field" }, el("span", { text: "Control statement" }), statement),
+    el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
     result,
-    c.notes && c.notes.length ? el("div", {}, el("h3", { text: "Drafting notes" }), el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n })))) : null,
     el("label", { class: "field" }, el("span", {}, "Risk it treats ", el("em", { text: "gives the control its purpose" })), risk),
-    el("div", { class: "grid2" },
-      el("label", { class: "field" }, el("span", {}, "Guidance ", el("em", { text: "tools, how-to" })), guidance),
-      el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
-    im8Panel(c, clause),
-    el("h3", { text: "Status" }), statuses,
-    el("div", { class: "editor__foot" }, add, aiBtn, remove),
+    extras,
+    im8Fold,
+    el("div", { class: "editor__foot" }, openClause, redraft, add, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
   call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => showResult(result, data)).catch((err) => {
@@ -926,7 +943,7 @@ function renderControlEditor(box, c) {
 }
 
 function showResult(box, data) {
-  box.replaceChildren(scoreLine(data.assessment), partsList(data.parts), improvementsList(data.assessment.improvements));
+  box.replaceChildren(...[scoreLine(data.assessment), partsList(data.parts), improvementsList(data.assessment.improvements)].filter(Boolean));
 }
 
 function renderClauseEditor(box, clause) {

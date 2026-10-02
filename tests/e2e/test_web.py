@@ -39,11 +39,43 @@ def turn_on_ollama(page):
     expect(page.locator("#ai-open")).to_have_text("AI drafting: on")
 
 
+def open_more(page):
+    page.locator("#work-more").evaluate("el => { el.open = true }")
+
+
+def open_im8_fold(page):
+    page.locator("#im8-fold").evaluate("el => { el.open = true }")
+
+
 # --- Opening and reviewing ----------------------------------------------------------------------------
 
 def test_demo_opens_with_drafts_scored(demo):
     expect(demo.locator("#work-summary")).to_contain_text("43 clauses → 38 controls")
     expect(demo.locator(".scoreline__pct")).to_be_visible()
+    expect(demo.locator("textarea.statement")).to_be_visible()
+    expect(demo.locator(".editor__primary")).to_contain_text("Accept")
+    expect(demo.locator(".editor__primary")).to_contain_text("Next")
+    expect(demo.locator("#clause-5\\.1")).to_be_visible()
+    expect(demo.locator("#clause-3\\.3")).to_have_count(0)
+    expect(demo.locator("#work-more .filters")).to_be_hidden()
+    expect(demo.locator("#select-shown")).to_be_hidden()
+    expect(demo.locator("#im8-fold")).not_to_have_attribute("open")
+
+
+def test_start_is_a_short_cta_not_a_wall(page):
+    expect(page.locator("#start-title")).to_have_text("Turn a policy into control statements")
+    expect(page.locator("#demo")).to_be_visible()
+    expect(page.locator(".steps")).to_have_count(0)
+    expect(page.locator("#paste-form")).to_be_visible()
+    expect(page.locator("#file")).to_be_attached()
+
+
+def test_happy_path_edit_accept_next(demo):
+    expect(demo.locator(".editor__where")).to_contain_text("5.1a")
+    demo.locator(".editor__primary >> text=Accept").click()
+    expect(demo.locator(ctl("5.1a") + " .state")).to_have_text("Accepted")
+    demo.locator(".editor__primary >> text=Next").click()
+    expect(demo.locator(".editor__where")).to_contain_text("5.1b")
 
 
 def test_pasted_text_is_shown_as_text_never_as_html(page):
@@ -202,6 +234,7 @@ def test_ai_dialog_shows_ready_or_needs_key(demo):
 
 def test_map_from_a_suggestion_and_remove(demo):
     demo.click(ctl("9.1a") + " .ctl__open")
+    open_im8_fold(demo)
     first = demo.locator(".im8__list li").first
     expect(first).to_contain_text("br-1 Backup")
     first.locator(".btn").click()
@@ -212,6 +245,7 @@ def test_map_from_a_suggestion_and_remove(demo):
 
 
 def test_coverage_view_counts_and_jumps_back(demo):
+    open_more(demo)
     demo.click("#select-shown")
     demo.click("#im8-bulk")
     expect(demo.locator("#notice")).to_contain_text("Mapped 35 controls")
@@ -227,9 +261,9 @@ def test_coverage_view_counts_and_jumps_back(demo):
 def test_redrafting_a_mapped_clause_keeps_the_mappings(demo):
     """A mapping is a person's work: redrafting the clause must not silently lose it."""
     demo.click(ctl("9.1a") + " .ctl__open")
+    open_im8_fold(demo)
     demo.locator(".im8__list li").first.locator(".btn").click()
     expect(demo.locator(ctl("9.1a") + " .im8-tag")).to_have_count(1)
-    demo.click(clause("9.1") + " .clause__select")
     demo.click("#editor >> text=Draft again from this clause")
     expect(demo.locator(ctl("9.1a") + " .im8-tag")).to_have_text("IM8 br-1")
 
@@ -237,6 +271,7 @@ def test_redrafting_a_mapped_clause_keeps_the_mappings(demo):
 def test_bulk_ai_leaves_mapped_clauses_alone(demo, provider):
     turn_on_ai(demo)
     demo.click(ctl("9.1a") + " .ctl__open")
+    open_im8_fold(demo)
     demo.locator(".im8__list li").first.locator(".btn").click()
     demo.click(ctl("9.1a") + " input[type=checkbox]")
     demo.click(ctl("8.1") + " input[type=checkbox]")
@@ -247,6 +282,7 @@ def test_bulk_ai_leaves_mapped_clauses_alone(demo, provider):
 
 
 def test_notice_clears_when_the_project_closes(demo):
+    open_more(demo)
     demo.click("#select-shown")
     demo.click("#im8-bulk")
     expect(demo.locator("#notice")).to_be_visible()
@@ -255,7 +291,8 @@ def test_notice_clears_when_the_project_closes(demo):
 
 
 def test_element_ids_are_unique_with_a_clause_open(demo):
-    demo.click(clause("9.1") + " .clause__select")
+    demo.click(ctl("9.1a") + " .ctl__open")
+    demo.get_by_role("button", name="Clause 9.1").click()
     expect(demo.locator(".editor__where")).to_contain_text("Clause 9.1")
     dupes = demo.evaluate("""() => {
         const ids = [...document.querySelectorAll('[id]')].map(e => e.id);
