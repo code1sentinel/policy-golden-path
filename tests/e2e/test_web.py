@@ -1,4 +1,4 @@
-"""The web app, end to end: open a policy, review, AI drafting, IM8 mapping and coverage, exports."""
+"""The web app, end to end: open a policy, review, AI drafting, exports."""
 
 import json
 import re
@@ -39,14 +39,6 @@ def turn_on_ollama(page):
     expect(page.locator("#ai-open")).to_have_text("AI drafting: on")
 
 
-def open_more(page):
-    page.locator("#work-more").evaluate("el => { el.open = true }")
-
-
-def open_im8_fold(page):
-    page.locator("#im8-fold").evaluate("el => { el.open = true }")
-
-
 # --- Opening and reviewing ----------------------------------------------------------------------------
 
 def test_demo_opens_with_drafts_scored(demo):
@@ -59,7 +51,9 @@ def test_demo_opens_with_drafts_scored(demo):
     expect(demo.locator("#clause-3\\.3")).to_have_count(0)
     expect(demo.locator("#work-more .filters")).to_be_hidden()
     expect(demo.locator("#select-shown")).to_be_hidden()
-    expect(demo.locator(".im8__list")).to_be_hidden()
+    expect(demo.locator("[data-view='im8']")).to_have_count(0)
+    expect(demo.locator("#im8-bulk")).to_have_count(0)
+    expect(demo.locator("#im8-fold")).to_have_count(0)
 
 
 def test_start_is_a_short_cta_not_a_wall(page):
@@ -230,64 +224,16 @@ def test_ai_dialog_shows_ready_or_needs_key(demo):
     expect(demo.locator("#ai-local-note")).to_contain_text("localhost:11434")
 
 
-# --- IM8 Reform mapping -----------------------------------------------------------------------------------
-
-def test_map_from_a_suggestion_and_remove(demo):
-    demo.click(ctl("9.1a") + " .ctl__open")
-    open_im8_fold(demo)
-    first = demo.locator(".im8__list li").first
-    expect(first).to_contain_text("br-1 Backup")
-    first.locator(".btn").click()
-    expect(demo.locator(ctl("9.1a") + " .im8-tag")).to_have_text("IM8 br-1")
-    assert control(demo, "9.1a")["im8"] == ["br-1"]
-    demo.click(".im8-chip .chip-x")
-    expect(demo.locator(ctl("9.1a") + " .im8-tag")).to_have_count(0)
-
-
-def test_coverage_view_counts_and_jumps_back(demo):
-    open_more(demo)
-    demo.click("#select-shown")
-    demo.click("#im8-bulk")
-    expect(demo.locator("#notice")).to_contain_text("Mapped 35 controls")
-    demo.click("[data-view='im8']")
-    expect(demo.locator(".im8-level").first).to_contain_text("20 of 137")
-    demo.click("[data-im8-show='gaps']")
-    expect(demo.locator(".im8-rows li.is-covered")).to_have_count(0)
-    demo.click("[data-im8-show='all']")
-    demo.locator(".im8-from .linkish").first.click()
-    expect(demo.locator("#work")).to_be_visible()
-
-
-def test_redrafting_a_mapped_clause_keeps_the_mappings(demo):
-    """A mapping is a person's work: redrafting the clause must not silently lose it."""
-    demo.click(ctl("9.1a") + " .ctl__open")
-    open_im8_fold(demo)
-    demo.locator(".im8__list li").first.locator(".btn").click()
-    expect(demo.locator(ctl("9.1a") + " .im8-tag")).to_have_count(1)
-    demo.click("#editor >> text=Draft again from this clause")
-    expect(demo.locator(ctl("9.1a") + " .im8-tag")).to_have_text("IM8 br-1")
-
-
-def test_bulk_ai_leaves_mapped_clauses_alone(demo, provider):
+def test_bulk_ai_leaves_reviewed_clauses_alone(demo, provider):
     turn_on_ai(demo)
     demo.click(ctl("9.1a") + " .ctl__open")
-    open_im8_fold(demo)
-    demo.locator(".im8__list li").first.locator(".btn").click()
+    demo.locator(".editor__primary >> text=Reviewed").click()
     demo.click(ctl("9.1a") + " input[type=checkbox]")
     demo.click(ctl("8.1") + " input[type=checkbox]")
     demo.click("#ai-bulk")
     expect(demo.locator("#ai-progress")).to_be_hidden()
     assert len(provider.requests) == 1 and "Legacy clause 8.1" in provider.requests[0]["body"]["messages"][0]["content"]
-    assert control(demo, "9.1a")["im8"] == ["br-1"]
-
-
-def test_notice_clears_when_the_project_closes(demo):
-    open_more(demo)
-    demo.click("#select-shown")
-    demo.click("#im8-bulk")
-    expect(demo.locator("#notice")).to_be_visible()
-    demo.click("#close-project")
-    expect(demo.locator("#notice")).to_be_hidden()
+    assert control(demo, "9.1a")["status"] == "reviewed" and control(demo, "9.1a")["origin"] != "ai"
 
 
 def test_element_ids_are_unique_with_a_clause_open(demo):
@@ -305,6 +251,6 @@ def test_element_ids_are_unique_with_a_clause_open(demo):
 
 def test_no_sideways_scroll_on_a_phone(demo):
     demo.set_viewport_size({"width": 390, "height": 844})
-    for view in ("work", "im8", "guide"):
+    for view in ("work", "guide"):
         demo.click(f"[data-view='{view}']")
         assert demo.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), view

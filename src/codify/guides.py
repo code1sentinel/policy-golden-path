@@ -29,9 +29,9 @@ def _p(title: str, why: str, how: str, weak: str, strong: str) -> dict:
 
 GUIDE: dict = {
     "title": "Control statements",
-    "summary": "A control statement is the requirement: what must be done, written the way Singapore's IM8 "
-               "writes it, and to OSCAL's own conventions for a catalog control. It starts with the action and "
-               "names no tool; who does it, and with what, belongs elsewhere.",
+    "summary": "A control statement is the requirement: what must be done. It starts with the action and "
+               "names no tool; who does it, and with what, belongs elsewhere. Write it so an assessor can "
+               "test it, in the shape of an OSCAL catalog control.",
     "practices": {
         "action_first": _p(
             "Start with the action",
@@ -45,8 +45,8 @@ GUIDE: dict = {
         "tool_neutral": _p(
             "Name no tool",
             "Tools change; the requirement should not. A product in the requirement ties every system to it.",
-            "Say what must be achieved. Put the product in guidance (IM8 keeps examples like AWS Backup in "
-            "its guidance), or wherever the control is implemented.",
+            "Say what must be achieved. Put the product in guidance (for example AWS Backup), "
+            "or wherever the control is implemented.",
             "Use Okta to enforce MFA.",
             "Require phishing-resistant multi-factor authentication for all access to cloud applications.",
         ),
@@ -62,14 +62,14 @@ GUIDE: dict = {
             "Make it testable",
             "An assessor needs something to test against: a frequency, a time limit, a threshold or a trigger.",
             "Add how often, how fast or when (before merging, above S$10,000), or leave a parameter for the "
-            "organization to set, as IM8 does ([time period]).",
+            "organization to set ([time period]).",
             "Review access regularly.",
             "Review privileged access at least every [90] days.",
         ),
         "purpose": _p(
             "Say why",
             "The purpose ties the control to the risk it treats, and helps people apply it sensibly.",
-            "Add the purpose ('to deter brute-force attacks'), or link the risk it treats. IM8 records a risk "
+            "Add the purpose ('to deter brute-force attacks'), or link the risk it treats. Record a risk "
             "statement for every control.",
             "Apply rate-limiting on authentication.",
             "Apply rate-limiting on all authentication mechanisms to deter brute-force attacks.",

@@ -66,7 +66,8 @@ def test_workspace_html_is_a_short_happy_path():
     assert 'class="steps"' not in html
     assert "Start with a legacy policy" not in html
     assert 'id="work-more"' in html
-    assert "Select ready drafts" in html and "Not mapped to IM8" in html
+    assert "Select ready drafts" in html
+    assert "Not mapped to IM8" not in html and "IM8 coverage" not in html
     js = (ROOT / "src/codify/static/app.js").read_text()
     assert "Select a clause to draft its control." in js
     assert "Keyboard:" not in js
@@ -79,8 +80,9 @@ def test_browser_package_works_without_server_modules(site, tmp_path):
     with zipfile.ZipFile(site / "codify.zip") as zf:
         names = set(zf.namelist())
         zf.extractall(tmp_path / "unpacked")
-    assert {"codify/api.py", "codify/xlsx.py", "codify/draft.py", "codify/data/im8-reform.json"} <= names
+    assert {"codify/api.py", "codify/xlsx.py", "codify/draft.py"} <= names
     assert not {"codify/webapp.py", "codify/cli.py"} & names
+    assert not any(n.startswith("codify/data/") or n.endswith("im8.py") for n in names)
     # Import and run it in a clean interpreter that can only see the unpacked archive, as Pyodide does.
     # -I -S: no environment, no site-packages, so the installed codify cannot be picked up instead.
     unpacked = tmp_path / "unpacked"
@@ -88,12 +90,12 @@ def test_browser_package_works_without_server_modules(site, tmp_path):
             "print(a.__file__); "
             "print(json.loads(a.handle(json.dumps({'action': 'open', 'text': '1.1 Logs shall be reviewed.'})))"
             "['summary']['controls']); "
-            "print(json.loads(a.handle(json.dumps({'action': 'im8', 'text': 'Back up all servers nightly.'})))"
-            "['suggestions'][0]['id'])")
+            "print(json.loads(a.handle(json.dumps({'action': 'check', 'text': 'Back up all servers nightly.'})))"
+            "['assessment']['confidence'])")
     out = subprocess.run([sys.executable, "-I", "-S", "-c", code, str(unpacked)],
                          capture_output=True, text=True, check=True)
-    module_file, total, im8 = out.stdout.split()
-    assert Path(module_file).is_relative_to(unpacked) and total == "1" and im8 == "br-1"
+    module_file, total, confidence = out.stdout.split()
+    assert Path(module_file).is_relative_to(unpacked) and total == "1" and float(confidence) > 0.5
 
 
 def test_build_refuses_incomplete_pyodide(tmp_path):

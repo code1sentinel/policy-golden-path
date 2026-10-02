@@ -22,9 +22,6 @@ const state = {
   checked: new Set(),  // control ids ticked for a bulk action
   guide: null,
   config: null,
-  im8: null,           // the IM8 Reform catalog: {title, version, domains, controls: [brief...]}
-  im8Risk: "low",
-  im8Show: "all",
 };
 
 // ---------------------------------------------------------------- helpers
@@ -421,9 +418,8 @@ async function aiDraftClause(clause) {
 }
 
 function needsConfirm(clause) {
-  // the person has worked on this clause's controls: edited, reviewed, accepted or mapped them
-  return controlsOf(clause.id).some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai") ||
-    (c.im8 || []).length);
+  // the person has worked on this clause's controls: edited, reviewed or accepted them
+  return controlsOf(clause.id).some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai"));
 }
 
 async function aiRedraft(clause, button) {
@@ -439,8 +435,8 @@ async function aiBulk() {
   const clauses = state.project.clauses.filter((c) => ids.has(c.id));
   const todo = clauses.filter((c) => !needsConfirm(c));
   const skipped = clauses.length - todo.length;
-  if (!todo.length) return showError("The selected controls have all been edited, reviewed, accepted or mapped, so AI drafting leaves them alone. Use \"Draft with AI\" on a clause to replace its controls.");
-  const note = skipped ? `\n\n${plural(skipped, "clause")} with edited, reviewed, accepted or mapped controls will be left alone.` : "";
+  if (!todo.length) return showError("The selected controls have all been edited, reviewed or accepted, so AI drafting leaves them alone. Use \"Draft with AI\" on a clause to replace its controls.");
+  const note = skipped ? `\n\n${plural(skipped, "clause")} with edited, reviewed or accepted controls will be left alone.` : "";
   if (!confirm(`Send ${plural(todo.length, "clause")} to ${aiName()}, one request per clause?\n\nEach request holds one clause's text, section heading and rule drafts. Their controls are replaced with AI drafts.${note}`)) return;
   ai.stop = false;
   showError("");
@@ -464,150 +460,11 @@ async function aiBulk() {
   }
 }
 
-// ---------------------------------------------------------------- IM8 Reform mapping
-//
-// Suggestions rank IM8 Reform controls by shared wording; a mapping counts once the person adds it.
-
-async function loadIm8() {
-  if (!state.im8) state.im8 = await call({ action: "im8" });
-  return state.im8;
-}
-
-const im8Brief = (id) => (state.im8 ? state.im8.controls.find((x) => x.id === id) : null);
-
-function levelBadges(levels) {
-  return el("span", { class: "levels" }, ["low", "medium"].map((risk) =>
-    levels && levels[risk] !== undefined
-      ? el("span", { class: `level level--${levels[risk]}`, title: `${risk}-risk systems: Level ${levels[risk]}`, text: `${risk === "low" ? "Low" : "Med"} L${levels[risk]}` })
-      : null));
-}
-
-function setMappings(c, ids) {
-  c.im8 = [...new Set(ids)];
-  saveLocal();
-  render();
-}
-
-function im8Panel(c, clause) {
-  const mapped = c.im8 || [];
-  const box = el("div", { class: "im8" });
-  const chips = el("div", { class: "im8__mapped" }, mapped.length ? mapped.map((id) => {
-    const b = im8Brief(id);
-    const remove = el("button", { type: "button", class: "chip-x", "aria-label": `Remove mapping to ${id}`, text: "×" });
-    remove.addEventListener("click", () => setMappings(c, mapped.filter((x) => x !== id)));
-    return el("span", { class: "im8-chip", title: b ? b.statement : "" }, el("strong", { text: id }), b ? ` ${b.title}` : "", remove);
-  }) : el("span", { class: "muted", text: "Not mapped yet." }));
-  const suggestions = el("div", { class: "im8__suggest" }, el("p", { class: "placeholder", text: "Finding IM8 controls…" }));
-
-  const find = el("input", { list: "im8-all", placeholder: "Find an IM8 control: id or title", autocomplete: "off", "aria-label": "Find an IM8 Reform control" });
-  const options = el("datalist", { id: "im8-all" });
-  const addBtn = el("button", { type: "button", class: "btn btn--small", text: "Map" });
-  const addFound = () => {
-    const id = find.value.trim().split(/\s/)[0].toLowerCase();
-    if (!im8Brief(id)) return showError(`"${find.value}" is not an IM8 Reform control. Pick one from the list.`);
-    showError("");
-    setMappings(c, [...mapped, id]);
-  };
-  addBtn.addEventListener("click", addFound);
-  find.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addFound(); } });
-
-  box.append(el("h3", {}, "IM8 Reform ", el("em", { text: "what this control maps to" })), chips, suggestions,
-    el("div", { class: "im8__find" }, find, addBtn, options));
-
-  loadIm8().then((cat) => {
-    options.replaceChildren(...cat.controls.map((x) => el("option", { value: `${x.id} ${x.title}` })));
-    // names for the chips, now that the catalog is here
-    for (const chip of $$(".im8-chip", chips)) {
-      const id = chip.querySelector("strong").textContent;
-      const b = im8Brief(id);
-      if (b && chip.childNodes.length === 2) chip.insertBefore(document.createTextNode(` ${b.title}`), chip.lastChild);
-      if (b) chip.title = b.statement;
-    }
-    if (!c.text) return suggestions.replaceChildren();
-    return call({ action: "im8", text: c.text, context: clause.text || "", exclude: mapped }).then((data) => {
-      if (!data.suggestions.length) return suggestions.replaceChildren(el("p", { class: "hint", text: "No close match in IM8 Reform. Find one below if it maps to something." }));
-      suggestions.replaceChildren(el("p", { class: "hint", text: "Suggested from shared wording. Map only what really matches." }),
-        el("ul", { class: "im8__list" }, data.suggestions.map((x) => {
-          const map = el("button", { type: "button", class: "btn btn--small", text: "Map", "aria-label": `Map to ${x.id}` });
-          map.addEventListener("click", () => setMappings(c, [...(c.im8 || []), x.id]));
-          return el("li", {},
-            el("div", { class: "im8__head" }, el("strong", { text: x.id }), ` ${x.title}`, el("span", { class: "muted", text: ` · ${x.domain}` }), levelBadges(x.levels)),
-            el("p", { class: "im8__smt", text: x.statement }), map);
-        })));
-    });
-  }).catch((err) => suggestions.replaceChildren(el("p", { class: "placeholder", text: err.message })));
-  return box;
-}
-
-async function im8Bulk() {
-  const targets = [...state.checked].map(controlById).filter((c) => c && c.text && !(c.im8 || []).length);
-  if (!targets.length) return showError("The selected controls are all mapped already (or empty). Change a mapping in the editor.");
-  if (!confirm(`Map ${plural(targets.length, "control")} to their top IM8 Reform suggestion?\n\nSuggestions come from shared wording, so check each one in the editor or the coverage view. Controls with no close match stay unmapped.`)) return;
-  await busy($("#im8-bulk"), "Mapping…", async () => {
-    let mappedCount = 0;
-    for (const c of targets) {
-      const clause = clauseById(c.clause) || { text: "" };
-      const data = await call({ action: "im8", text: c.text, context: clause.text });
-      if (data.suggestions.length) { c.im8 = [data.suggestions[0].id]; mappedCount += 1; }
-    }
-    state.checked.clear();
-    saveLocal();
-    render();
-    showNotice(`Mapped ${plural(mappedCount, "control")} to their top IM8 suggestion.` +
-      (mappedCount < targets.length ? ` ${plural(targets.length - mappedCount, "control")} had no close match and stay unmapped: filter "Not mapped to IM8" to see them.` : ""));
-  });
-}
-
-async function renderCoverage() {
-  const has = !!state.project;
-  $("#im8-empty").hidden = has;
-  $("#im8-body").hidden = !has;
-  if (!has) return;
-  try {
-    const cov = await call({ action: "coverage", project: state.project });
-    $("#im8-source").textContent = `${cov.title}, version ${cov.version} (GovTech, MIT licence).`;
-    const risk = state.im8Risk;
-    const levelNames = ["Level 0 must-have", "Level 1 should-have", "Level 2 good-to-have"];
-    $("#im8-levels").replaceChildren(
-      el("div", { class: "im8-level im8-level--all" }, el("strong", { text: `${cov.covered} of ${cov.total}` }), el("span", { text: "IM8 controls covered" })),
-      ...[0, 1, 2].map((n) => {
-        const l = cov.levels[`${risk}-${n}`];
-        const fill = el("span", { class: "bar__fill" });
-        fill.style.width = pct(l.total ? l.covered / l.total : 0);
-        return el("div", { class: "im8-level" }, el("strong", { text: `${l.covered} of ${l.total}` }), el("span", { text: levelNames[n] }),
-          el("span", { class: "bar", role: "img", "aria-label": `${l.covered} of ${l.total} covered` }, fill));
-      }));
-    const gapsOnly = state.im8Show === "gaps";
-    $("#im8-domains").replaceChildren(...cov.domains.map((d) => {
-      const rows = d.controls.filter((r) => !gapsOnly || !r.controls.length);
-      if (!rows.length) return null;
-      return el("section", { class: "im8-domain card" },
-        el("h3", {}, d.title, el("span", { class: "muted", text: ` ${d.covered} of ${d.controls.length} covered` })),
-        el("ul", { class: "im8-rows" }, rows.map((r) => {
-          const level = r.levels[risk];
-          return el("li", { class: r.controls.length ? "is-covered" : "is-gap" },
-            el("div", { class: "im8__head" }, el("strong", { text: r.id }), ` ${r.title}`,
-              level !== undefined ? el("span", { class: `level level--${level}`, text: `L${level}` }) : el("span", { class: "level level--none", text: `not in ${risk}-risk profiles` })),
-            el("p", { class: "im8__smt", text: r.statement }),
-            r.controls.length
-              ? el("div", { class: "im8-from" }, "Mapped from ", r.controls.map((id) => {
-                const b = el("button", { type: "button", class: "linkish", text: id });
-                b.addEventListener("click", () => { showView("work"); select({ control: id }); });
-                return b;
-              }))
-              : el("span", { class: "gap", text: "Gap" }));
-        })));
-    }).filter(Boolean));
-  } catch (err) { showError(err.message); }
-}
-
 // ---------------------------------------------------------------- views
 
 function showView(view) {
   for (const b of $$("[data-view]")) b.setAttribute("aria-pressed", String(b.dataset.view === view));
   $("#guide").hidden = view !== "guide";
-  $("#im8-view").hidden = view !== "im8";
-  if (view === "im8") renderCoverage();
   $("#start").hidden = view !== "work" || !!state.project;
   $("#work").hidden = view !== "work" || !state.project;
   if (view === "work" && !state.project) renderResume();
@@ -674,7 +531,6 @@ function matches(control) {
   const f = state.filter;
   if (f === "all") return true;
   if (f === "low") return (scoreOf(control.id) ?? 0) < READY;
-  if (f === "unmapped") return !(control.im8 || []).length;
   return control.status === f;
 }
 
@@ -697,7 +553,7 @@ function renderMoreLabel() {
   const summary = $("#work-more summary");
   if (!summary) return;
   const names = { all: "More", draft: "Drafts", reviewed: "Reviewed", accepted: "Accepted",
-    low: "Below 80%", unmapped: "Not mapped to IM8", other: "Not converted" };
+    low: "Below 80%", other: "Not converted" };
   summary.textContent = names[state.filter] || "More";
 }
 
@@ -734,10 +590,8 @@ function scorePill(id) {
 function controlRow(c, inEditor = false) {
   const box = el("input", { type: "checkbox", "aria-label": `Select ${c.id}` });
   box.checked = state.checked.has(c.id);
-  const mapped = c.im8 || [];
   const open = el("button", { type: "button", class: "ctl__open" },
-    el("span", { class: "ctl__id", text: c.id }), el("span", { class: "ctl__text", text: c.text || "(empty)" }),
-    mapped.length ? el("span", { class: "im8-tag", title: "Mapped to IM8 Reform", text: `IM8 ${mapped.join(", ")}` }) : null);
+    el("span", { class: "ctl__id", text: c.id }), el("span", { class: "ctl__text", text: c.text || "(empty)" }));
   open.addEventListener("click", () => select({ control: c.id }));
   const row = el("div", {
     class: `ctl${state.checked.has(c.id) ? " is-checked" : ""}`,
@@ -802,7 +656,6 @@ function renderBulk() {
   for (const b of $$("[data-bulk]")) b.disabled = n === 0;
   $("#select-none").disabled = n === 0;
   $("#ai-bulk").disabled = n === 0;
-  $("#im8-bulk").disabled = n === 0;
 }
 
 // ---------------------------------------------------------------- the editor
@@ -919,11 +772,6 @@ function renderControlEditor(box, c) {
         el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
       c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
 
-  const mapped = c.im8 || [];
-  const im8Fold = el("details", { class: "fold fold--block", id: "im8-fold", open: mapped.length > 0 },
-    el("summary", { text: mapped.length ? `IM8 · ${mapped.join(", ")}` : "Map to IM8" }),
-    el("div", { class: "fold__body" }, im8Panel(c, clause)));
-
   put(box,
     el("div", { class: "editor__nav" },
       el("p", { class: "editor__where" }, "Control ", el("strong", { text: c.id }), ` · ${ORIGIN_LABELS[c.origin] || "edited"}`)),
@@ -933,7 +781,6 @@ function renderControlEditor(box, c) {
     result,
     el("label", { class: "field" }, el("span", {}, "Risk it treats ", el("em", { text: "gives the control its purpose" })), risk),
     extras,
-    im8Fold,
     el("div", { class: "editor__foot" }, openClause, redraft, add, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
@@ -993,7 +840,6 @@ async function redraftClause(clause, button) {
 function replaceControls(clause, data, show = true) {
   // put new drafts where the clause's controls were
   const at = state.project.controls.findIndex((c) => c.clause === clause.id);
-  keepMappings(controlsOf(clause.id), data.controls);
   for (const c of controlsOf(clause.id)) { delete state.scores[c.id]; state.checked.delete(c.id); }
   state.project.controls = state.project.controls.filter((c) => c.clause !== clause.id);
   state.project.controls.splice(at >= 0 ? at : insertionPoint(clause), 0, ...data.controls);
@@ -1002,17 +848,6 @@ function replaceControls(clause, data, show = true) {
   state.selected = data.controls[0] ? { control: data.controls[0].id } : { clause: clause.id };
   saveLocal();
   render();
-}
-
-function keepMappings(before, after) {
-  // IM8 mappings are a person's work: a new draft with the same id keeps them, and the rest go to the first draft
-  if (!after.length) return;
-  const byId = new Map(after.map((c) => [c.id, c]));
-  for (const old of before) {
-    if (!(old.im8 || []).length) continue;
-    const to = byId.get(old.id) || after[0];
-    to.im8 = [...new Set([...(to.im8 || []), ...old.im8])];
-  }
 }
 
 function insertionPoint(clause) {
@@ -1047,7 +882,7 @@ function addControl(clause) {
   let n = controlsOf(clause.id).length + 1;
   let id = `${clause.id.replace(/[^A-Za-z0-9.]+/g, "")}-${n}`;
   while (used.has(id)) id = `${clause.id.replace(/[^A-Za-z0-9.]+/g, "")}-${++n}`;
-  const control = { id, clause: clause.id, text: "", guidance: "", risk: "", who: "", notes: [], status: "draft", origin: "person", im8: [] };
+  const control = { id, clause: clause.id, text: "", guidance: "", risk: "", who: "", notes: [], status: "draft", origin: "person" };
   const last = state.project.controls.map((c) => c.clause).lastIndexOf(clause.id);
   state.project.controls.splice(last >= 0 ? last + 1 : insertionPoint(clause), 0, control);
   state.selected = { control: id };
@@ -1203,15 +1038,6 @@ function init() {
     updateAiDialogStatus();
   });
   $("#ai-bulk").addEventListener("click", aiBulk);
-  $("#im8-bulk").addEventListener("click", im8Bulk);
-  $("#im8-risk").addEventListener("change", () => { state.im8Risk = $("#im8-risk").value; renderCoverage(); });
-  for (const b of $$("[data-im8-show]")) {
-    b.addEventListener("click", () => {
-      state.im8Show = b.dataset.im8Show;
-      for (const x of $$("[data-im8-show]")) x.setAttribute("aria-pressed", String(x === b));
-      renderCoverage();
-    });
-  }
   $("#ai-stop").addEventListener("click", () => {
     ai.stop = true;
     $("#ai-progress-text").textContent = "Stopping after this clause…";

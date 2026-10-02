@@ -51,7 +51,7 @@ def test_saved_catalog_resumes_exactly(acme):
 
 
 def test_any_catalog_opens_as_a_starting_point():
-    catalog = {"catalog": {"uuid": "00000000-0000-4000-8000-000000000000", "metadata": {"title": "IM8"},
+    catalog = {"catalog": {"uuid": "00000000-0000-4000-8000-000000000000", "metadata": {"title": "Backup catalog"},
                            "groups": [{"id": "br", "title": "Backup and Recovery", "controls": [{
                                "id": "br-1", "title": "Backup",
                                "params": [{"id": "br-1_prm_1", "label": "time period (days)"}],
@@ -62,7 +62,7 @@ def test_any_catalog_opens_as_a_starting_point():
     p = from_oscal(catalog)
     assert p["controls"] == [{"id": "br-1", "clause": "br-1", "text": "Back up data every [N] day(s).",
                               "guidance": "Use AWS Backup.", "risk": "Data could be lost.", "who": "", "notes": [],
-                              "status": "draft", "origin": "catalog", "im8": []}]
+                              "status": "draft", "origin": "catalog"}]
     assert p["clauses"][0]["heading"] == "Backup and Recovery"
     with pytest.raises(ValueError, match="no controls"):
         from_oscal({"catalog": {"metadata": {"title": "empty"}}})
@@ -74,6 +74,8 @@ def test_rows_report_and_formula_safety(acme):
     rows = to_rows(acme, {c["id"]: 0.9 for c in acme["controls"]})
     assert rows[1][:5] == ["5.1a", "5.1", "Requirement", acme["clauses"][11]["text"],
                            "Grant access to Agency systems on a need-to-know basis."]
+    assert rows[0] == ["control id", "legacy clause", "clause type", "legacy text", "control statement",
+                       "parameters", "guidance", "risk it treats", "who", "status", "origin", "score", "notes"]
     assert len(rows) == 1 + len(acme["controls"]) + 17  # plus the 16 non-requirement clauses and the duplicate
     acme["controls"][0]["text"] = "=HYPERLINK(\"http://evil\")"
     assert "'=HYPERLINK" in to_csv(acme)

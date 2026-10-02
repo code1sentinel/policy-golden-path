@@ -1,4 +1,4 @@
-"""Draft IM8-style control statements from a legacy requirement clause, using rules only.
+"""Draft action-first control statements from a legacy requirement clause, using rules only.
 
     "The IT Department shall back up all servers nightly using Veritas Backup Exec,
      and backup tapes shall be stored off-site."

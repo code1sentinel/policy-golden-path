@@ -24,7 +24,6 @@
       </div>
       <nav class="views" aria-label="Views">
         <button type="button" class="view-btn" data-view="work" aria-pressed="true">Workspace</button>
-        <button type="button" class="view-btn" data-view="im8" aria-pressed="false">IM8 coverage</button>
         <button type="button" class="view-btn" data-view="guide" aria-pressed="false">Guide</button>
         <button type="button" class="view-btn" id="ai-open" aria-haspopup="dialog">AI drafting: off</button>
       </nav>
@@ -117,7 +116,6 @@
                   <button type="button" class="chip" data-filter="reviewed" aria-pressed="false">Reviewed</button>
                   <button type="button" class="chip" data-filter="accepted" aria-pressed="false">Accepted</button>
                   <button type="button" class="chip" data-filter="low" aria-pressed="false">Below 80%</button>
-                  <button type="button" class="chip" data-filter="unmapped" aria-pressed="false">Not mapped to IM8</button>
                   <button type="button" class="chip" data-filter="other" aria-pressed="false">Not converted</button>
                 </div>
                 <div class="select-tools" role="group" aria-label="Select">
@@ -139,30 +137,9 @@
         <div class="selection-bar__actions">
           <button type="button" class="btn btn--small" data-bulk="reviewed">Mark reviewed</button>
           <button type="button" class="btn btn--small btn--primary" data-bulk="accepted">Mark accepted</button>
-          <button type="button" class="btn btn--small" id="im8-bulk" title="Map each selected control that has no IM8 mapping yet to its top IM8 Reform suggestion">Map to top IM8 suggestion</button>
           <button type="button" class="btn btn--small" id="ai-bulk" hidden title="Draft the clauses of the selected controls again with AI, one request per clause">Draft with AI</button>
         </div>
         <button type="button" class="btn btn--small btn--quiet" id="select-none">Clear</button>
-      </div>
-    </section>
-
-    <!-- IM8 Reform coverage -->
-    <section id="im8-view" class="im8-view" aria-labelledby="im8-title" hidden>
-      <h2 id="im8-title" class="section-title section-title--first">IM8 Reform coverage</h2>
-      <p class="hint">Which controls in Singapore's IM8 Reform catalog your controls map to, from the mappings you have confirmed. Covered means one of your controls maps to it, not that it is implemented. <span id="im8-source"></span></p>
-      <p id="im8-empty" class="placeholder" hidden>Open a policy, then map its controls to IM8 Reform in the editor, to see coverage here.</p>
-      <div id="im8-body" hidden>
-        <div class="toolbar im8-toolbar">
-          <label class="field field--inline"><span>Systems at</span>
-            <select id="im8-risk"><option value="low">low risk</option><option value="medium">medium risk</option></select>
-          </label>
-          <div class="filters" role="group" aria-label="Show">
-            <button type="button" class="chip" data-im8-show="all" aria-pressed="true">All IM8 controls</button>
-            <button type="button" class="chip" data-im8-show="gaps" aria-pressed="false">Gaps only</button>
-          </div>
-        </div>
-        <div id="im8-levels" class="im8-levels"></div>
-        <div id="im8-domains"></div>
       </div>
     </section>
 
@@ -228,7 +205,7 @@
   </dialog>
 
   <footer class="wrap foot">
-    <p>Codify is open source (MIT) from the GRC Engineering Club Singapore. Control statements follow the style of Singapore's IM8 Reform catalog; this tool is not affiliated with GovTech. <span id="version"></span></p>
+    <p>Codify is open source (MIT) from the GRC Engineering Club Singapore. <span id="version"></span></p>
   </footer>
 
   <script type="module" src="app.js"></script>

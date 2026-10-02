@@ -8,14 +8,11 @@ and Codify:
 1. **Sorts** every clause: requirement, scope, definition, role, exception, or
    not a control (aspirations, consequences, permissions). Duplicates are
    flagged.
-2. **Drafts** control statements from the requirements, in the style of
-   Singapore's [IM8 Reform](https://github.com/GovTechSG/tech-standards)
-   catalog: the action first, no tools, testable.
+2. **Drafts** control statements from the requirements: the action first, no
+   tools, testable.
 3. **Checks** each draft as you edit it, and shows its parts (action, scope,
    limit, purpose), so a missing one is easy to see.
-4. **Maps** each control to Singapore's IM8 Reform catalog, and shows which
-   IM8 controls your policy covers and where the gaps are.
-5. **Exports** an OSCAL catalog, which is also your save file, plus Excel, CSV
+4. **Exports** an OSCAL catalog, which is also your save file, plus Excel, CSV
    and a conversion report.
 
 ```
@@ -60,7 +57,7 @@ each clause is there to show.
 | Pasted text | Split on the policy's own numbering: `5. Access Control` is a section, `5.1` a clause, `(a)` an item that carries its lead-in ("Users shall:"). Unnumbered paragraphs and bullets are numbered for you. |
 | Word (`.docx`) | The same, with Word's headings as sections. Read with the Python standard library. |
 | CSV or Excel (`.xlsx`) | One clause per row: a `clause text` column, and optionally `clause id` and `section`. |
-| A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog (IM8 Reform, say) opens as a starting point: each control becomes a clause to work on. |
+| A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog opens as a starting point: each control becomes a clause to work on. |
 
 PDF is not read: copy the text and paste it.
 
@@ -102,10 +99,10 @@ Every draft carries notes saying what changed and what a person should decide.
 
 ## Checking control statements
 
-Each statement is scored the way IM8 Reform writes controls, and against
-OSCAL's own conventions for a catalog control. Weights are relative: they are
-rescaled to add up to 100%. IM8's own 137
-statements score a median of 95%; tool-specific implementation text scores
+Each statement is scored for how well it is written as a catalog control:
+action first, tool-neutral, testable, and against OSCAL's own conventions.
+Weights are relative: they are rescaled to add up to 100%. Well-written
+requirements score in the 90s; tool-specific implementation text scores
 around 60%; weak requirements ("Systems should be patched regularly where
 possible") around 30%.
 
@@ -123,36 +120,6 @@ possible") around 30%.
 Hedges ("should", "may"), vague wording and open-ended lists reduce the score.
 A score describes how a statement is written, not whether it is true; the
 Guide in the app explains each practice with a weak and a strong example.
-
-## Mapping to IM8 Reform
-
-Codify ships with Singapore's [IM8 Reform](https://github.com/GovTechSG/tech-standards)
-catalog (version 2025.05.13, 137 controls in 15 domains; MIT licence, GovTech)
-and its risk profiles: for low-risk and medium-risk systems, each IM8 control is
-Level 0 (must-have), 1 (should-have) or 2 (good-to-have).
-
-- **Suggestions**: the editor suggests the IM8 controls whose wording is
-  closest to the statement and its legacy clause, with their levels. Map one
-  with a click, or find any IM8 control by id or title. Suggestions come from
-  shared words, weighted so telling words ("backup", "MFA", "sanitise") count
-  for more than common ones; a mapping counts only once you add it.
-- **In bulk**: "Map to top IM8 suggestion" maps the selected controls that have
-  no mapping yet to their best match, after asking. Controls with no close
-  match stay unmapped; the "Not mapped to IM8" filter shows them.
-- **Coverage**: the **IM8 coverage** view lists every IM8 control by domain,
-  covered (with the controls that map to it) or a gap, and counts coverage for
-  each level, for low-risk or medium-risk systems. "Gaps only" shows what the
-  policy does not address. Covered means a control maps to it, not that it is
-  implemented.
-- **In the outputs**: each mapping is an `im8-reform` prop and a `related` link
-  on the control in the OSCAL catalog, with the IM8 catalog in the back matter;
-  an "IM8 Reform" column in Excel and CSV; and an IM8 coverage section in the
-  report, listing the Level 0 controls not covered. Opening the IM8 Reform
-  catalog itself maps each control to itself.
-
-`scripts/make_im8.py` rebuilds the bundled data from a checkout of GovTech's
-repository when it changes; GovTech's licence is kept beside it
-([`src/codify/data/LICENSE-im8-reform.txt`](src/codify/data/LICENSE-im8-reform.txt)).
 
 ## AI drafting (optional)
 
@@ -182,8 +149,7 @@ browsers block `http://localhost` from the HTTPS online site.
 - **Where**: "Draft with AI" on a clause replaces its controls; with controls
   selected, the bulk "Draft with AI" redrafts their clauses one by one, and can
   be stopped. Clauses whose controls you have edited, reviewed or accepted are
-  left alone in bulk, and so are clauses with controls mapped to IM8. Redrafting a
-  clause keeps its IM8 mappings.
+  left alone in bulk.
 
 The prompt is in [`src/codify/ai.py`](src/codify/ai.py). The command line and
 the rule drafts never use AI.
@@ -193,13 +159,13 @@ the rule drafts never use AI.
 The workspace lists requirement clauses, with their controls under each. Select a
 control to edit the statement next to its legacy clause. Mark it **reviewed** or
 **accepted**, then go to the next clause. Add the risk it treats (its purpose);
-guidance, who implements it, and IM8 mapping sit under disclosure in the editor.
+guidance and who implements it sit under disclosure in the editor.
 
 - **Filters and bulk** sit under **More** in the clause list: drafts, reviewed,
-  accepted, below 80%, not mapped to IM8, or the clauses that did not become
-  controls. "Select ready drafts" ticks drafts scoring 80% or more with no notes
-  left to decide, and "Select shown" every control the filter shows; then mark
-  them reviewed or accepted, or draft them again with AI.
+  accepted, below 80%, or the clauses that did not become controls. "Select ready
+  drafts" ticks drafts scoring 80% or more with no notes left to decide, and
+  "Select shown" every control the filter shows; then mark them reviewed or
+  accepted, or draft them again with AI.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.
 - **Saving**: work is kept in your browser as you go. **Save OSCAL catalog**
@@ -219,18 +185,17 @@ schema). One group per policy section and one control per statement:
 | `parts[name=drafting-notes]` | what the rules changed, and what to decide |
 | `props`: `legacy-clause`, `status`, `origin`, `risk-statement`, `responsible-role` | traceability and review state |
 | `links[rel=derived-from]` | the legacy clause, kept in `back-matter` |
-| `props[name=im8-reform]`, `links[rel=related]` | the IM8 Reform controls it maps to; the IM8 catalog is in `back-matter` |
 | `back-matter.resources` | every legacy clause, with its type and the reason |
 
 Codify's own names are in the namespace `https://grcengineering.club/ns/codify`.
 
 **Excel and CSV**: one row per control (legacy clause, statement, parameters,
-guidance, risk, who, IM8 Reform, status, score, notes), then the clauses that did not
+guidance, risk, who, status, score, notes), then the clauses that did not
 become controls. Cells that would run as spreadsheet formulas are escaped.
 
 **Conversion report** (Markdown): "43 clauses → 38 controls", the status, every
-control with its score, what still needs attention, IM8 Reform coverage (once
-controls are mapped), and the clauses that are not controls, with the reason.
+control with its score, what still needs attention, and the clauses that are not
+controls, with the reason.
 
 ## Command line
 
@@ -302,12 +267,10 @@ src/codify/
   api.py        the request API, shared by the local server and the browser
   webapp.py     local web server (codify-web)
   cli.py        command line (codify)
-  im8.py        IM8 Reform: suggested mappings and coverage
   guides.py     the best-practice guide
   xlsx.py       Excel reader and writer, standard library only
-  data/         the IM8 Reform catalog, trimmed for mapping
   static/       the web app, and the Acme demo policy
-scripts/        build the online site; make a .docx; validate OSCAL; rebuild the IM8 data
+scripts/        build the online site; make a .docx; validate OSCAL
 examples/       the Acme demo policy (Markdown and Word) and its key
 ```
 
