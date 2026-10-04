@@ -10,3 +10,7 @@ When a slice writes or changes OSCAL:
 
 Commit the golden JSON. Do not regenerate goldens to hide an accidental
 format change — review the diff.
+
+`unnumbered-lock-screens.json` is the catalog for a single unnumbered
+clause ("Users shall lock screens."). UUIDs and `last-modified` are
+frozen in the test.

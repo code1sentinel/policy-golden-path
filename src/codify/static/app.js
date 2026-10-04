@@ -425,7 +425,7 @@ function needsConfirm(clause) {
 async function aiRedraft(clause, button) {
   if (!aiReady()) return openAiDialog();
   const existing = controlsOf(clause.id);
-  if (needsConfirm(clause) && !confirm(`Replace the ${plural(existing.length, "control")} from clause ${clause.id}, including your edits, with AI drafts?`)) return;
+  if (needsConfirm(clause) && !confirm(`Replace the ${plural(existing.length, "control")} from this clause, including your edits, with AI drafts?`)) return;
   await busy(button, "Drafting with AI…", async () => replaceControls(clause, await aiDraftClause(clause)));
 }
 
@@ -446,7 +446,7 @@ async function aiBulk() {
   try {
     for (const clause of todo) {
       if (ai.stop) break;
-      $("#ai-progress-text").textContent = `Drafting with AI: clause ${clause.id} (${done + 1} of ${todo.length})…`;
+      $("#ai-progress-text").textContent = `Drafting with AI: clause ${done + 1} of ${todo.length}…`;
       replaceControls(clause, await aiDraftClause(clause), false);
       done += 1;
     }
@@ -588,10 +588,10 @@ function scorePill(id) {
 }
 
 function controlRow(c, inEditor = false) {
-  const box = el("input", { type: "checkbox", "aria-label": `Select ${c.id}` });
+  const box = el("input", { type: "checkbox", "aria-label": "Select this control" });
   box.checked = state.checked.has(c.id);
   const open = el("button", { type: "button", class: "ctl__open" },
-    el("span", { class: "ctl__id", text: c.id }), el("span", { class: "ctl__text", text: c.text || "(empty)" }));
+    el("span", { class: "ctl__text", text: c.text || "(empty)" }));
   open.addEventListener("click", () => select({ control: c.id }));
   const row = el("div", {
     class: `ctl${state.checked.has(c.id) ? " is-checked" : ""}`,
@@ -608,7 +608,7 @@ function controlRow(c, inEditor = false) {
 
 function clauseCard(clause, controls) {
   const other = clause.type !== "requirement" || clause.duplicate_of;
-  const label = clause.duplicate_of ? `Duplicate of ${clause.duplicate_of}` : TYPE_LABELS[clause.type];
+  const label = clause.duplicate_of ? "Duplicate" : TYPE_LABELS[clause.type];
   const open = el("button", { type: "button", class: "clause__select" }, el("span", { class: "clause__text", text: clause.text }));
   open.addEventListener("click", () => {
     const first = controlsOf(clause.id)[0];
@@ -618,7 +618,7 @@ function clauseCard(clause, controls) {
     (state.selected?.control && controlById(state.selected.control)?.clause === clause.id);
   return el("div", { class: `clause${other ? " is-other" : ""}`, id: `clause-${clause.id}`,
     "aria-current": String(!!current) },
-  el("div", { class: "clause__head" }, el("span", { class: "clause__id", text: clause.id }),
+  el("div", { class: "clause__head" },
     el("span", { class: "clause__type", text: label }),
     other && !clause.duplicate_of ? el("span", { class: "clause__reason", text: clause.reason }) : null),
   open,
@@ -635,8 +635,7 @@ function renderList() {
     const controls = controlsOf(clause.id).filter((c) => visible.has(c.id));
     const show = state.filter === "other" ? other : !other && (state.filter === "all" || controls.length > 0);
     if (!show) continue;
-    const heading = clause.section && clause.heading ? `${clause.section}. ${clause.heading}`
-      : clause.heading || (clause.section ? `Section ${clause.section}` : "");
+    const heading = clause.heading || "";
     if (heading && heading !== section) {
       nodes.push(el("p", { class: "section-head", text: heading }));
       section = heading;
@@ -678,7 +677,7 @@ function renderEditor() {
 }
 
 function legacyBox(clause) {
-  return el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: `Legacy clause ${clause.id}` }), clause.text);
+  return el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Legacy clause" }), clause.text);
 }
 
 function partsList(parts) {
@@ -761,7 +760,7 @@ function renderControlEditor(box, c) {
   redraft.addEventListener("click", () => redraftClause(clause, redraft));
   const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Delete this control" });
   remove.addEventListener("click", () => deleteControl(c));
-  const openClause = el("button", { type: "button", class: "btn btn--small btn--quiet", text: `Clause ${clause.id}` });
+  const openClause = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Open clause" });
   openClause.addEventListener("click", () => select({ clause: clause.id }));
 
   const extras = el("details", { class: "fold fold--block" },
@@ -774,7 +773,7 @@ function renderControlEditor(box, c) {
 
   put(box,
     el("div", { class: "editor__nav" },
-      el("p", { class: "editor__where" }, "Control ", el("strong", { text: c.id }), ` · ${ORIGIN_LABELS[c.origin] || "edited"}`)),
+      el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`)),
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field" }, el("span", { text: "Control statement" }), statement),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
@@ -803,10 +802,10 @@ function renderClauseEditor(box, clause) {
   const aiBtn = el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" });
   aiBtn.addEventListener("click", () => aiRedraft(clause, aiBtn));
   put(box,
-    el("p", { class: "editor__where" }, "Clause ", el("strong", { text: clause.id }), clause.heading ? ` · ${clause.heading}` : ""),
+    el("p", { class: "editor__where" }, "Clause", clause.heading ? ` · ${clause.heading}` : ""),
     legacyBox(clause),
     el("label", { class: "field" }, el("span", { text: "Type" }), type),
-    el("p", { class: "hint", text: clause.duplicate_of ? `Repeats ${clause.duplicate_of}, so no control was drafted from it.` : `Sorted as ${TYPE_LABELS[clause.type].toLowerCase()}: ${clause.reason}.` }),
+    el("p", { class: "hint", text: clause.duplicate_of ? "Repeats another clause, so no control was drafted from it." : `Sorted as ${TYPE_LABELS[clause.type].toLowerCase()}: ${clause.reason}.` }),
     clause.type === "requirement" ? el("div", { class: "actions" }, draftBtn, aiReady() ? aiBtn : null) : null,
     controls.length ? el("div", {}, el("h3", { text: `Controls from this clause (${controls.length})` }), controls.map((c) => controlRow(c, true))) : null,
   );
@@ -833,7 +832,7 @@ function setStatus(ids, status) {
 
 async function redraftClause(clause, button) {
   const existing = controlsOf(clause.id);
-  if (existing.some((c) => c.origin !== "rules") && !confirm(`Replace the ${plural(existing.length, "control")} from clause ${clause.id}, including your edits?`)) return;
+  if (existing.some((c) => c.origin !== "rules") && !confirm(`Replace the ${plural(existing.length, "control")} from this clause, including your edits?`)) return;
   await busy(button, "Drafting…", async () => replaceControls(clause, await call({ action: "redraft", clause_id: clause.id, text: clause.text })));
 }
 
@@ -862,7 +861,7 @@ function insertionPoint(clause) {
 async function changeType(clause, type, select) {
   const controls = controlsOf(clause.id);
   if (type !== "requirement" && controls.length) {
-    if (!confirm(`Clause ${clause.id} has ${plural(controls.length, "control")}. Remove them?`)) {
+    if (!confirm(`This clause has ${plural(controls.length, "control")}. Remove them?`)) {
       select.value = clause.type;
       return;
     }
@@ -893,7 +892,7 @@ function addControl(clause) {
 }
 
 function deleteControl(c) {
-  if (!confirm(`Delete control ${c.id}?`)) return;
+  if (!confirm("Delete this control?")) return;
   const visible = visibleControls();
   const index = visible.findIndex((x) => x.id === c.id);
   state.project.controls = state.project.controls.filter((x) => x.id !== c.id);
@@ -962,7 +961,7 @@ function init() {
     const text = form.elements.namedItem("text").value;
     if (!text.trim()) return showError("Paste the policy clauses first.");
     busy($("#paste-submit"), "Codifying…", async () => openProject(await call({
-      action: "open", name: "pasted text", text, title: form.elements.namedItem("title").value.trim(),
+      action: "open", name: "pasted text", text,
     })));
   });
 

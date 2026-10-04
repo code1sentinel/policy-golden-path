@@ -17,6 +17,17 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 - CI jobs for `ruff`, `mypy` (lenient), `pip-audit`, and `gitleaks`. Existing
   test, e2e, and OSCAL schema jobs are unchanged.
 
+### Changed
+
+- Happy path is clause text only ([ADR 0006](docs/adr/0006-clause-only-input.md)):
+  unnumbered paragraphs are clauses, a leading number stays in the pasted
+  text, and OSCAL control ids/titles are minted internally.
+
+### Removed
+
+- Optional Title field on the start form and the `title` argument on
+  `open`. Clause numbers are no longer required or shown in the workspace.
+
 ## [1.2.1] - 2026-10-02
 
 ### Added

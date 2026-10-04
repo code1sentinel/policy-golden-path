@@ -77,8 +77,14 @@ def _freeze(catalog: dict) -> dict:
     catalog["catalog"]["metadata"]["props"] = [
         p for p in catalog["catalog"]["metadata"].get("props", []) if p.get("name") != "generator"
     ]
+    rid = "11111111-1111-4111-8111-111111111111"
     for resource in catalog["catalog"].get("back-matter", {}).get("resources", []):
-        resource["uuid"] = "11111111-1111-4111-8111-111111111111"
+        resource["uuid"] = rid
+    for group in catalog["catalog"].get("groups", []):
+        for control in group.get("controls", []):
+            for link in control.get("links", []):
+                if link.get("rel") == "derived-from":
+                    link["href"] = "#" + rid
     return catalog
 
 

@@ -34,6 +34,7 @@ Relevant decisions already on file:
 - [`0003-local-only-privacy-model.md`](docs/adr/0003-local-only-privacy-model.md)
 - [`0004-ollama-localhost-only.md`](docs/adr/0004-ollama-localhost-only.md)
 - [`0005-remove-im8-mapping.md`](docs/adr/0005-remove-im8-mapping.md)
+- [`0006-clause-only-input.md`](docs/adr/0006-clause-only-input.md)
 
 ## 3. Thin vertical slices, one PR each
 

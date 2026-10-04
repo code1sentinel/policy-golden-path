@@ -36,7 +36,7 @@ ORIGINS = ("rules", "person", "ai", "catalog")
 # --- Building a project ---------------------------------------------------------------------------
 
 def _control_ids(clause_id: str, n: int) -> list[str]:
-    base = re.sub(r"[^A-Za-z0-9.]+", "", clause_id) or "x"
+    base = re.sub(r"[^A-Za-z0-9.]+", "", clause_id) or "c1"
     if n == 1:
         return [base]
     return [f"{base}{chr(ord('a') + i)}" if base[-1].isdigit() else f"{base}-{i + 1}" for i in range(n)]
@@ -173,7 +173,8 @@ def to_oscal(project: dict) -> dict:
         clause = clauses.get(control["clause"], {})
         section = clause.get("section") or "0"
         group = groups.setdefault(section, {"id": _token(section, "s-"),
-                                            "title": clause.get("heading") or f"Section {section}", "controls": []})
+                                            "title": clause.get("heading") or ("Policy" if section == "0" else f"Section {section}"),
+                                            "controls": []})
         cid = _token(control["id"], "c-")
         prose, params = to_params(cid, control["text"])
         parts = [{"id": f"{cid}_smt", "name": "statement", "prose": prose}]
