@@ -19,7 +19,7 @@ Issues = "https://github.com/code1sentinel/policy-golden-path/issues"
 dev = [
     "pytest>=8",
     "openpyxl>=3.1",  # only to test reading real-world workbooks
-    "ruff>=0.6",
+    "ruff>=0.16.9",
     "mypy>=1.11",
     "pip-audit>=2.7",
 ]
