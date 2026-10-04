@@ -1,15 +1,18 @@
-"""Read a legacy policy into numbered clauses: from pasted text, a Word document, or a table.
+"""Read a legacy policy into clauses: from pasted text, a Word document, or a table.
 
-Pasted text and Word documents are split on the policy's own numbering:
+The happy path is clause text. Numbers are optional. A lone unnumbered
+paragraph is a clause (`c1`), not a title. A single pasted paragraph that
+starts with a number keeps that text as-is.
+
+Multi-clause documents may still split on the policy's own numbering:
 
     ## 5. Access Control                 a section heading (Markdown or "5. Access Control")
-    5.1 Access to Agency systems ...     a clause, numbered 5.1
+    5.1 Access to Agency systems ...     a clause; internal id 5.1
     (a) ... / a) ...                     a lettered item, numbered 5.1(a)
     - ... / • ...                        a bullet, numbered 5.1-1
 
-Lines that carry on a clause are joined to it; an unnumbered paragraph becomes
-a clause numbered after its section (5-p1). A table (CSV or Excel) has one
-clause per row: a clause id column and a clause text column.
+Lines that carry on a clause are joined to it. A table (CSV or Excel) has one
+clause per row: a clause text column, and optionally a clause id column.
 """
 
 from __future__ import annotations
@@ -99,15 +102,30 @@ def parse_text(text: str, title: str = "") -> Policy:
         if current is not None:
             current.text = f"{current.text} {line}"  # a wrapped line carries on the clause
             continue
-        if not policy.title and not policy.clauses:
-            policy.title = line  # a first line on its own is the title
-            continue
-        base = section or "p"
-        counters[f"{base}-p"] = counters.get(f"{base}-p", 0) + 1
-        current = start(f"{base}-p{counters[f'{base}-p']}", line)
+        counters["c"] = counters.get("c", 0) + 1
+        current = start(f"c{counters['c']}", line)
         parent = ""
     policy.clauses = [c for c in policy.clauses if c.text and c.id not in lead_ins]
+    _keep_single_paragraph_text(policy, text)
     return policy
+
+
+def _keep_single_paragraph_text(policy: Policy, text: str) -> None:
+    """A single pasted paragraph keeps its exact text, including a leading number."""
+    if len(policy.clauses) != 1:
+        return
+    lines = []
+    for raw in text.replace("\r\n", "\n").split("\n"):
+        line = raw.strip()
+        if not line or _SKIP.match(line):
+            continue
+        if _MD_HEADING.match(line):
+            continue
+        if _PLAIN_HEADING.match(line) and not _NUMBERED.match(line):
+            continue
+        lines.append(line)
+    if len(lines) == 1:
+        policy.clauses[0].text = lines[0]
 
 
 # --- Word ---------------------------------------------------------------------------------------
@@ -230,6 +248,6 @@ def read_policy(name: str, content: str | bytes) -> Policy:
                 raise ValueError("file is not UTF-8 text") from None
         policy = parse_csv(content) if lower.endswith(".csv") else parse_text(content)
     if not policy.clauses:
-        raise ValueError("no clauses found: number them (4.1, 4.2 …) or put one per paragraph")
+        raise ValueError("no clauses found: paste one clause per paragraph")
     policy.title = policy.title or stem
     return policy

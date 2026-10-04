@@ -4,7 +4,7 @@ from codify.clauses import parse_text, read_policy
 
 
 def test_numbered_clauses_sections_and_wrapped_lines():
-    p = parse_text("Password Policy\n\n1. Passwords\n1.1 Passwords shall be changed\nevery 90 days.\n"
+    p = parse_text("# Password Policy\n\n1. Passwords\n1.1 Passwords shall be changed\nevery 90 days.\n"
                    "1.2 Users shall lock screens.\n\n## 2. Email\n2.1 Email shall be filtered.\n")
     assert p.title == "Password Policy"
     assert [(c.id, c.section, c.heading, c.text) for c in p.clauses] == [
@@ -23,7 +23,7 @@ def test_lettered_items_carry_their_lead_in():
 def test_unnumbered_paragraphs_and_bullets_get_ids():
     p = parse_text("# Remote Work\n\n## Devices\nStaff shall use managed laptops.\n\n- Laptops shall be encrypted.\n"
                    "- Screens shall lock after 5 minutes.")
-    assert [c.id for c in p.clauses] == ["p-p1", "p-1", "p-2"]
+    assert [c.id for c in p.clauses] == ["c1", "p-1", "p-2"]
     assert p.title == "Remote Work" and p.clauses[1].heading == "Devices"
 
 

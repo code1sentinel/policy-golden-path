@@ -17,8 +17,8 @@ def test_open_text_word_and_saved_catalog(opened, examples):
     word = api.call({"action": "open", "name": "acme.docx", "content_base64": base64.b64encode(
         (examples / "acme-information-security-policy-2016.docx").read_bytes()).decode()})
     assert word["summary"]["controls"] == opened["summary"]["controls"]
-    pasted = api.call({"action": "open", "text": "1.1 Users shall lock screens.", "title": "Screens"})
-    assert pasted["project"]["title"] == "Screens" and pasted["project"]["source"] == ""
+    pasted = api.call({"action": "open", "text": "Users shall lock screens."})
+    assert pasted["project"]["clauses"][0]["text"] == "Users shall lock screens." and pasted["project"]["source"] == ""
     saved = api.call({"action": "export", "format": "oscal", "project": opened["project"]})
     again = api.call({"action": "open", "name": saved["name"], "content": saved["content"]})
     assert [c["text"] for c in again["project"]["controls"]] == [c["text"] for c in opened["project"]["controls"]]

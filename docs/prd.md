@@ -38,8 +38,11 @@ They are a starting point to edit, not finished controls.
 
 ## Scope (today)
 
-- **Ingest:** pasted text, Word (`.docx`), CSV/Excel (`.xlsx`), or a saved
-  OSCAL catalog. Numbering and Word headings become sections and clauses.
+- **Ingest:** pasted clause text (the happy path), Word (`.docx`),
+  CSV/Excel (`.xlsx`), or a saved OSCAL catalog. There is no Title field
+  and clause numbers are optional ([ADR 0006](adr/0006-clause-only-input.md)).
+  Multi-clause files may still split on the policy's own numbering and
+  Word headings.
 - **Sort:** requirement, scope, definition, role, exception, not-a-control;
   flag duplicates; show the reason; allow the type to be changed.
 - **Draft:** rule-based split, active voice, drop the organisation as subject,
@@ -85,6 +88,10 @@ They are a starting point to edit, not finished controls.
 None recorded for the shipped workspace. Earlier polish named production
 apps as inspiration but did not store Mobbin URLs.
 
+The 2026-10-04 clause-only input slice removed the Title field and hid
+clause numbers. No new layout: see
+[docs/prds/clause-only-input.md](prds/clause-only-input.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
@@ -100,6 +107,8 @@ links, ask for them; do not invent a design.
 - Ollama localhost-only ([ADR 0004](adr/0004-ollama-localhost-only.md)).
 - No IM8 (or similar) mapping surface without a new ADR that supersedes
   [ADR 0005](adr/0005-remove-im8-mapping.md).
+- Clause-only happy-path input ([ADR 0006](adr/0006-clause-only-input.md)):
+  no Title field; clause numbers are not required or shown.
 - Standard-library runtime for the package; optional `dev` / `e2e` only for
   tests.
 

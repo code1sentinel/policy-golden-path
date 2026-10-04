@@ -54,7 +54,7 @@ each clause is there to show.
 
 | Input | How it is read |
 | --- | --- |
-| Pasted text | Split on the policy's own numbering: `5. Access Control` is a section, `5.1` a clause, `(a)` an item that carries its lead-in ("Users shall:"). Unnumbered paragraphs and bullets are numbered for you. |
+| Pasted text | The clause text, one paragraph per clause. Numbers are optional. A single paragraph that starts with a number (`4.2.1 …`) is kept as-is. A longer policy may still split on its own numbering (`5. Access Control` is a section, `5.1` a clause, `(a)` an item that carries its lead-in). |
 | Word (`.docx`) | The same, with Word's headings as sections. Read with the Python standard library. |
 | CSV or Excel (`.xlsx`) | One clause per row: a `clause text` column, and optionally `clause id` and `section`. |
 | A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog opens as a starting point: each control becomes a clause to work on. |

@@ -65,11 +65,11 @@ def test_start_is_a_short_cta_not_a_wall(page):
 
 
 def test_happy_path_edit_accept_next(demo):
-    expect(demo.locator(".editor__where")).to_contain_text("5.1a")
+    expect(demo.locator(".editor__where")).to_contain_text("Control")
     demo.locator(".editor__primary >> text=Accept").click()
     expect(demo.locator(ctl("5.1a") + " .state")).to_have_text("Accepted")
     demo.locator(".editor__primary >> text=Next").click()
-    expect(demo.locator(".editor__where")).to_contain_text("5.1b")
+    expect(demo.locator(".editor__where")).to_contain_text("Control")
 
 
 def test_pasted_text_is_shown_as_text_never_as_html(page):
@@ -238,8 +238,8 @@ def test_bulk_ai_leaves_reviewed_clauses_alone(demo, provider):
 
 def test_element_ids_are_unique_with_a_clause_open(demo):
     demo.click(ctl("9.1a") + " .ctl__open")
-    demo.get_by_role("button", name="Clause 9.1").click()
-    expect(demo.locator(".editor__where")).to_contain_text("Clause 9.1")
+    demo.get_by_role("button", name="Open clause").click()
+    expect(demo.locator(".editor__where")).to_contain_text("Clause")
     dupes = demo.evaluate("""() => {
         const ids = [...document.querySelectorAll('[id]')].map(e => e.id);
         return ids.filter((id, i) => ids.indexOf(id) !== i);

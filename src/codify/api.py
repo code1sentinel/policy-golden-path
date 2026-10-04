@@ -142,8 +142,6 @@ def open_policy(body: dict) -> dict:
             project = from_oscal(json.loads(raw))
         else:
             project = new_project(read_policy(name, content), source=name if body.get("name") else "")
-            if body.get("title"):
-                project["title"] = _text(body["title"], "title", 500)
     except json.JSONDecodeError as exc:
         raise BadRequest(f"{name}: not valid JSON ({exc.msg})") from None
     except (ValueError, KeyError, TypeError) as exc:

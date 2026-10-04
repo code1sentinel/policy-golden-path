@@ -360,8 +360,12 @@ def _tidy(text: str) -> str:
 
 # --- Public --------------------------------------------------------------------------------------
 
+_LEAD_NUMBER = re.compile(r"^\d{1,2}(?:\.\d{1,3}){1,3}\.?\s+")
+
+
 def draft(clause_text: str) -> list[Draft]:
     """Control statements drafted from one legacy requirement clause."""
+    clause_text = _LEAD_NUMBER.sub("", clause_text.strip(), count=1)
     out: list[Draft] = []
     for sentence in re.split(r"(?<=[.;])\s+(?=[A-Z])", clause_text.strip()):
         sentence = sentence.strip().rstrip(".;:")
