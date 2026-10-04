@@ -39,8 +39,9 @@ time.
 
 The online version runs entirely in your browser: Codify's Python runs there
 through [Pyodide](https://pyodide.org), served from the site itself. Your
-policy is read on your device and never uploaded, and the site makes no
-requests to any third party unless you turn on AI drafting. The first visit
+policy is read on your device and never uploaded, and neither the site nor
+`codify-web` loads fonts or other assets from a third party. The page
+makes no requests to any third party unless you turn on AI drafting. The first visit
 loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 

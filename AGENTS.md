@@ -192,7 +192,8 @@ python -m http.server --directory site
 - `codify-web` binds to `127.0.0.1`, has no authentication, refuses
   cross-origin POSTs, and keeps nothing on disk.
 - The Pages site runs Python in the browser via Pyodide served from the site.
-  Do not add third-party script, font, or analytics hosts to the site build.
+  Do not add third-party script, font, or analytics hosts to the site build
+  or to `codify-web`. Both use the system font stack.
 - CSP `connect-src` may include only `'self'`, the three opt-in cloud AI
   origins, and `http://localhost:11434` / `http://127.0.0.1:11434`.
 - Ollama is localhost only. Do not point it at a remote host.

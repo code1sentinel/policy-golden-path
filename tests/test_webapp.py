@@ -38,6 +38,7 @@ def test_serves_the_page_assets_and_demo(server):
     assert status == 200 and b"<title>Codify</title>" in body
     csp = headers["Content-Security-Policy"]
     assert "default-src 'self'" in csp and headers["X-Content-Type-Options"] == "nosniff"
+    assert "style-src 'self'" in csp and "fonts.googleapis.com" not in csp
     assert "http://localhost:11434" in csp and "http://127.0.0.1:11434" in csp
     for name in ("app.js", "app.css", "acme-policy.md", "acme-policy.docx"):
         assert get(f"{server}/{name}")[0] == 200
