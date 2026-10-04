@@ -18,7 +18,7 @@ Issues = "https://github.com/code1sentinel/policy-golden-path/issues"
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
-    "openpyxl>=3.1",  # only to test reading real-world workbooks
+    "openpyxl>=3.1.5",  # only to test reading real-world workbooks
     "ruff>=0.6",
     "mypy>=1.11",
     "pip-audit>=2.7",
