@@ -34,7 +34,7 @@ STATIC = PACKAGE / "static"
 SERVER_ONLY = {"webapp.py", "cli.py", "__main__.py"}
 PYODIDE_FILES = ("pyodide.mjs", "pyodide.asm.mjs", "pyodide.asm.wasm", "python_stdlib.zip", "pyodide-lock.json")
 
-# Fonts fall back to the system font and Pyodide is served from the site. The only other origins are the
+# The page uses the system font stack. Pyodide is served from the site. The only other origins are the
 # AI providers, which the page calls only when the person turns AI drafting on, with their own key.
 CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; "
        f"connect-src 'self' {AI_ORIGINS}; base-uri 'none'; form-action 'none'")
@@ -43,9 +43,6 @@ CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'sel
 def build_index() -> str:
     html = (STATIC / "index.html").read_text(encoding="utf-8")
     html = html.replace('<html lang="en">', '<html lang="en" data-mode="browser">', 1)
-    # Drop the Google Fonts links: the site makes no third-party requests.
-    lines = [ln for ln in html.splitlines() if "fonts.googleapis.com" not in ln]
-    html = "\n".join(lines) + "\n"
     meta = f'  <meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
     return html.replace('  <meta name="viewport"', meta + '  <meta name="viewport"', 1)
 

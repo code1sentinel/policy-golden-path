@@ -20,8 +20,9 @@ How the three surfaces honour that:
   POSTs, CSP `connect-src` is `'self'` plus the opt-in AI origins. Warns if
   bound off loopback.
 - **GitHub Pages:** the same Python package runs in the browser through
-  Pyodide served from the site. The site build strips Google Fonts and
-  third-party script hosts. Policy text is not uploaded.
+  Pyodide served from the site. The page and the local app use the
+  system font stack; neither loads Google Fonts or other third-party
+  script hosts. Policy text is not uploaded.
 
 The request API (`src/codify/api.py`) is pure: each call is given the
 project it needs. The page holds the project (memory / browser storage).
@@ -35,7 +36,8 @@ autosave, or exports.
 - Default path: no outbound calls, no Codify server in the middle, no
   policy upload.
 - Do not add analytics, CDNs, fonts, or other third-party origins to the
-  Pages build.
+  local app or the Pages build. `index.html` has no `https://` asset
+  origins; the local CSP does not list font hosts.
 - Do not add a backend that receives policy text or API keys.
 - Any new origin or leave-device path needs its own ADR, a CSP change with
   tests, and an explicit confirmation in the UI.

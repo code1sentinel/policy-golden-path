@@ -22,6 +22,9 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 - Happy path is clause text only ([ADR 0006](docs/adr/0006-clause-only-input.md)):
   unnumbered paragraphs are clauses, a leading number stays in the pasted
   text, and OSCAL control ids/titles are minted internally.
+- Local `codify-web` uses the system font stack and no longer loads
+  Inter from Google Fonts. The Pages build no longer needs to strip
+  those links ([ADR 0003](docs/adr/0003-local-only-privacy-model.md)).
 
 ### Removed
 

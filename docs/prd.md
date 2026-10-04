@@ -92,6 +92,10 @@ The 2026-10-04 clause-only input slice removed the Title field and hid
 clause numbers. No new layout: see
 [docs/prds/clause-only-input.md](prds/clause-only-input.md).
 
+The local app and Pages site use the system font stack and do not load
+Google Fonts. See
+[docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
