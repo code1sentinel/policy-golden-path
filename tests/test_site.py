@@ -63,7 +63,7 @@ def test_workspace_html_is_a_short_happy_path():
     html = (ROOT / "src/codify/static/index.html").read_text()
     assert "Turn a policy into control statements" in html
     assert 'name="title"' not in html
-    assert 'id="demo"' in html and "Try the Acme demo" in html
+    assert 'id="demo"' in html and "Try an example" in html
     assert 'class="steps"' not in html
     assert "Start with a legacy policy" not in html
     assert 'id="work-more"' in html

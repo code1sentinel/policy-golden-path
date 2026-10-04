@@ -25,6 +25,9 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 - Local `codify-web` uses the system font stack and no longer loads
   Inter from Google Fonts. The Pages build no longer needs to strip
   those links ([ADR 0003](docs/adr/0003-local-only-privacy-model.md)).
+- Start screen: the clause textarea is the hero with one **Codify**
+  primary. The Acme demo is a quiet **Try an example** chip. Empty
+  editor and filter panes offer **Open first draft** and **Show all**.
 
 ### Removed
 

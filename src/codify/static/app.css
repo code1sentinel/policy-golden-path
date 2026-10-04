@@ -127,11 +127,30 @@ input:focus, select:focus, textarea:focus { border-color: var(--orange); outline
 
 .start { max-width: 640px; margin: 0 auto; }
 .start__lede { color: var(--muted); margin: 0 0 22px; font-size: 15px; }
-.start__cta { margin: 0 0 22px; }
-.start__load { border-style: dashed; }
+.start__load { border-style: solid; }
 .start__load.is-over { border-color: var(--orange); background: var(--orange-dim); }
-.start__load h3 { margin-bottom: 12px; color: var(--muted); font-weight: 500; }
-.start__load textarea { min-height: 9em; }
+.start__clause { min-height: 11em; font-size: 16px; line-height: 1.5; }
+.start__examples { margin: 14px 0 0; }
+.example-chip {
+  appearance: none; background: transparent; cursor: pointer;
+  border: 1px solid var(--border-soft); color: var(--muted);
+  border-radius: 999px; padding: 5px 12px; font: 500 13px var(--font);
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.example-chip:hover { color: var(--text); border-color: var(--border); }
+
+.empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 12px; min-height: 280px; padding: 32px 16px; color: var(--muted);
+}
+.empty--list { min-height: 180px; padding: 28px 12px; }
+.empty__icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  border: 1px solid var(--border-soft); background: var(--bg);
+  display: grid; place-items: center;
+}
+.empty__glyph { width: 22px; height: 22px; }
+.empty__line { margin: 0; max-width: 28ch; font-size: 14px; }
 .resume { margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
 .resume__text { margin: 0; }
 

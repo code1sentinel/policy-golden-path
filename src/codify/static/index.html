@@ -37,7 +37,7 @@
     <!-- Start: no project open -->
     <section id="start" class="start" aria-labelledby="start-title">
       <h2 id="start-title" class="section-title section-title--first">Turn a policy into control statements</h2>
-      <p class="start__lede">Paste a policy, open a file, or try the demo. Codify drafts each requirement into a control.</p>
+      <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control.</p>
 
       <div id="resume" class="card resume" hidden>
         <p class="resume__text"><strong>Continue where you left off:</strong> <span id="resume-title"></span> <span id="resume-when" class="muted"></span></p>
@@ -47,25 +47,23 @@
         </div>
       </div>
 
-      <div class="start__cta">
-        <button type="button" class="btn btn--primary btn--lg" id="demo">Try the Acme demo</button>
-      </div>
-
       <div class="card start__load" id="drop">
         <form id="paste-form" novalidate>
-          <h3>Or load your policy</h3>
           <label class="field">
             <span class="visually-hidden">Clause</span>
-            <textarea name="text" rows="7" placeholder="Access to systems shall be granted on a need-to-know basis.&#10;User accounts shall be reviewed regularly."></textarea>
+            <textarea class="start__clause" name="text" rows="8" placeholder="Access to systems shall be granted on a need-to-know basis.&#10;User accounts shall be reviewed regularly."></textarea>
           </label>
           <div class="actions">
-            <button type="submit" class="btn btn--primary" id="paste-submit">Codify</button>
+            <button type="submit" class="btn btn--primary btn--lg" id="paste-submit">Codify</button>
             <label class="btn btn--file">
               Open a file
               <input type="file" id="file" accept=".docx,.csv,.xlsx,.json,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/json,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
             </label>
           </div>
         </form>
+        <p class="start__examples">
+          <button type="button" class="example-chip" id="demo">Try an example</button>
+        </p>
       </div>
     </section>
 

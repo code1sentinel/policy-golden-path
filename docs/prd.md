@@ -96,13 +96,19 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
+Start is one clause box and one **Codify** button; the demo is a quiet
+example chip. Empty editor and filter panes include a next-step action.
+See [docs/prds/start-hero-empty-states.md](prds/start-hero-empty-states.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
-| _required for any UI slice_ | https://mobbin.com/... | _layout / density / interaction — not branding_ |
+| Krea AI — single prompt + Generate | https://mobbin.com/screens/323e22c9-d758-4bf1-aee3-dcc9e284a2ef | Start: one hero input, one primary |
+| Gamma — example prompts | https://mobbin.com/screens/23a25ddc-5d71-44d3-af2b-ff2ea0ec1767 | Start: quiet example under the input |
+| Arcade — empty output | https://mobbin.com/screens/7b9d6805-0331-41c2-b7aa-165ea081bb09 | Empty pane: icon + line + next step |
 
 ## Constraints that new work must keep
 

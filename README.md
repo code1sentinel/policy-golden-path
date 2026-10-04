@@ -45,7 +45,8 @@ makes no requests to any third party unless you turn on AI drafting. The first v
 loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
-To see it work, open the **Acme demo policy**
+To see it work, paste a clause and press **Codify**, or choose **Try an
+example** to open the **Acme demo policy**
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
 a fictional 2016 agency policy written with typical legacy problems.
 [`examples/acme-policy-key.md`](examples/acme-policy-key.md) explains what

@@ -625,6 +625,42 @@ function clauseCard(clause, controls) {
   controls.map((c) => controlRow(c)));
 }
 
+function emptyGlyph() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "empty__glyph");
+  svg.setAttribute("fill", "none");
+  const path = document.createElementNS(ns, "path");
+  path.setAttribute("d", "M8 3.5h6.2L19 8.3V20.5H8zM14.2 3.5v4.8H19M9.5 13h5M9.5 16.5h3.5");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "1.5");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("stroke-linecap", "round");
+  svg.append(path);
+  return svg;
+}
+
+function emptyState(line, actionLabel, onAction, extraClass) {
+  const action = el("button", { type: "button", class: "btn", text: actionLabel });
+  action.addEventListener("click", onAction);
+  return el("div", { class: extraClass ? `empty ${extraClass}` : "empty" },
+    el("div", { class: "empty__icon", "aria-hidden": "true" }, emptyGlyph()),
+    el("p", { class: "empty__line", text: line }),
+    action);
+}
+
+function showAllFilters() {
+  state.filter = "all";
+  for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
+  render();
+}
+
+function openFirstDraft() {
+  const first = state.project?.controls.find((c) => c.status === "draft") || state.project?.controls[0];
+  if (first) select({ control: first.id });
+}
+
 function renderList() {
   const list = $("#list");
   const visible = new Set(visibleControls().map((c) => c.id));
@@ -642,7 +678,9 @@ function renderList() {
     }
     nodes.push(clauseCard(clause, controls));
   }
-  if (!nodes.length) nodes.push(el("p", { class: "placeholder", text: "Nothing matches this filter." }));
+  if (!nodes.length) {
+    nodes.push(emptyState("Nothing matches this filter.", "Show all", showAllFilters, "empty--list"));
+  }
   list.replaceChildren(...nodes);
 }
 
@@ -673,7 +711,7 @@ function renderEditor() {
   const sel = state.selected;
   if (sel?.control && controlById(sel.control)) return renderControlEditor(box, controlById(sel.control));
   if (sel?.clause && clauseById(sel.clause)) return renderClauseEditor(box, clauseById(sel.clause));
-  box.replaceChildren(el("p", { class: "placeholder", text: "Select a clause to draft its control." }));
+  box.replaceChildren(emptyState("Select a clause to draft its control.", "Open first draft", openFirstDraft));
 }
 
 function legacyBox(clause) {
@@ -1004,6 +1042,8 @@ function init() {
     b.addEventListener("click", () => {
       state.filter = b.dataset.filter;
       for (const x of $$("[data-filter]")) x.setAttribute("aria-pressed", String(x === b));
+      const more = $("#work-more");
+      if (more) more.open = false;
       render();
     });
   }
@@ -1066,6 +1106,7 @@ function init() {
     const c = state.selected?.control && controlById(state.selected.control);
     if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
     else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }
+    else if (e.key === "Escape" && state.selected) { e.preventDefault(); state.selected = null; render(); }
     else if (e.key === "r" && c) setStatus([c.id], "reviewed");
     else if (e.key === "a" && c) setStatus([c.id], "accepted");
   });
