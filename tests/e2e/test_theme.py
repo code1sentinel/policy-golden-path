@@ -48,8 +48,8 @@ def test_theme_toggle_makes_no_third_party_requests(browser, base_url):
     page.click("[data-theme-choice='light']")
     page.click("[data-theme-choice='dark']")
     page.click("[data-theme-choice='system']")
-    hosts = {urlparse(u).netloc for u in seen}
-    assert hosts <= {"127.0.0.1", "localhost", ""}
+    hosts = {urlparse(u).hostname for u in seen}
+    assert hosts <= {"127.0.0.1", "localhost", None}
     ctx.close()
 
 
