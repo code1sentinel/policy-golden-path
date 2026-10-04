@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +7,7 @@
   <meta name="description" content="Turn legacy policy clauses into OSCAL control statements.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F1F1F'/%3E%3Cpath d='M0 0h32L0 32z' fill='%23E8650A'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="app.css">
+  <script src="theme.js"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -20,11 +21,20 @@
           <p class="brand__tag">Turn legacy policy clauses into OSCAL control statements.</p>
         </div>
       </div>
-      <nav class="views" aria-label="Views">
-        <button type="button" class="view-btn" data-view="work" aria-pressed="true">Workspace</button>
-        <button type="button" class="view-btn" data-view="guide" aria-pressed="false">Guide</button>
-        <button type="button" class="view-btn" id="ai-open" aria-haspopup="dialog">AI drafting: off</button>
-      </nav>
+      <div class="top__end">
+        <nav class="views" aria-label="Views">
+          <button type="button" class="view-btn" data-view="work" aria-pressed="true">Workspace</button>
+          <button type="button" class="view-btn" data-view="guide" aria-pressed="false">Guide</button>
+        </nav>
+        <div class="top__tools">
+          <button type="button" class="status-chip" id="ai-open" aria-haspopup="dialog">AI: Off</button>
+          <div class="theme-toggle" role="radiogroup" aria-label="Theme">
+            <button type="button" role="radio" aria-checked="false" data-theme-choice="light">Light</button>
+            <button type="button" role="radio" aria-checked="false" data-theme-choice="dark">Dark</button>
+            <button type="button" role="radio" aria-checked="true" data-theme-choice="system">System</button>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -76,14 +86,15 @@
           <div id="work-progress" class="progress" aria-label="Review progress"></div>
         </div>
         <div class="actions work__actions">
-          <button type="button" class="btn" data-export="oscal">Save OSCAL catalog</button>
-          <div class="menu">
-            <button type="button" class="btn btn--quiet" id="export-more" aria-haspopup="true" aria-expanded="false">Export</button>
+          <div class="menu split">
+            <button type="button" class="btn" data-export="oscal">Save OSCAL (.json)</button>
+            <button type="button" class="btn split__chevron" id="export-more" aria-haspopup="true" aria-expanded="false" aria-label="More export formats">
+              <span aria-hidden="true">▾</span>
+            </button>
             <div class="menu__list" id="export-menu" role="menu" hidden>
               <button type="button" role="menuitem" data-export="xlsx">Excel (.xlsx)</button>
               <button type="button" role="menuitem" data-export="csv">CSV</button>
               <button type="button" role="menuitem" data-export="report">Conversion report (.md)</button>
-              <button type="button" role="menuitem" data-export="oscal">OSCAL catalog (.json)</button>
             </div>
           </div>
           <button type="button" class="btn btn--quiet" id="close-project">Close</button>

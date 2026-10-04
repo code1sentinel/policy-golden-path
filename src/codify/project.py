@@ -230,6 +230,16 @@ def to_oscal(project: dict) -> dict:
     return {"catalog": catalog}
 
 
+def control_oscal(project: dict, control_id: str) -> dict:
+    """The OSCAL 1.1.2 control object for one project control."""
+    token = _token(control_id, "c-")
+    for group in to_oscal(project)["catalog"].get("groups", []):
+        for control in group.get("controls", []):
+            if control["id"] == token:
+                return control
+    raise KeyError(f"no OSCAL control for {control_id}")
+
+
 def _section_key(section: str) -> tuple:
     return tuple(int(p) if p.isdigit() else 0 for p in re.split(r"\D+", section) if p) or (0,)
 
