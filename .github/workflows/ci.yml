@@ -71,3 +71,46 @@ jobs:
             "https://github.com/usnistgov/OSCAL/releases/download/v${OSCAL_VERSION}/oscal_catalog_schema.json"
           npm install --no-save --silent ajv@8 ajv-formats@3
           node scripts/validate_oscal.mjs out/schema.json out/acme-md.json out/acme-docx.json out/acme-reopened.json
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests scripts
+
+  types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: mypy src
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Audit installed dependencies
+        # setup-python gives a clean env; --skip-editable skips this repo (not on PyPI).
+        run: pip-audit --skip-editable
+      - name: Install gitleaks
+        run: |
+          curl -sSLf -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan for secrets
+        run: gitleaks detect --source . --verbose --redact --config .gitleaks.toml

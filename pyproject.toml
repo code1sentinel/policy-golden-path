@@ -16,7 +16,13 @@ Homepage = "https://github.com/code1sentinel/policy-golden-path"
 Issues = "https://github.com/code1sentinel/policy-golden-path/issues"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "openpyxl>=3.1"]  # openpyxl only to test reading real-world workbooks
+dev = [
+    "pytest>=8",
+    "openpyxl>=3.1",  # only to test reading real-world workbooks
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pip-audit>=2.7",
+]
 e2e = ["pytest>=8", "playwright==1.56.0"]  # browser tests in tests/e2e; then: python -m playwright install chromium
 
 [project.scripts]
@@ -32,3 +38,43 @@ codify = ["static/*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 160
+src = ["src", "tests", "scripts"]
+extend-exclude = ["site", "package", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# Existing sources are already long; do not fail the first lint gate on wrap.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Pre-existing; fix in a later slice rather than in a process PR.
+"src/codify/cli.py" = ["F401"]
+"src/codify/control.py" = ["F401"]
+"src/codify/text.py" = ["F821"]
+"tests/test_site.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+ignore_missing_imports = true
+follow_imports = "silent"
+warn_unused_configs = true
+# Lenient starting point: most of the package is untyped. Tighten over time.
+check_untyped_defs = false
+allow_untyped_defs = true
+allow_untyped_calls = true
+allow_incomplete_defs = true
+pretty = true
+disable_error_code = [
+    "return-value",
+    "name-defined",
+    "assignment",
+    "arg-type",
+    "index",
+    "attr-defined",
+    "call-overload",
+]

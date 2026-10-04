@@ -221,9 +221,15 @@ cross-site requests and keeps nothing on disk.
 
 ## Development
 
+Workflow for agents and humans: [`AGENTS.md`](AGENTS.md). Short version:
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Product baseline: [`docs/prd.md`](docs/prd.md).
+Changelog: [`CHANGELOG.md`](CHANGELOG.md).
+
 ```
 pip install -e ".[dev]"
 pytest
+ruff check src tests scripts
+mypy src
 ```
 
 The browser tests in `tests/e2e` drive the web app in Chromium, with the AI

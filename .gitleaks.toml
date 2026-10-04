@@ -1,0 +1,16 @@
+# Gitleaks config for Codify.
+# Test fixtures use the fake key "sk-test" (never a real secret).
+
+title = "codify"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Playwright fixtures use a non-secret placeholder key"
+paths = [
+  '''tests/e2e/''',
+]
+regexes = [
+  '''sk-test''',
+]
