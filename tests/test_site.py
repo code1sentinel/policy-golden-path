@@ -32,15 +32,16 @@ def site(tmp_path):
 
 
 def test_site_has_everything_the_page_loads(site):
-    for name in ("index.html", "app.css", "app.js", "codify.zip", "config.json", "guide.json", "acme-policy.md",
-                 "acme-policy.docx", ".nojekyll", *(f"pyodide/{f}" for f in build_site.PYODIDE_FILES)):
+    for name in ("index.html", "app.css", "app.js", "theme.js", "codify.zip", "config.json", "guide.json",
+                 "acme-policy.md", "acme-policy.docx", ".nojekyll",
+                 *(f"pyodide/{f}" for f in build_site.PYODIDE_FILES)):
         assert (site / name).exists(), name
     assert json.loads((site / "config.json").read_text()) == api.config()
 
 
 def test_index_runs_in_browser_mode_with_no_third_parties(site):
     html = (site / "index.html").read_text()
-    assert '<html lang="en" data-mode="browser">' in html
+    assert '<html lang="en" data-theme="dark" data-mode="browser">' in html
     assert "Content-Security-Policy" in html and "'wasm-unsafe-eval'" in html
     assert "fonts.googleapis.com" not in html and "https://cdn" not in html
     # the only other origins it may reach are the AI providers, for AI drafting the person turns on
