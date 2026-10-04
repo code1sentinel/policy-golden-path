@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Product PRD
+    url: https://github.com/code1sentinel/policy-golden-path/blob/main/docs/prd.md
+    about: Read the current product baseline before opening a slice.
+  - name: Agent and contributor rules
+    url: https://github.com/code1sentinel/policy-golden-path/blob/main/AGENTS.md
+    about: Workflow, TDD, CI, privacy, and Mobbin rules.

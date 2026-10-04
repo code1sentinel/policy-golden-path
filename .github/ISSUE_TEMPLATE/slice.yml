@@ -1,0 +1,86 @@
+name: Slice
+description: A thin vertical slice — one user story, one PR, Given/When/Then acceptance criteria.
+title: "[slice] "
+labels: ["slice"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One slice = the smallest change that delivers a complete path (input → behaviour → test → docs).
+        Start from [docs/prd.md](../docs/prd.md) or a feature PRD under `docs/prds/`.
+        Follow [AGENTS.md](../AGENTS.md). UI slices need Mobbin links before anyone implements.
+
+  - type: input
+    id: prd
+    attributes:
+      label: PRD
+      description: Link to docs/prd.md or docs/prds/<feature>.md
+      placeholder: docs/prd.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      description: Who, what, and why.
+      placeholder: As a GRC reviewer, I want to … so that …
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Given / When / Then. These become the first failing tests.
+      placeholder: |
+        Given a saved OSCAL catalog from Codify
+        When I open it with `codify catalog.json`
+        Then the project resumes with the same clauses, controls, and statuses
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Design references
+      description: >
+        Required for any frontend/UI change. List Mobbin (mobbin.com) screen
+        links. If you do not have them, do not start implementation — ask.
+        For non-UI slices, write "None — no UI change."
+      placeholder: |
+        None — no UI change.
+
+        or
+
+        - Workspace list + editor — https://mobbin.com/... — split review, selected row
+        - Confirm dialog — https://mobbin.com/... — provider name + count
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      description: >
+        TDD. Name the failing test you will write first. OSCAL output needs a
+        golden-file test and schema validation.
+      placeholder: |
+        - [ ] Failing test from the first Given/When/Then
+        - [ ] Golden file under tests/goldens/ if OSCAL is written
+        - [ ] Schema validation still green
+        - [ ] Acme key still holds if classification or drafting changes
+        - [ ] e2e if the workspace or Pages site changes
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this slice will not do. Put those in later issues.
+      placeholder: |
+        - No PDF ingest
+        - No new outbound network calls
+    validations:
+      required: true

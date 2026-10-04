@@ -1,0 +1,71 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Seeded from git history and merged pull requests on 2026-10-04.
+There are no release tags; version numbers match `src/codify/__init__.py`.
+
+## [Unreleased]
+
+### Added
+
+- Development workflow: `AGENTS.md`, product PRD, ADRs, slice issue template,
+  pull request template, `CONTRIBUTING.md`, and retro/PRD templates.
+- CI jobs for `ruff`, `mypy` (lenient), `pip-audit`, and `gitleaks`. Existing
+  test, e2e, and OSCAL schema jobs are unchanged.
+
+## [1.2.1] - 2026-10-02
+
+### Added
+
+- Playwright browser tests against `codify-web` and the Pyodide site; four
+  fixes they drove (purpose parsing, mapping preserved on redraft, mapped
+  notice lifecycle, unique editor ids).
+- Ollama as a key-free local AI provider at `http://localhost:11434`
+  ([#1](https://github.com/code1sentinel/policy-golden-path/pull/1)).
+
+### Changed
+
+- Workspace polish: split list/editor, floating selection bar, clearer AI
+  dialog (ready / needs-key) ([#2](https://github.com/code1sentinel/policy-golden-path/pull/2)).
+- Decluttered the happy path: short start page, requirement clauses first,
+  control statement as the editor hero, filters and bulk under More
+  ([#3](https://github.com/code1sentinel/policy-golden-path/pull/3)).
+
+### Removed
+
+- IM8 Reform mapping, coverage view, bundled catalog, and export columns
+  ([#4](https://github.com/code1sentinel/policy-golden-path/pull/4)).
+
+## [1.2.0] - 2026-10-02
+
+### Added
+
+- Map drafted controls to Singapore's IM8 Reform catalog, coverage and gaps
+  view, and IM8 columns in exports. Later removed in 1.2.1.
+
+## [1.1.0] - 2026-10-01
+
+### Added
+
+- Optional AI drafting with a bring-your-own key (Anthropic, OpenAI, Gemini).
+  One clause per request from the browser; keys never enter the project.
+- Default Claude model Sonnet 5.5; any model the account has can still be
+  entered.
+
+## [1.0.0] - 2026-10-01
+
+### Added
+
+- First Codify release: sort legacy clauses, draft control statements from
+  rules, score them against OSCAL-oriented criteria, review/accept, export
+  an OSCAL 1.1.2 catalog (the save file), Excel, CSV, and a conversion
+  report.
+- CLI (`codify`), local web app (`codify-web`), and a browser-only GitHub
+  Pages site via Pyodide.
+- Acme demo policy and key as the regression hold.
+
+[Unreleased]: https://github.com/code1sentinel/policy-golden-path/compare/main...HEAD
