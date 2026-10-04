@@ -51,10 +51,11 @@ They are a starting point to edit, not finished controls.
 - **Check:** weighted score (testable, scope, action-first, tool-neutral,
   purpose, single, labeled parts, determinable) with in-app Guide examples.
 - **Review:** workspace lists requirement clauses; edit the statement next to
-  the legacy clause; mark reviewed or accepted; filters and bulk actions
-  under More; keyboard `j` / `k` / `r` / `a`.
-- **Export:** OSCAL catalog 1.1.2, Excel, CSV (formula-escaped), Markdown
-  report. Catalog is the save file.
+  the legacy clause; **Statement | OSCAL JSON** tabs on the current control;
+  mark reviewed or accepted; filters and bulk actions under More; keyboard
+  `j` / `k` / `r` / `a`.
+- **Export:** **Save OSCAL (.json)** (catalog 1.1.2, also the save file);
+  Excel, CSV (formula-escaped), and the Markdown report under a chevron.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -96,13 +97,34 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
+Start is one clause box and one **Codify** button; the demo is a quiet
+example chip. Empty editor and filter panes include a next-step action.
+See [docs/prds/start-hero-empty-states.md](prds/start-hero-empty-states.md).
+
+The editor can show this control as OSCAL JSON (copy locally). Export is
+a split **Save OSCAL (.json)** button. See
+[docs/prds/oscal-panel-export.md](prds/oscal-panel-export.md).
+
+Workspace and Guide are the view tabs; AI drafting is a status chip.
+Light / Dark / System theming defaults to the OS. See
+[docs/prds/theme-ai-chip.md](prds/theme-ai-chip.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
-| _required for any UI slice_ | https://mobbin.com/... | _layout / density / interaction — not branding_ |
+| Krea AI — single prompt + Generate | https://mobbin.com/screens/323e22c9-d758-4bf1-aee3-dcc9e284a2ef | Start: one hero input, one primary |
+| Gamma — example prompts | https://mobbin.com/screens/23a25ddc-5d71-44d3-af2b-ff2ea0ec1767 | Start: quiet example under the input |
+| Arcade — empty output | https://mobbin.com/screens/7b9d6805-0331-41c2-b7aa-165ea081bb09 | Empty pane: icon + line + next step |
+| Browserbase — JSON + copy | https://mobbin.com/screens/ae95ee59-43fe-4173-887a-c3542d08c9c8 | Control OSCAL panel + copy |
+| Mistral AI — code tabs | https://mobbin.com/screens/911ba1b2-a744-4359-832b-451758afbd09 | Statement / JSON tabs, copied status |
+| Claude — copy + publish | https://mobbin.com/screens/587db0a6-6f7d-4a6a-b1ac-80ea594f7c7a | One copy + one primary save |
+| Adaline — settings chips | https://mobbin.com/screens/80e3ebce-e59f-45a5-a6c5-7d9755ec4ef5 | AI as a status chip, not a tab |
+| Twenty — Light / Dark / System | https://mobbin.com/screens/bee89cac-9a8a-4f5c-a0ef-90a26ec69658 | Three-way theme choice |
+| Better Stack — Look & Feel | https://mobbin.com/screens/47f13a6b-5547-4aa6-bb4d-b8aa640e35d8 | Compact theme picker |
+| Adaline — pass/fail on dark | https://mobbin.com/screens/081e7212-d5b4-4ca3-928c-d8a62f637b64 | Status colour with a text label |
 
 ## Constraints that new work must keep
 

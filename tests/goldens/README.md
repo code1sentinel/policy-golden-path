@@ -14,3 +14,6 @@ format change — review the diff.
 `unnumbered-lock-screens.json` is the catalog for a single unnumbered
 clause ("Users shall lock screens."). UUIDs and `last-modified` are
 frozen in the test.
+
+`unnumbered-lock-screens-control.json` is that catalog's first control
+object (`control_oscal`), with the derived-from href frozen.

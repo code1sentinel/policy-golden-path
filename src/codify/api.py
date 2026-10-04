@@ -4,13 +4,14 @@
 (webapp.py) calls the same functions for POST /api. Nothing here does I/O, and
 the project lives in the page: each call is given what it needs.
 
-    open      a policy file or pasted text (or a saved OSCAL catalog) -> project, with scores
-    check     one control statement -> score, best practices, improvements and its parts
-    score     a whole project -> scores for every control
-    redraft   one clause -> rule-based control drafts
-    export    a project -> OSCAL catalog, Excel, CSV or Markdown report
-    ai_prompt one clause -> the prompt the page sends to the person's AI provider
-    ai_reply  the provider's reply -> control drafts marked as drafted by AI, with scores
+    open          a policy file or pasted text (or a saved OSCAL catalog) -> project, with scores
+    check         one control statement -> score, best practices, improvements and its parts
+    score         a whole project -> scores for every control
+    redraft       one clause -> rule-based control drafts
+    export        a project -> OSCAL catalog, Excel, CSV or Markdown report
+    control_oscal one control in a project -> that control's OSCAL 1.1.2 object
+    ai_prompt     one clause -> the prompt the page sends to the person's AI provider
+    ai_reply      the provider's reply -> control drafts marked as drafted by AI, with scores
 """
 
 from __future__ import annotations
@@ -27,7 +28,8 @@ from .control import assess_control_statement, parts
 from .guides import ADOPTED, GUIDE, PARTLY, STATUS_LABELS
 from .models import Statement
 from .project import (
-    ORIGINS, STATUSES, draft_controls, from_oscal, new_project, summary, to_csv, to_oscal, to_report, to_xlsx,
+    ORIGINS, STATUSES, control_oscal, draft_controls, from_oscal, new_project, summary, to_csv, to_oscal,
+    to_report, to_xlsx,
 )
 
 MAX_TEXT = 20000  # characters per field
@@ -184,6 +186,17 @@ def _filename(project: dict, suffix: str) -> str:
     return f"{stem}-{suffix}"
 
 
+def control_oscal_action(body: dict) -> dict:
+    project = _clean_project(body.get("project"))
+    control_id = _text(body.get("control_id"), "control_id", 64)
+    if not control_id:
+        raise BadRequest("enter a control id")
+    try:
+        return {"control": control_oscal(project, control_id)}
+    except KeyError as exc:
+        raise BadRequest(str(exc)) from None
+
+
 def export(body: dict) -> dict:
     project = _clean_project(body.get("project"))
     fmt = body.get("format")
@@ -214,7 +227,7 @@ def guide() -> dict:
 
 
 ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export,
-           "ai_prompt": ai_prompt, "ai_reply": ai_reply}
+           "control_oscal": control_oscal_action, "ai_prompt": ai_prompt, "ai_reply": ai_reply}
 
 
 def call(body: dict) -> dict:

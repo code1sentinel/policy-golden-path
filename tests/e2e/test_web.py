@@ -27,7 +27,7 @@ def turn_on_ai(page):
     page.fill("#ai-key", "sk-test")
     page.check("#ai-ack")
     page.click("#ai-on")
-    expect(page.locator("#ai-open")).to_have_text("AI drafting: on")
+    expect(page.locator("#ai-open")).to_have_text("AI: On · Anthropic")
 
 
 def turn_on_ollama(page):
@@ -36,7 +36,7 @@ def turn_on_ollama(page):
     expect(page.locator("#ai-key-field")).to_be_hidden()
     page.check("#ai-ack")
     page.click("#ai-on")
-    expect(page.locator("#ai-open")).to_have_text("AI drafting: on")
+    expect(page.locator("#ai-open")).to_have_text("AI: On · Ollama")
 
 
 # --- Opening and reviewing ----------------------------------------------------------------------------

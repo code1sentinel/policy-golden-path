@@ -22,6 +22,7 @@ const state = {
   checked: new Set(),  // control ids ticked for a bulk action
   guide: null,
   config: null,
+  editorTab: "statement", // statement | oscal
 };
 
 // ---------------------------------------------------------------- helpers
@@ -321,7 +322,8 @@ const aiName = () => `${PROVIDERS[ai.provider].label}, ${ai.model}`;
 function renderAiButton() {
   const b = $("#ai-open");
   const ready = aiReady();
-  b.textContent = ready ? "AI drafting: on" : ai.on ? "AI drafting: needs a key" : "AI drafting: off";
+  const shortName = (PROVIDERS[ai.provider].label.split(" (")[0] || ai.provider);
+  b.textContent = ready ? `AI: On · ${shortName}` : ai.on ? "AI: Needs a key" : "AI: Off";
   b.setAttribute("aria-pressed", String(ready));
   b.classList.toggle("is-on", ready);
   b.classList.toggle("is-needs", ai.on && !ready);
@@ -489,6 +491,7 @@ function openProject(data) {
   state.filter = "all";
   const first = state.project.controls.find((c) => c.status === "draft") || state.project.controls[0];
   state.selected = first ? { control: first.id } : null;
+  state.editorTab = "statement";
   for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
   saveLocal();
   showView("work");
@@ -625,6 +628,42 @@ function clauseCard(clause, controls) {
   controls.map((c) => controlRow(c)));
 }
 
+function emptyGlyph() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "empty__glyph");
+  svg.setAttribute("fill", "none");
+  const path = document.createElementNS(ns, "path");
+  path.setAttribute("d", "M8 3.5h6.2L19 8.3V20.5H8zM14.2 3.5v4.8H19M9.5 13h5M9.5 16.5h3.5");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "1.5");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("stroke-linecap", "round");
+  svg.append(path);
+  return svg;
+}
+
+function emptyState(line, actionLabel, onAction, extraClass) {
+  const action = el("button", { type: "button", class: "btn", text: actionLabel });
+  action.addEventListener("click", onAction);
+  return el("div", { class: extraClass ? `empty ${extraClass}` : "empty" },
+    el("div", { class: "empty__icon", "aria-hidden": "true" }, emptyGlyph()),
+    el("p", { class: "empty__line", text: line }),
+    action);
+}
+
+function showAllFilters() {
+  state.filter = "all";
+  for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
+  render();
+}
+
+function openFirstDraft() {
+  const first = state.project?.controls.find((c) => c.status === "draft") || state.project?.controls[0];
+  if (first) select({ control: first.id });
+}
+
 function renderList() {
   const list = $("#list");
   const visible = new Set(visibleControls().map((c) => c.id));
@@ -642,7 +681,9 @@ function renderList() {
     }
     nodes.push(clauseCard(clause, controls));
   }
-  if (!nodes.length) nodes.push(el("p", { class: "placeholder", text: "Nothing matches this filter." }));
+  if (!nodes.length) {
+    nodes.push(emptyState("Nothing matches this filter.", "Show all", showAllFilters, "empty--list"));
+  }
   list.replaceChildren(...nodes);
 }
 
@@ -660,6 +701,9 @@ function renderBulk() {
 // ---------------------------------------------------------------- the editor
 
 function select(target) {
+  const same = state.selected && target
+    && state.selected.control === target.control && state.selected.clause === target.clause;
+  if (!same) state.editorTab = "statement";
   state.selected = target;
   render();
   const id = target.control ? `ctl-${target.control}` : `clause-${target.clause}`;
@@ -673,7 +717,7 @@ function renderEditor() {
   const sel = state.selected;
   if (sel?.control && controlById(sel.control)) return renderControlEditor(box, controlById(sel.control));
   if (sel?.clause && clauseById(sel.clause)) return renderClauseEditor(box, clauseById(sel.clause));
-  box.replaceChildren(el("p", { class: "placeholder", text: "Select a clause to draft its control." }));
+  box.replaceChildren(emptyState("Select a clause to draft its control.", "Open first draft", openFirstDraft));
 }
 
 function legacyBox(clause) {
@@ -703,10 +747,80 @@ function improvementsList(items) {
   return el("ul", { class: "improvements" }, items.map((i) => el("li", { text: i })));
 }
 
+function editorTabs() {
+  const make = (id, label) => {
+    const b = el("button", {
+      type: "button", class: "editor-tab", role: "tab",
+      "aria-selected": String(state.editorTab === id), text: label,
+    });
+    b.addEventListener("click", () => {
+      state.editorTab = id;
+      renderEditor();
+    });
+    return b;
+  };
+  return el("div", { class: "editor-tabs", role: "tablist", "aria-label": "Control view" },
+    make("statement", "Statement"), make("oscal", "OSCAL JSON"));
+}
+
+function numberedJson(text) {
+  return text.split("\n").map((line, i) => el("div", { class: "oscal-line" },
+    el("span", { class: "oscal-ln", text: String(i + 1) }),
+    el("span", { class: "oscal-code", text: line || " " })));
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch { /* fall through to execCommand */ }
+  }
+  const ta = el("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.append(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  ta.remove();
+  return ok;
+}
+
+function oscalPanel(c) {
+  const pre = el("pre", { class: "oscal-pre", id: "oscal-json", tabindex: "0", "aria-label": "OSCAL JSON for this control" });
+  const status = el("span", { class: "oscal-copy-status", "aria-live": "polite", id: "oscal-copy-status" });
+  const copy = el("button", { type: "button", class: "btn btn--small", id: "oscal-copy", text: "Copy" });
+  copy.addEventListener("click", async () => {
+    const raw = pre.dataset.raw || "";
+    status.textContent = (await copyText(raw)) ? "Copied" : "Copy failed";
+  });
+  pre.textContent = "Loading…";
+  call({ action: "control_oscal", project: state.project, control_id: c.id }).then((data) => {
+    const raw = JSON.stringify(data.control, null, 2);
+    pre.dataset.raw = raw;
+    pre.replaceChildren(...numberedJson(raw));
+  }).catch((err) => { pre.textContent = err.message; });
+  return el("div", { class: "oscal-view", role: "tabpanel", "aria-label": "OSCAL JSON" },
+    el("div", { class: "oscal-view__bar" },
+      el("span", { class: "oscal-view__label", text: "This control" }),
+      copy, status),
+    pre);
+}
+
 function renderControlEditor(box, c) {
   const clause = clauseById(c.clause) || { id: c.clause, text: "" };
   const visible = visibleControls();
   const index = visible.findIndex((x) => x.id === c.id);
+  const tabs = editorTabs();
+  const where = el("div", { class: "editor__nav" },
+    el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`));
+  if (state.editorTab === "oscal") {
+    put(box, where, tabs, oscalPanel(c));
+    return;
+  }
 
   const statement = el("textarea", { class: "statement", rows: "5", "aria-label": "Control statement" });
   statement.value = c.text;
@@ -772,8 +886,8 @@ function renderControlEditor(box, c) {
       c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
 
   put(box,
-    el("div", { class: "editor__nav" },
-      el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`)),
+    where,
+    tabs,
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field" }, el("span", { text: "Control statement" }), statement),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
@@ -1004,6 +1118,8 @@ function init() {
     b.addEventListener("click", () => {
       state.filter = b.dataset.filter;
       for (const x of $$("[data-filter]")) x.setAttribute("aria-pressed", String(x === b));
+      const more = $("#work-more");
+      if (more) more.open = false;
       render();
     });
   }
@@ -1061,11 +1177,18 @@ function init() {
   for (const b of $$("[data-export]")) b.addEventListener("click", () => exportAs(b.dataset.export, b));
 
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#export-menu").hidden) {
+      $("#export-menu").hidden = true;
+      more.setAttribute("aria-expanded", "false");
+      e.preventDefault();
+      return;
+    }
     if (!state.project || $("#work").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target.closest("dialog, input, textarea, select, [contenteditable]")) return;
     const c = state.selected?.control && controlById(state.selected.control);
     if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
     else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }
+    else if (e.key === "Escape" && state.selected) { e.preventDefault(); state.selected = null; render(); }
     else if (e.key === "r" && c) setStatus([c.id], "reviewed");
     else if (e.key === "a" && c) setStatus([c.id], "accepted");
   });

@@ -45,7 +45,8 @@ makes no requests to any third party unless you turn on AI drafting. The first v
 loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
-To see it work, open the **Acme demo policy**
+To see it work, paste a clause and press **Codify**, or choose **Try an
+example** to open the **Acme demo policy**
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
 a fictional 2016 agency policy written with typical legacy problems.
 [`examples/acme-policy-key.md`](examples/acme-policy-key.md) explains what
@@ -124,8 +125,9 @@ Guide in the app explains each practice with a weak and a strong example.
 
 ## AI drafting (optional)
 
-AI drafting is off unless you turn it on (**AI drafting** at the top of the
-page). Bring your own API key from Anthropic (Claude), OpenAI or Google
+AI drafting is off unless you turn it on (**AI** chip at the top of the
+page). The header also has a **Light / Dark / System** theme toggle;
+System follows your OS and is the default. Bring your own API key from Anthropic (Claude), OpenAI or Google
 (Gemini), and use any model your account has. Or choose **Ollama** to draft
 with a model running on this machine at `http://localhost:11434`: no API key,
 and the clause never leaves this device. Ollama works with `codify-web`;
@@ -169,9 +171,11 @@ guidance and who implements it sit under disclosure in the editor.
   accepted, or draft them again with AI.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.
-- **Saving**: work is kept in your browser as you go. **Save OSCAL catalog**
+- **Saving**: work is kept in your browser as you go. **Save OSCAL (.json)**
   downloads the catalog, which is the file to keep, share or put in git, and
-  opens again later.
+  opens again later. Excel, CSV, and the conversion report sit under the
+  chevron next to that button. The editor's **OSCAL JSON** tab shows this
+  control so you can read or copy it without downloading the file.
 
 ## What comes out
 
