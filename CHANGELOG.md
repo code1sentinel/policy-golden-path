@@ -28,6 +28,9 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 - Start screen: the clause textarea is the hero with one **Codify**
   primary. The Acme demo is a quiet **Try an example** chip. Empty
   editor and filter panes offer **Open first draft** and **Show all**.
+- Editor tabs **Statement | OSCAL JSON** show this control's OSCAL with
+  line numbers and a local **Copy**. **Save OSCAL (.json)** is a split
+  button; Excel, CSV, and the conversion report sit under the chevron.
 
 ### Removed
 

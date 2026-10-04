@@ -22,6 +22,7 @@ const state = {
   checked: new Set(),  // control ids ticked for a bulk action
   guide: null,
   config: null,
+  editorTab: "statement", // statement | oscal
 };
 
 // ---------------------------------------------------------------- helpers
@@ -489,6 +490,7 @@ function openProject(data) {
   state.filter = "all";
   const first = state.project.controls.find((c) => c.status === "draft") || state.project.controls[0];
   state.selected = first ? { control: first.id } : null;
+  state.editorTab = "statement";
   for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
   saveLocal();
   showView("work");
@@ -698,6 +700,9 @@ function renderBulk() {
 // ---------------------------------------------------------------- the editor
 
 function select(target) {
+  const same = state.selected && target
+    && state.selected.control === target.control && state.selected.clause === target.clause;
+  if (!same) state.editorTab = "statement";
   state.selected = target;
   render();
   const id = target.control ? `ctl-${target.control}` : `clause-${target.clause}`;
@@ -741,10 +746,80 @@ function improvementsList(items) {
   return el("ul", { class: "improvements" }, items.map((i) => el("li", { text: i })));
 }
 
+function editorTabs() {
+  const make = (id, label) => {
+    const b = el("button", {
+      type: "button", class: "editor-tab", role: "tab",
+      "aria-selected": String(state.editorTab === id), text: label,
+    });
+    b.addEventListener("click", () => {
+      state.editorTab = id;
+      renderEditor();
+    });
+    return b;
+  };
+  return el("div", { class: "editor-tabs", role: "tablist", "aria-label": "Control view" },
+    make("statement", "Statement"), make("oscal", "OSCAL JSON"));
+}
+
+function numberedJson(text) {
+  return text.split("\n").map((line, i) => el("div", { class: "oscal-line" },
+    el("span", { class: "oscal-ln", text: String(i + 1) }),
+    el("span", { class: "oscal-code", text: line || " " })));
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch { /* fall through to execCommand */ }
+  }
+  const ta = el("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.append(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  ta.remove();
+  return ok;
+}
+
+function oscalPanel(c) {
+  const pre = el("pre", { class: "oscal-pre", id: "oscal-json", tabindex: "0", "aria-label": "OSCAL JSON for this control" });
+  const status = el("span", { class: "oscal-copy-status", "aria-live": "polite", id: "oscal-copy-status" });
+  const copy = el("button", { type: "button", class: "btn btn--small", id: "oscal-copy", text: "Copy" });
+  copy.addEventListener("click", async () => {
+    const raw = pre.dataset.raw || "";
+    status.textContent = (await copyText(raw)) ? "Copied" : "Copy failed";
+  });
+  pre.textContent = "Loading…";
+  call({ action: "control_oscal", project: state.project, control_id: c.id }).then((data) => {
+    const raw = JSON.stringify(data.control, null, 2);
+    pre.dataset.raw = raw;
+    pre.replaceChildren(...numberedJson(raw));
+  }).catch((err) => { pre.textContent = err.message; });
+  return el("div", { class: "oscal-view", role: "tabpanel", "aria-label": "OSCAL JSON" },
+    el("div", { class: "oscal-view__bar" },
+      el("span", { class: "oscal-view__label", text: "This control" }),
+      copy, status),
+    pre);
+}
+
 function renderControlEditor(box, c) {
   const clause = clauseById(c.clause) || { id: c.clause, text: "" };
   const visible = visibleControls();
   const index = visible.findIndex((x) => x.id === c.id);
+  const tabs = editorTabs();
+  const where = el("div", { class: "editor__nav" },
+    el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`));
+  if (state.editorTab === "oscal") {
+    put(box, where, tabs, oscalPanel(c));
+    return;
+  }
 
   const statement = el("textarea", { class: "statement", rows: "5", "aria-label": "Control statement" });
   statement.value = c.text;
@@ -810,8 +885,8 @@ function renderControlEditor(box, c) {
       c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
 
   put(box,
-    el("div", { class: "editor__nav" },
-      el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`)),
+    where,
+    tabs,
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field" }, el("span", { text: "Control statement" }), statement),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
@@ -1101,6 +1176,12 @@ function init() {
   for (const b of $$("[data-export]")) b.addEventListener("click", () => exportAs(b.dataset.export, b));
 
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#export-menu").hidden) {
+      $("#export-menu").hidden = true;
+      more.setAttribute("aria-expanded", "false");
+      e.preventDefault();
+      return;
+    }
     if (!state.project || $("#work").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target.closest("dialog, input, textarea, select, [contenteditable]")) return;
     const c = state.selected?.control && controlById(state.selected.control);

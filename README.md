@@ -170,9 +170,11 @@ guidance and who implements it sit under disclosure in the editor.
   accepted, or draft them again with AI.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.
-- **Saving**: work is kept in your browser as you go. **Save OSCAL catalog**
+- **Saving**: work is kept in your browser as you go. **Save OSCAL (.json)**
   downloads the catalog, which is the file to keep, share or put in git, and
-  opens again later.
+  opens again later. Excel, CSV, and the conversion report sit under the
+  chevron next to that button. The editor's **OSCAL JSON** tab shows this
+  control so you can read or copy it without downloading the file.
 
 ## What comes out
 

@@ -76,14 +76,15 @@
           <div id="work-progress" class="progress" aria-label="Review progress"></div>
         </div>
         <div class="actions work__actions">
-          <button type="button" class="btn" data-export="oscal">Save OSCAL catalog</button>
-          <div class="menu">
-            <button type="button" class="btn btn--quiet" id="export-more" aria-haspopup="true" aria-expanded="false">Export</button>
+          <div class="menu split">
+            <button type="button" class="btn" data-export="oscal">Save OSCAL (.json)</button>
+            <button type="button" class="btn split__chevron" id="export-more" aria-haspopup="true" aria-expanded="false" aria-label="More export formats">
+              <span aria-hidden="true">▾</span>
+            </button>
             <div class="menu__list" id="export-menu" role="menu" hidden>
               <button type="button" role="menuitem" data-export="xlsx">Excel (.xlsx)</button>
               <button type="button" role="menuitem" data-export="csv">CSV</button>
               <button type="button" role="menuitem" data-export="report">Conversion report (.md)</button>
-              <button type="button" role="menuitem" data-export="oscal">OSCAL catalog (.json)</button>
             </div>
           </div>
           <button type="button" class="btn btn--quiet" id="close-project">Close</button>

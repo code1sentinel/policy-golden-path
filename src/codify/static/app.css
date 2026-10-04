@@ -173,6 +173,11 @@ body:has(#work:not([hidden])) #work { flex: 1; min-height: 0; display: flex; fle
 .progress .p-accepted { background: var(--orange); }
 .progress .p-reviewed { background: var(--orange-line); }
 .menu { position: relative; }
+.split { display: inline-flex; align-items: stretch; }
+.split > [data-export="oscal"] { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split__chevron {
+  border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; padding-left: 8px; padding-right: 10px;
+}
 .menu__list { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 8px; padding: 4px; min-width: 220px; display: grid; }
 .menu__list button { appearance: none; background: none; border: 0; color: var(--text); font: 14px var(--font); text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
 .menu__list button:hover, .menu__list button:focus-visible { background: var(--orange-dim); }
@@ -253,6 +258,27 @@ body:has(#work:not([hidden])) #work { flex: 1; min-height: 0; display: flex; fle
 
 /* Editor ------------------------------------------------------------------ */
 
+.editor-tabs {
+  display: flex; gap: 4px; margin: 0 0 16px; padding: 3px; width: fit-content;
+  background: var(--bg); border: 1px solid var(--border-soft); border-radius: 999px;
+}
+.editor-tab {
+  appearance: none; background: transparent; border: 1px solid transparent; cursor: pointer;
+  color: var(--muted); font: 600 12px var(--font); padding: 5px 12px; border-radius: 999px;
+}
+.editor-tab:hover { color: var(--text); }
+.editor-tab[aria-selected="true"] { background: var(--surface-raised); color: var(--text); border-color: var(--border); }
+.oscal-view { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.oscal-view__bar { display: flex; align-items: center; gap: 8px; }
+.oscal-view__label { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: auto; }
+.oscal-copy-status { font-size: 12px; font-weight: 600; color: var(--ready); min-height: 1em; }
+.oscal-pre {
+  margin: 0; padding: 12px 0; border: 1px solid var(--border-soft); border-radius: 10px;
+  background: var(--bg); overflow: auto; max-height: min(60vh, 640px); font: 13px/1.45 var(--mono);
+}
+.oscal-line { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); }
+.oscal-ln { color: var(--muted); text-align: right; padding: 0 12px 0 8px; user-select: none; }
+.oscal-code { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 12px; color: var(--text); }
 .editor__nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
 .editor__where { font-size: 13px; color: var(--muted); margin: 0; }
 .editor__where strong { color: var(--text); font-family: var(--mono); }

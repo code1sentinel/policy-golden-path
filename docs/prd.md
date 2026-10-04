@@ -51,10 +51,11 @@ They are a starting point to edit, not finished controls.
 - **Check:** weighted score (testable, scope, action-first, tool-neutral,
   purpose, single, labeled parts, determinable) with in-app Guide examples.
 - **Review:** workspace lists requirement clauses; edit the statement next to
-  the legacy clause; mark reviewed or accepted; filters and bulk actions
-  under More; keyboard `j` / `k` / `r` / `a`.
-- **Export:** OSCAL catalog 1.1.2, Excel, CSV (formula-escaped), Markdown
-  report. Catalog is the save file.
+  the legacy clause; **Statement | OSCAL JSON** tabs on the current control;
+  mark reviewed or accepted; filters and bulk actions under More; keyboard
+  `j` / `k` / `r` / `a`.
+- **Export:** **Save OSCAL (.json)** (catalog 1.1.2, also the save file);
+  Excel, CSV (formula-escaped), and the Markdown report under a chevron.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -100,6 +101,10 @@ Start is one clause box and one **Codify** button; the demo is a quiet
 example chip. Empty editor and filter panes include a next-step action.
 See [docs/prds/start-hero-empty-states.md](prds/start-hero-empty-states.md).
 
+The editor can show this control as OSCAL JSON (copy locally). Export is
+a split **Save OSCAL (.json)** button. See
+[docs/prds/oscal-panel-export.md](prds/oscal-panel-export.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
@@ -109,6 +114,9 @@ links, ask for them; do not invent a design.
 | Krea AI — single prompt + Generate | https://mobbin.com/screens/323e22c9-d758-4bf1-aee3-dcc9e284a2ef | Start: one hero input, one primary |
 | Gamma — example prompts | https://mobbin.com/screens/23a25ddc-5d71-44d3-af2b-ff2ea0ec1767 | Start: quiet example under the input |
 | Arcade — empty output | https://mobbin.com/screens/7b9d6805-0331-41c2-b7aa-165ea081bb09 | Empty pane: icon + line + next step |
+| Browserbase — JSON + copy | https://mobbin.com/screens/ae95ee59-43fe-4173-887a-c3542d08c9c8 | Control OSCAL panel + copy |
+| Mistral AI — code tabs | https://mobbin.com/screens/911ba1b2-a744-4359-832b-451758afbd09 | Statement / JSON tabs, copied status |
+| Claude — copy + publish | https://mobbin.com/screens/587db0a6-6f7d-4a6a-b1ac-80ea594f7c7a | One copy + one primary save |
 
 ## Constraints that new work must keep
 
