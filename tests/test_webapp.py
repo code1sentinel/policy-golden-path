@@ -40,7 +40,7 @@ def test_serves_the_page_assets_and_demo(server):
     assert "default-src 'self'" in csp and headers["X-Content-Type-Options"] == "nosniff"
     assert "style-src 'self'" in csp and "fonts.googleapis.com" not in csp
     assert "http://localhost:11434" in csp and "http://127.0.0.1:11434" in csp
-    for name in ("app.js", "app.css", "acme-policy.md", "acme-policy.docx"):
+    for name in ("app.js", "app.css", "theme.js", "acme-policy.md", "acme-policy.docx"):
         assert get(f"{server}/{name}")[0] == 200
     assert json.loads(get(server + "/api/config")[2])["version"]
     assert "action_first" in json.loads(get(server + "/api/guide")[2])["guide"]["practices"]

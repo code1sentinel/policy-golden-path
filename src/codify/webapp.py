@@ -21,7 +21,7 @@ from .api import BadRequest
 
 MAX_BODY = 30 * 1024 * 1024  # bytes per request
 STATIC = {"index.html": "text/html", "app.css": "text/css", "app.js": "text/javascript",
-          "acme-policy.md": "text/markdown", "acme-policy.docx":
+          "theme.js": "text/javascript", "acme-policy.md": "text/markdown", "acme-policy.docx":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
 # AI drafting (off unless the person turns it on) calls these providers from the page with the person's own key.
 AI_ORIGINS = "https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com http://localhost:11434 http://127.0.0.1:11434"

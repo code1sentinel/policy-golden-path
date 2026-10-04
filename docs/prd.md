@@ -105,6 +105,10 @@ The editor can show this control as OSCAL JSON (copy locally). Export is
 a split **Save OSCAL (.json)** button. See
 [docs/prds/oscal-panel-export.md](prds/oscal-panel-export.md).
 
+Workspace and Guide are the view tabs; AI drafting is a status chip.
+Light / Dark / System theming defaults to the OS. See
+[docs/prds/theme-ai-chip.md](prds/theme-ai-chip.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
@@ -117,6 +121,10 @@ links, ask for them; do not invent a design.
 | Browserbase — JSON + copy | https://mobbin.com/screens/ae95ee59-43fe-4173-887a-c3542d08c9c8 | Control OSCAL panel + copy |
 | Mistral AI — code tabs | https://mobbin.com/screens/911ba1b2-a744-4359-832b-451758afbd09 | Statement / JSON tabs, copied status |
 | Claude — copy + publish | https://mobbin.com/screens/587db0a6-6f7d-4a6a-b1ac-80ea594f7c7a | One copy + one primary save |
+| Adaline — settings chips | https://mobbin.com/screens/80e3ebce-e59f-45a5-a6c5-7d9755ec4ef5 | AI as a status chip, not a tab |
+| Twenty — Light / Dark / System | https://mobbin.com/screens/bee89cac-9a8a-4f5c-a0ef-90a26ec69658 | Three-way theme choice |
+| Better Stack — Look & Feel | https://mobbin.com/screens/47f13a6b-5547-4aa6-bb4d-b8aa640e35d8 | Compact theme picker |
+| Adaline — pass/fail on dark | https://mobbin.com/screens/081e7212-d5b4-4ca3-928c-d8a62f637b64 | Status colour with a text label |
 
 ## Constraints that new work must keep
 

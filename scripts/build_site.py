@@ -42,7 +42,7 @@ CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'sel
 
 def build_index() -> str:
     html = (STATIC / "index.html").read_text(encoding="utf-8")
-    html = html.replace('<html lang="en">', '<html lang="en" data-mode="browser">', 1)
+    html = html.replace('<html lang="en" data-theme="dark">', '<html lang="en" data-theme="dark" data-mode="browser">', 1)
     meta = f'  <meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
     return html.replace('  <meta name="viewport"', meta + '  <meta name="viewport"', 1)
 
@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
     (out / "pyodide").mkdir(parents=True)
 
     (out / "index.html").write_text(build_index(), encoding="utf-8")
-    for name in ("app.css", "app.js", "acme-policy.md", "acme-policy.docx"):
+    for name in ("app.css", "app.js", "theme.js", "acme-policy.md", "acme-policy.docx"):
         shutil.copy2(STATIC / name, out / name)
     build_package_zip(out / "codify.zip")
     (out / "config.json").write_text(json.dumps(api.config()), encoding="utf-8")

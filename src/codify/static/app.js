@@ -322,7 +322,8 @@ const aiName = () => `${PROVIDERS[ai.provider].label}, ${ai.model}`;
 function renderAiButton() {
   const b = $("#ai-open");
   const ready = aiReady();
-  b.textContent = ready ? "AI drafting: on" : ai.on ? "AI drafting: needs a key" : "AI drafting: off";
+  const shortName = (PROVIDERS[ai.provider].label.split(" (")[0] || ai.provider);
+  b.textContent = ready ? `AI: On · ${shortName}` : ai.on ? "AI: Needs a key" : "AI: Off";
   b.setAttribute("aria-pressed", String(ready));
   b.classList.toggle("is-on", ready);
   b.classList.toggle("is-needs", ai.on && !ready);
