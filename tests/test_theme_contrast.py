@@ -29,6 +29,7 @@ TEXT_PAIRS = (
     ("--accent-text", "--bg"),
     ("--accent-text", "--surface"),
     ("--on-accent", "--orange"),
+    ("--on-accent", "--orange-bright"),
 )
 
 UI_PAIRS = (
@@ -37,6 +38,8 @@ UI_PAIRS = (
     ("--orange", "--bg"),
     ("--accent-text", "--surface-raised"),
 )
+
+LEGACY_ORANGE = ("#e8650a", "#ff7a22", "#ff9a52", "#b54c00")
 
 
 def _hex_to_rgb(value: str) -> tuple[float, float, float] | None:
@@ -56,6 +59,23 @@ def _channel(c: float) -> float:
 def relative_luminance(rgb: tuple[float, float, float]) -> float:
     r, g, b = (_channel(c) for c in rgb)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def hue_degrees(value: str) -> float:
+    rgb = _hex_to_rgb(value)
+    assert rgb, value
+    r, g, b = rgb
+    mx, mn = max(r, g, b), min(r, g, b)
+    delta = mx - mn
+    if delta == 0:
+        return 0.0
+    if mx == r:
+        h = ((g - b) / delta) % 6
+    elif mx == g:
+        h = (b - r) / delta + 2
+    else:
+        h = (r - g) / delta + 4
+    return (h * 60) % 360
 
 
 def contrast_ratio(a: str, b: str) -> float:
@@ -121,3 +141,29 @@ def test_token_pairs_meet_wcag_aa():
         if theme == "light":
             assert tokens["--accent-text"].lower() != "#e8650a"
     assert not failures, "\n".join(failures)
+
+
+def test_accent_is_indigo_on_cool_gray():
+    for theme in ("dark", "light"):
+        tokens = theme_tokens(theme)
+        accent = tokens["--orange"]
+        assert accent.lower() not in LEGACY_ORANGE, theme
+        hue = hue_degrees(accent)
+        assert 220 <= hue <= 250, f"{theme} accent hue {hue:.1f} is not indigo ({accent})"
+        on_accent = _hex_to_rgb(tokens["--on-accent"])
+        assert on_accent and relative_luminance(on_accent) > 0.7, theme
+        bg = _hex_to_rgb(tokens["--bg"])
+        assert bg, theme
+        r, _g, b = bg
+        assert b >= r - 1e-9, f"{theme} --bg {tokens['--bg']} is not cool gray"
+        if theme == "dark":
+            assert tokens["--bg"].lower() != "#0c0c0c"
+        action = hue_degrees(tokens["--part-action"])
+        assert 220 <= action <= 260, f"{theme} --part-action hue {action:.1f}"
+
+
+def test_web_assets_drop_legacy_orange():
+    haystacks = (CSS.lower(), INDEX.lower())
+    for hex_value in LEGACY_ORANGE:
+        for hay in haystacks:
+            assert hex_value not in hay, hex_value

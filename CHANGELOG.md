@@ -36,7 +36,8 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   button; Excel, CSV, and the conversion report sit under the chevron.
 - Light / Dark / System theme (defaults to the OS, stored as
   `codify:theme`). AI drafting is a status chip, not a view tab.
-  Contrast tokens meet WCAG 2.2 AA in both themes.
+  Accent and canvas tokens are indigo on cool gray in both themes.
+  Contrast tokens meet WCAG 2.2 AA.
 
 ### Removed
 

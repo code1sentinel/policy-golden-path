@@ -108,8 +108,10 @@ a split **Save OSCAL (.json)** button. See
 [docs/prds/oscal-panel-export.md](prds/oscal-panel-export.md).
 
 Workspace and Guide are the view tabs; AI drafting is a status chip.
-Light / Dark / System theming defaults to the OS. See
-[docs/prds/theme-ai-chip.md](prds/theme-ai-chip.md).
+Light / Dark / System theming defaults to the OS. Accent fills are indigo
+on cool-gray canvases. See
+[docs/prds/theme-ai-chip.md](prds/theme-ai-chip.md) and
+[docs/prds/indigo-theme.md](prds/indigo-theme.md).
 
 The open workspace hides Start-only chrome. The editor leads with the
 control statement; Risk sits under extras. Guide is a single column.
@@ -130,6 +132,13 @@ links, ask for them; do not invent a design.
 | Adaline — settings chips | https://mobbin.com/screens/80e3ebce-e59f-45a5-a6c5-7d9755ec4ef5 | AI as a status chip, not a tab |
 | Twenty — Light / Dark / System | https://mobbin.com/screens/bee89cac-9a8a-4f5c-a0ef-90a26ec69658 | Three-way theme choice |
 | Better Stack — Look & Feel | https://mobbin.com/screens/47f13a6b-5547-4aa6-bb4d-b8aa640e35d8 | Compact theme picker |
+| Adaline — pass/fail on dark | https://mobbin.com/screens/081e7212-d5b4-4ca3-928c-d8a62f637b64 | Status colour with a text label |
+| Linear — dark issue list | https://mobbin.com/screens/e142df2a-3527-499c-8f81-1b715947ac0c | Cool near-black canvas, indigo accent |
+| Linear — dark product + app | https://mobbin.com/screens/18191caa-a25c-4c43-a7d2-0f6e52b444b1 | Dark raised surfaces |
+| Linear — light settings | https://mobbin.com/screens/4c62cf9f-feb8-4928-b62d-84585be57b07 | Cool gray + white, indigo control |
+| Linear — indigo toggle on light | https://mobbin.com/screens/c7223b87-8318-4848-8453-2ac4b1e1a0a9 | Indigo fill for the on state |
+| Linear — Light / Dark / System | https://mobbin.com/screens/abf277ec-d00a-4504-8cfa-54930315f0ab | Same accent in both appearances |
+| Twenty — light canvas | https://mobbin.com/screens/11590444-bb89-4836-88d5-1c8a83df041c | Cool gray page, white writing surface |
 | Uxcel — one theory block | https://mobbin.com/screens/3c72f6e0-becb-4ad2-840c-09479eb71585 | Guide: one column, whitespace |
 | Linear — inbox + issue | https://mobbin.com/screens/beb9d6b3-ec34-46d7-9332-320fcb32a338 | Workspace: quiet list, title as hero |
 | Grok — files + document | https://mobbin.com/screens/b9b4d3ed-593b-46f1-8f25-326edc5eae68 | Workspace: compact list, large editor |
