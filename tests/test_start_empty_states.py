@@ -24,6 +24,17 @@ def test_start_hero_is_the_clause_textarea_with_one_primary():
     assert 'name="title"' not in INDEX
 
 
+def test_start_chrome_has_no_club_or_version_line():
+    """The start page is personal: no club attribution, MIT line, or version footer."""
+    assert "GRC Engineering Club Singapore" not in INDEX
+    assert "open source (MIT)" not in INDEX
+    assert 'id="version"' not in INDEX
+    assert "<footer" not in INDEX
+    assert "$(\"#version\")" not in JS
+    assert "Version ${c.version}" not in JS
+    assert ".foot {" not in CSS
+
+
 def test_empty_states_have_icon_line_and_action():
     assert "Open first draft" in JS
     assert "Show all" in JS

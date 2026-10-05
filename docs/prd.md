@@ -99,7 +99,9 @@ Google Fonts. See
 
 Start is one clause box and one **Codify** button; the demo is a quiet
 example chip. Empty editor and filter panes include a next-step action.
-See [docs/prds/start-hero-empty-states.md](prds/start-hero-empty-states.md).
+The start page has no club or version footer. See
+[docs/prds/start-hero-empty-states.md](prds/start-hero-empty-states.md)
+and [docs/prds/personal-start-chrome.md](prds/personal-start-chrome.md).
 
 The editor can show this control as OSCAL JSON (copy locally). Export is
 a split **Save OSCAL (.json)** button. See

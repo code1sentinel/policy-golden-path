@@ -1193,7 +1193,7 @@ function init() {
     else if (e.key === "a" && c) setStatus([c.id], "accepted");
   });
 
-  backend.config().then((c) => { state.config = c; $("#version").textContent = `Version ${c.version}.`; }).catch(() => {});
+  backend.config().then((c) => { state.config = c; }).catch(() => {});
   backend.guide().then((g) => { state.guide = g; renderGuide(); }).catch(() => {});
   showView("work");
   if (BROWSER) startPython().catch(() => {});  // warm up while the person reads the page

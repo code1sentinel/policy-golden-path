@@ -37,6 +37,8 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Removed
 
+- Start-page footer that named the GRC Engineering Club Singapore and
+  the app version. MIT remains in LICENSE and README.
 - Optional Title field on the start form and the `title` argument on
   `open`. Clause numbers are no longer required or shown in the workspace.
 
