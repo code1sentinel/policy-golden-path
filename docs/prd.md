@@ -111,6 +111,10 @@ Workspace and Guide are the view tabs; AI drafting is a status chip.
 Light / Dark / System theming defaults to the OS. See
 [docs/prds/theme-ai-chip.md](prds/theme-ai-chip.md).
 
+The open workspace hides Start-only chrome. The editor leads with the
+control statement; Risk sits under extras. Guide is a single column.
+See [docs/prds/workspace-guide-declutter.md](prds/workspace-guide-declutter.md).
+
 **Future UI work must list Mobbin (`https://mobbin.com`) screen links here
 or in `docs/prds/<feature>.md` before implementation.** If a request has no
 links, ask for them; do not invent a design.
@@ -126,7 +130,11 @@ links, ask for them; do not invent a design.
 | Adaline — settings chips | https://mobbin.com/screens/80e3ebce-e59f-45a5-a6c5-7d9755ec4ef5 | AI as a status chip, not a tab |
 | Twenty — Light / Dark / System | https://mobbin.com/screens/bee89cac-9a8a-4f5c-a0ef-90a26ec69658 | Three-way theme choice |
 | Better Stack — Look & Feel | https://mobbin.com/screens/47f13a6b-5547-4aa6-bb4d-b8aa640e35d8 | Compact theme picker |
-| Adaline — pass/fail on dark | https://mobbin.com/screens/081e7212-d5b4-4ca3-928c-d8a62f637b64 | Status colour with a text label |
+| Uxcel — one theory block | https://mobbin.com/screens/3c72f6e0-becb-4ad2-840c-09479eb71585 | Guide: one column, whitespace |
+| Linear — inbox + issue | https://mobbin.com/screens/beb9d6b3-ec34-46d7-9332-320fcb32a338 | Workspace: quiet list, title as hero |
+| Grok — files + document | https://mobbin.com/screens/b9b4d3ed-593b-46f1-8f25-326edc5eae68 | Workspace: compact list, large editor |
+| Mintlify — intro + stacked cards | https://mobbin.com/screens/d4ce0aef-c205-432b-8f31-b4267315dc35 | Guide: single column, one card per idea |
+| LangChain — numbered quickstart | https://mobbin.com/screens/568fff70-41fd-4660-a3b6-eb843e6e14d9 | Guide: stacked sections, short labels |
 
 ## Constraints that new work must keep
 
