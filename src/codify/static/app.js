@@ -619,11 +619,14 @@ function clauseCard(clause, controls) {
   });
   const current = state.selected?.clause === clause.id ||
     (state.selected?.control && controlById(state.selected.control)?.clause === clause.id);
+  const head = other
+    ? el("div", { class: "clause__head" },
+      el("span", { class: "clause__type", text: label }),
+      !clause.duplicate_of ? el("span", { class: "clause__reason", text: clause.reason }) : null)
+    : null;
   return el("div", { class: `clause${other ? " is-other" : ""}`, id: `clause-${clause.id}`,
     "aria-current": String(!!current) },
-  el("div", { class: "clause__head" },
-    el("span", { class: "clause__type", text: label }),
-    other && !clause.duplicate_of ? el("span", { class: "clause__reason", text: clause.reason }) : null),
+  head,
   open,
   controls.map((c) => controlRow(c)));
 }
@@ -735,11 +738,9 @@ function partsList(parts) {
 function scoreLine(assessment) {
   const fill = el("span", { class: "bar__fill" });
   fill.style.width = pct(assessment.confidence);
-  const p = assessment.practices;
   return el("div", { class: "scoreline" },
     el("span", { class: "scoreline__pct", text: pct(assessment.confidence) }),
-    el("span", { class: "bar", role: "img", "aria-label": `${pct(assessment.confidence)} score` }, fill),
-    el("span", { class: "scoreline__meta", text: `${p.adopted} of ${p.total} practices adopted` }));
+    el("span", { class: "bar", role: "img", "aria-label": `${pct(assessment.confidence)} score` }, fill));
 }
 
 function improvementsList(items) {
@@ -816,9 +817,10 @@ function renderControlEditor(box, c) {
   const index = visible.findIndex((x) => x.id === c.id);
   const tabs = editorTabs();
   const where = el("div", { class: "editor__nav" },
-    el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`));
+    el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`),
+    tabs);
   if (state.editorTab === "oscal") {
-    put(box, where, tabs, oscalPanel(c));
+    put(box, where, oscalPanel(c));
     return;
   }
 
@@ -878,21 +880,20 @@ function renderControlEditor(box, c) {
   openClause.addEventListener("click", () => select({ clause: clause.id }));
 
   const extras = el("details", { class: "fold fold--block" },
-    el("summary", { text: "Guidance, who, notes" }),
+    el("summary", { text: "Guidance, risk, who" }),
     el("div", { class: "fold__body" },
       el("div", { class: "grid2" },
         el("label", { class: "field" }, el("span", {}, "Guidance ", el("em", { text: "tools, how-to" })), guidance),
         el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
+      el("label", { class: "field" }, el("span", { text: "Risk it treats" }), risk),
       c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
 
   put(box,
     where,
-    tabs,
     clause.text ? legacyBox(clause) : null,
-    el("label", { class: "field" }, el("span", { text: "Control statement" }), statement),
+    el("label", { class: "field field--hero" }, statement),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
     result,
-    el("label", { class: "field" }, el("span", {}, "Risk it treats ", el("em", { text: "gives the control its purpose" })), risk),
     extras,
     el("div", { class: "editor__foot" }, openClause, redraft, add, remove),
   );
@@ -1050,13 +1051,11 @@ function renderGuide() {
   const g = state.guide;
   if (!g) return;
   $("#guide-summary").textContent = g.guide.summary;
-  $("#adopted-at").textContent = pct(g.adopted);
-  $("#partly-at").textContent = pct(g.partly);
   $("#guide-list").replaceChildren(...Object.values(g.guide.practices).map((p) =>
     el("article", { class: "guide" },
       el("h3", { text: p.title }),
       el("p", { class: "guide__why", text: p.why }),
-      el("p", { class: "guide__how" }, el("strong", { text: "How: " }), p.how),
+      el("p", { class: "guide__how", text: p.how }),
       el("div", { class: "guide__examples" },
         el("figure", { class: "example example--weak" }, el("figcaption", { text: "Weak" }), el("blockquote", { text: p.weak })),
         el("figure", { class: "example example--strong" }, el("figcaption", { text: "Strong" }), el("blockquote", { text: p.strong }))))));
