@@ -127,7 +127,8 @@ Guide in the app explains each practice with a weak and a strong example.
 
 AI drafting is off unless you turn it on (**AI** chip at the top of the
 page). The header also has a **Light / Dark / System** theme toggle;
-System follows your OS and is the default. Bring your own API key from Anthropic (Claude), OpenAI or Google
+System follows your OS and is the default. Both themes use indigo on cool
+gray (Linear / Twenty-inspired; not a copy of their branding). Bring your own API key from Anthropic (Claude), OpenAI or Google
 (Gemini), and use any model your account has. Or choose **Ollama** to draft
 with a model running on this machine at `http://localhost:11434`: no API key,
 and the clause never leaves this device. Ollama works with `codify-web`;

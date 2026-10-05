@@ -41,6 +41,7 @@ Choose Light, Dark, or System. Text and chrome stay at AA in both themes.
     script; CSP `script-src 'self'`).
   - Contrast: dark placeholder `#8A8A8A`; light accent text `#B54C00`;
     orange `#E8650A` as a fill only. Automated pair test.
+    Accent hue later became indigo; see [indigo-theme.md](indigo-theme.md).
 - Out:
   - New fonts, icon libraries, or CDNs.
   - Changing Start, OSCAL tabs, or export behaviour.
