@@ -1152,7 +1152,7 @@ function renderProps(control, data) {
   if (!saved.length) {
     libraryCard.replaceChildren(
       el("h3", { class: "props-card__title", text: "From library" }),
-      el("p", { class: "placeholder", text: "Accept a control to save it here." }),
+      el("p", { class: "placeholder", text: "No saved statements yet." }),
     );
   } else {
     const browse = el("button", { type: "button", class: "btn btn--small", text: "Browse library" });
