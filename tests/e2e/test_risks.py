@@ -35,7 +35,7 @@ def test_risk_import_template_accept_export(page, tmp_path):
     expect(page.locator("#props")).to_contain_text("R-001")
     page.locator(".editor__primary >> text=Accept").click()
     page.click("[data-nav='catalog']")
-    expect(page.locator(".data-table")).to_contain_text("R-001")
+    expect(page.locator("#catalog .data-table")).to_contain_text("R-001")
     with export_oscal(page) as dl:
         page.click("#export-dialog [data-export='oscal']")
     path = tmp_path / "catalog.json"
@@ -46,7 +46,7 @@ def test_risk_import_template_accept_export(page, tmp_path):
                for c in controls)
     assert any(any(p.get("name") == "risk-id" for p in r.get("props", []))
                for r in catalog["back-matter"]["resources"])
-    assert "sk-" not in path.read_text()
+    assert "sk-test" not in path.read_text()
 
 
 def test_risk_ai_draft_is_faked_and_keeps_keys_out(page, provider, tmp_path):

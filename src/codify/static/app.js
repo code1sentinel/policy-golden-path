@@ -1373,7 +1373,7 @@ function renderRiskDrawer(risk) {
     });
     const aiBtn = aiReady() ? el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" }) : null;
     if (aiBtn) aiBtn.addEventListener("click", () => aiRedraftRisk(risk, aiBtn));
-    suggestionsBox.replaceChildren(
+    put(suggestionsBox,
       el("h3", { class: "props-card__title", text: "Draft controls" }),
       rows.length ? rows : el("p", { class: "placeholder", text: "No matching templates. Add a control from the editor." }),
       aiBtn,
