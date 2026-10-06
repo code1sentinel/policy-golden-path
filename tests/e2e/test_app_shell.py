@@ -24,6 +24,7 @@ def test_clauses_catalog_and_risks_views(demo):
     expect(demo.locator("#props")).to_contain_text("Properties")
     expect(demo.locator("#props")).to_contain_text("Review suggestions")
     expect(demo.locator("#props")).to_contain_text("Source")
+    expect(demo.locator("#props")).not_to_contain_text("null")
     expect(demo.locator(".subitems")).to_be_visible()
 
     demo.click("[data-nav='catalog']")

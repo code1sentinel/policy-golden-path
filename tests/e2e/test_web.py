@@ -111,6 +111,7 @@ def test_oscal_export_opens_again(demo, tmp_path):
     dl.value.save_as(path)
     catalog = json.loads(path.read_text())["catalog"]
     assert sum(len(g["controls"]) for g in catalog["groups"]) == 38
+    expect(demo.locator("#export-dialog")).to_be_hidden()
     demo.click("#close-project")
     demo.set_input_files("#file", str(path))
     expect(demo.locator("#work-summary")).to_contain_text("43 clauses → 38 controls")

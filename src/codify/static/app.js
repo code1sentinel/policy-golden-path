@@ -1064,13 +1064,11 @@ function renderProps(control, data) {
       el("p", { class: "disclaimer", text: "Optional AI may produce inaccurate wording. The rule draft needs no AI." }));
   }
 
-  box.replaceChildren(
-    propsCard,
+  box.replaceChildren(...[propsCard,
     el("div", { class: "props-card" },
       el("h3", { class: "props-card__title", text: "Review suggestions" }),
       suggestions.length ? suggestions : el("p", { class: "placeholder", text: "No suggestions." })),
-    aiCard,
-  );
+    aiCard].filter(Boolean));
 }
 
 function controlSourceLabel(control) {
@@ -1246,8 +1244,6 @@ function download(name, mime, data) {
 }
 
 async function exportAs(format, button) {
-  const dialog = $("#export-dialog");
-  if (dialog && dialog.open && format) { /* keep open until the file starts */ }
   await busy(button, "Preparing…", async () => {
     const out = await call({ action: "export", format, project: state.project });
     if (out.content_base64) {
@@ -1257,6 +1253,8 @@ async function exportAs(format, button) {
       download(out.name, out.mime, out.content);
     }
   });
+  const dialog = $("#export-dialog");
+  if (dialog && dialog.open) dialog.close();
 }
 
 function openExportDialog() {
