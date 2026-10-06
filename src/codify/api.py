@@ -12,6 +12,8 @@ the project lives in the page: each call is given what it needs.
     suggest_risk_controls  one risk -> deterministic template suggestions
     draft_risk_controls    one risk -> project controls from selected templates
     export        a project -> OSCAL catalog, Excel, CSV, Markdown report, or risk CSV
+    library_upsert / library_remove / library_search / library_export
+                  a device-wide statement library (entries in, entries out; never stored here)
     control_oscal one control in a project -> that control's OSCAL 1.1.2 object
     ai_prompt     one clause or risk -> the prompt the page sends to the person's AI provider
     ai_reply      the provider's reply -> control drafts marked as drafted by AI, with scores
@@ -29,6 +31,12 @@ from .classify import TYPE_LABELS, TYPES
 from .clauses import read_policy
 from .control import assess_control_statement, parts
 from .guides import ADOPTED, GUIDE, PARTLY, STATUS_LABELS
+from .library import clean_library
+from .library import remove as library_remove_entries
+from .library import search as search_library
+from .library import to_csv as library_to_csv
+from .library import to_json as library_to_json
+from .library import upsert as upsert_library
 from .models import Statement
 from .project import (
     ORIGINS, STATUSES, control_oscal, draft_controls, empty_project, from_oscal, merge_risks,
@@ -267,6 +275,54 @@ def _filename(project: dict, suffix: str) -> str:
     return f"{stem}-{suffix}"
 
 
+def _library(body: dict) -> list:
+    try:
+        return clean_library(body.get("library"))
+    except ValueError as exc:
+        raise BadRequest(str(exc)) from None
+
+
+def library_upsert(body: dict) -> dict:
+    """Insert or update one accepted (or used) statement. The page holds the store."""
+    statement = _text(body.get("statement"), "statement")
+    if not statement:
+        raise BadRequest("enter a control statement to save")
+    source = body.get("source_type") or body.get("source-type")
+    source_type = source if source in ("clause", "risk") else "clause"
+    try:
+        entry, entries = upsert_library(
+            _library(body), statement,
+            parts=body.get("parts") if isinstance(body.get("parts"), dict) else None,
+            source_type=source_type,
+            risk_id=_text(body.get("risk_id") or body.get("risk-id"), "risk_id", 64),
+            used=bool(body.get("used")),
+            now=_text(body.get("now"), "now", 64) or None,
+        )
+    except ValueError as exc:
+        raise BadRequest(str(exc)) from None
+    return {"library": entries, "entry": entry}
+
+
+def library_remove(body: dict) -> dict:
+    return {"library": library_remove_entries(_library(body), _text(body.get("id"), "id", 64))}
+
+
+def library_search(body: dict) -> dict:
+    return {"entries": search_library(_library(body), _text(body.get("query"), "query", 500))}
+
+
+def library_export(body: dict) -> dict:
+    entries = _library(body)
+    fmt = body.get("format")
+    if fmt == "json":
+        return {"name": "statement-library.json", "mime": "application/json",
+                "content": library_to_json(entries)}
+    if fmt == "csv":
+        return {"name": "statement-library.csv", "mime": "text/csv",
+                "content": library_to_csv(entries)}
+    raise BadRequest("'format' must be csv or json")
+
+
 def control_oscal_action(body: dict) -> dict:
     project = _clean_project(body.get("project"))
     control_id = _text(body.get("control_id"), "control_id", 64)
@@ -314,7 +370,9 @@ def guide() -> dict:
 ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export,
            "control_oscal": control_oscal_action, "ai_prompt": ai_prompt, "ai_reply": ai_reply,
            "import_risks": import_risks, "suggest_risk_controls": suggest_risk_controls,
-           "draft_risk_controls": draft_risk_controls}
+           "draft_risk_controls": draft_risk_controls,
+           "library_upsert": library_upsert, "library_remove": library_remove,
+           "library_search": library_search, "library_export": library_export}
 
 
 def call(body: dict) -> dict:

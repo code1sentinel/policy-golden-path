@@ -35,6 +35,9 @@ Relevant decisions already on file:
 - [`0004-ollama-localhost-only.md`](docs/adr/0004-ollama-localhost-only.md)
 - [`0005-remove-im8-mapping.md`](docs/adr/0005-remove-im8-mapping.md)
 - [`0006-clause-only-input.md`](docs/adr/0006-clause-only-input.md)
+- [`0007-authoring-app-shell.md`](docs/adr/0007-authoring-app-shell.md)
+- [`0008-risk-input-and-oscal-tracing.md`](docs/adr/0008-risk-input-and-oscal-tracing.md)
+- [`0009-device-wide-statement-library.md`](docs/adr/0009-device-wide-statement-library.md)
 
 ## 3. Thin vertical slices, one PR each
 
@@ -198,7 +201,7 @@ python -m http.server --directory site
   origins, and `http://localhost:11434` / `http://127.0.0.1:11434`.
 - Ollama is localhost only. Do not point it at a remote host.
 - AI keys stay in the browser (tab, or optional device remember). Never write
-  a key into the project, autosave, catalog, or exports.
+  a key into the project, autosave, catalog, library, or exports.
 - No new outbound network calls without an ADR and a PR privacy check.
 
 ## Layout (where to change things)
@@ -208,6 +211,7 @@ src/codify/clauses.py    read a policy into clauses
 src/codify/classify.py   sort clauses and find duplicates
 src/codify/draft.py      rule-based drafting
 src/codify/control.py    statement check and parts
+src/codify/library.py    device-wide statement library (normalize, upsert, export)
 src/codify/project.py    project + OSCAL catalog
 src/codify/ai.py         AI prompt and reply handling (no provider I/O)
 src/codify/api.py        request API (server and browser)

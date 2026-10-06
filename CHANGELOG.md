@@ -12,13 +12,18 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- Device-wide Statement library ([ADR 0009](docs/adr/0009-device-wide-statement-library.md)):
+  after Accept, the statement is saved on this device (deduped by
+  normalized text), reusable from **Library** or **From library** in the
+  editor. Search, remove, and export CSV/JSON locally. Separate
+  `codify:statements` key; the OSCAL catalog stays the per-project save.
 - Risk → control statements ([ADR 0008](docs/adr/0008-risk-input-and-oscal-tracing.md)):
   local risk register (table, heatmap, detail drawer, CSV/JSON import with
   column mapping, CSV export), deterministic control templates, optional
   existing AI chip, OSCAL tracing (`source-type`, `risk-id`, `rel=reference`),
   and `codify POLICY --risks FILE`.
 - Authoring app shell ([ADR 0007](docs/adr/0007-authoring-app-shell.md)):
-  collapsible sidebar (Workspace, Clauses, Risks, Catalog, Export, Guide),
+  collapsible sidebar (Workspace, Clauses, Risks, Catalog, Library, Export, Guide),
   breadcrumb, centred writing column, properties/review panel, Catalog
   table, export dialog, and `⌘`/`Ctrl`+Enter to accept.
 - Development workflow: `AGENTS.md`, product PRD, ADRs, slice issue template,

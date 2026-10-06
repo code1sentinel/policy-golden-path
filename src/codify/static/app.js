@@ -15,6 +15,7 @@ const RISK_STATUS_LABELS = { identified: "Identified", treating: "Treating", acc
 const RISK_FIELDS = ["id", "title", "description", "asset", "likelihood", "impact", "threat", "vulnerability", "owner", "status"];
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
 const SAVE_KEY = "codify:project";
+const LIBRARY_KEY = "codify:statements";
 
 const state = {
   project: null,       // {uuid, title, source, clauses: [...], controls: [...], risks: [...]}
@@ -179,6 +180,49 @@ function loadLocal() {
 
 function clearLocal() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+}
+
+function loadLibrary() {
+  try {
+    const data = JSON.parse(localStorage.getItem(LIBRARY_KEY) || "null");
+    if (Array.isArray(data)) return data;
+    return data && Array.isArray(data.entries) ? data.entries : [];
+  } catch { return []; }
+}
+
+function saveLibrary(entries) {
+  try {
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify({ entries, saved: new Date().toISOString() }));
+  } catch { /* storage full or unavailable: the catalog remains the project save */ }
+}
+
+function librarySourceLabel(entry) {
+  if ((entry["source-type"] || entry.source_type) === "risk" || entry["risk-id"] || entry.risk_id) {
+    return entry["risk-id"] || entry.risk_id || "Risk";
+  }
+  return "Clause";
+}
+
+function formatWhen(iso) {
+  if (!iso) return "—";
+  const when = new Date(iso);
+  return isNaN(when) ? iso : when.toLocaleDateString();
+}
+
+async function rememberStatement(control, { used = false } = {}) {
+  const text = (control.text || "").trim();
+  if (!text) return;
+  const data = await call({
+    action: "library_upsert",
+    library: loadLibrary(),
+    statement: text,
+    parts: (state.lastCheck[control.id] && state.lastCheck[control.id].parts) || control.parts || null,
+    source_type: control.source_type || (control.risk_id ? "risk" : "clause"),
+    risk_id: control.risk_id || "",
+    used,
+  });
+  saveLibrary(data.library);
+  return data.entry;
 }
 
 // ---------------------------------------------------------------- AI drafting, with the person's own key
@@ -492,6 +536,7 @@ function showView(view) {
   $("#work").hidden = view !== "work";
   $("#catalog").hidden = view !== "catalog";
   $("#risks").hidden = view !== "risks";
+  $("#library").hidden = view !== "library";
   const exportTop = $("#export-open-top");
   const closeBtn = $("#close-project");
   if (exportTop) exportTop.hidden = !state.project;
@@ -500,6 +545,7 @@ function showView(view) {
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
   if (view === "risks") renderRisks();
+  if (view === "library") renderLibrary();
   renderCrumb();
 }
 
@@ -519,6 +565,7 @@ function renderCrumb() {
     const risk = state.selectedRisk && riskById(state.selectedRisk);
     if (risk) parts.push(risk.title);
   }
+  else if (state.view === "library") parts.push("Library");
   else if (state.view === "guide") parts.push("Guide");
   const nodes = [];
   parts.forEach((p, i) => {
@@ -622,6 +669,7 @@ function render() {
   renderCrumb();
   if (state.view === "catalog") renderCatalog();
   if (state.view === "risks") renderRisks();
+  if (state.view === "library") renderLibrary();
 }
 
 function renderMoreLabel() {
@@ -992,6 +1040,8 @@ function renderControlEditor(box, c) {
     aiBtn.addEventListener("click", () => (risk ? aiRedraftRisk(risk, aiBtn) : aiRedraft(clause, aiBtn)));
   }
 
+  const fromLib = el("button", { type: "button", class: "btn", id: "library-from", text: "From library" });
+  fromLib.addEventListener("click", openLibraryPick);
   const add = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Add a control from this clause" });
   add.addEventListener("click", () => addControl(clause));
   const redraft = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Draft again from this clause" });
@@ -1023,7 +1073,7 @@ function renderControlEditor(box, c) {
     isRisk && risk ? el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Risk" }),
       `${risk.id} · ${risk.title}`) : (clause.text ? legacyBox(clause) : null),
     el("label", { class: "field field--hero" }, statement),
-    el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
+    el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, fromLib, aiBtn),
     result,
     sub,
     extras,
@@ -1095,6 +1145,25 @@ function renderProps(control, data) {
     suggestions.push(row);
   }
 
+  const libraryCard = el("div", { class: "props-card", id: "library-picks" },
+    el("h3", { class: "props-card__title", text: "From library" }),
+    el("p", { class: "placeholder", text: "Loading…" }));
+  const saved = loadLibrary();
+  if (!saved.length) {
+    libraryCard.replaceChildren(
+      el("h3", { class: "props-card__title", text: "From library" }),
+      el("p", { class: "placeholder", text: "Accept a control to save it here." }),
+    );
+  } else {
+    const browse = el("button", { type: "button", class: "btn btn--small", text: "Browse library" });
+    browse.addEventListener("click", openLibraryPick);
+    libraryCard.replaceChildren(
+      el("h3", { class: "props-card__title", text: "From library" }),
+      ...libraryPickRows(saved.slice(0, 5), { add: true }),
+      el("div", { class: "actions" }, browse),
+    );
+  }
+
   let aiCard = null;
   if (control.origin === "ai") {
     const tryAgain = el("button", { type: "button", class: "btn btn--small", text: "Try again" });
@@ -1116,6 +1185,7 @@ function renderProps(control, data) {
     el("div", { class: "props-card" },
       el("h3", { class: "props-card__title", text: "Review suggestions" }),
       suggestions.length ? suggestions : el("p", { class: "placeholder", text: "No suggestions." })),
+    libraryCard,
     aiCard].filter(Boolean));
 }
 
@@ -1151,6 +1221,163 @@ function renderCatalog() {
         el("th", { text: "ID" }), el("th", { text: "Control" }),
         el("th", { text: "Source" }), el("th", { text: "Status" }))),
       el("tbody", {}, body))));
+}
+
+function renderLibrary() {
+  const box = $("#library-body");
+  if (!box) return;
+  const query = ($("#library-search") && $("#library-search").value) || state.libraryQuery || "";
+  state.libraryQuery = query;
+  const entries = loadLibrary();
+  const filtered = query
+    ? entries.filter((e) => {
+      const hay = `${e.statement} ${e["source-type"] || ""} ${e["risk-id"] || ""} ${e.id}`.toLowerCase();
+      return hay.includes(query.trim().toLowerCase());
+    })
+    : entries;
+  const search = el("input", {
+    id: "library-search", type: "search", placeholder: "Search statements",
+    "aria-label": "Search the statement library", autocomplete: "off",
+  });
+  search.value = query;
+  search.addEventListener("input", () => {
+    state.libraryQuery = search.value;
+    renderLibrary();
+    const again = $("#library-search");
+    if (again) { again.focus(); again.setSelectionRange(search.value.length, search.value.length); }
+  });
+  const exportJson = el("button", { type: "button", class: "btn", id: "library-export-json", text: "Export JSON" });
+  const exportCsv = el("button", { type: "button", class: "btn", id: "library-export-csv", text: "Export CSV" });
+  exportJson.addEventListener("click", () => exportAs("library-json", exportJson));
+  exportCsv.addEventListener("click", () => exportAs("library-csv", exportCsv));
+  const head = el("div", { class: "library-toolbar" },
+    el("div", { class: "view-head" },
+      el("h2", { id: "library-title", class: "section-title section-title--first", text: "Statement library" }),
+      el("p", { class: "view-head__lede", text: "Accepted control statements on this device. Reuse them in any project. Nothing is uploaded." })),
+    el("div", { class: "library-toolbar__tools" }, search,
+      el("div", { class: "actions" }, exportJson, exportCsv)));
+  if (!filtered.length) {
+    const empty = entries.length
+      ? emptyState("No statements match that search.", "Clear search", () => { state.libraryQuery = ""; renderLibrary(); }, "empty--list")
+      : emptyState("No statements saved yet.", "Open clauses", () => showView(state.project ? "work" : "workspace"), "empty--list");
+    box.replaceChildren(head, empty);
+    return;
+  }
+  const rows = filtered.map((entry) => {
+    const use = el("button", { type: "button", class: "btn btn--small btn--primary library-use", text: "Use" });
+    const removeBtn = el("button", { type: "button", class: "btn btn--small library-remove", text: "Remove" });
+    use.addEventListener("click", () => useLibraryEntry(entry, "use"));
+    removeBtn.addEventListener("click", () => removeLibraryEntry(entry));
+    return el("tr", { class: "library-row", "data-library-id": entry.id },
+      el("td", {}, el("p", { class: "library-statement", text: entry.statement })),
+      el("td", { text: librarySourceLabel(entry) }),
+      el("td", { text: formatWhen(entry["accepted-at"]) }),
+      el("td", { text: formatWhen(entry["last-used-at"]) }),
+      el("td", { class: "library-row__actions" }, use, removeBtn));
+  });
+  box.replaceChildren(head,
+    el("p", { class: "library-count", text: `Statement library (${filtered.length})` }),
+    el("div", { class: "catalog-body" },
+      el("table", { class: "data-table library-table" },
+        el("thead", {}, el("tr", {},
+          el("th", { text: "Statement" }), el("th", { text: "Source" }),
+          el("th", { text: "Accepted" }), el("th", { text: "Last used" }),
+          el("th", { text: "Actions" }))),
+        el("tbody", {}, rows))));
+}
+
+async function removeLibraryEntry(entry) {
+  if (!confirm("Remove this statement from the library? The catalog is unchanged.")) return;
+  try {
+    const data = await call({ action: "library_remove", library: loadLibrary(), id: entry.id });
+    saveLibrary(data.library);
+    renderLibrary();
+    if (state.view === "work" && state.selected?.control) {
+      renderProps(controlById(state.selected.control), state.lastCheck[state.selected.control]);
+    }
+  } catch (err) { showError(err.message); }
+}
+
+function addControlFromLibrary(entry, { clauseId = "", riskId = "" } = {}) {
+  ensureProject();
+  const used = new Set(state.project.controls.map((c) => c.id));
+  const base = riskId ? `${riskId}-L` : `${(clauseId || "L").replace(/[^A-Za-z0-9.]+/g, "")}-L`;
+  let n = 1;
+  let id = `${base}${n}`;
+  while (used.has(id)) id = `${base}${++n}`;
+  const control = {
+    id, clause: clauseId, text: entry.statement, guidance: "", risk: "", who: "", notes: [],
+    status: "draft", origin: "person",
+    source_type: riskId ? "risk" : "clause",
+    risk_id: riskId || "",
+  };
+  state.project.controls.push(control);
+  state.selected = { control: id };
+  saveLocal();
+  showView("work");
+  render();
+  const box = $("#editor textarea.statement");
+  if (box) box.focus();
+  return control;
+}
+
+async function useLibraryEntry(entry, mode = "use") {
+  try {
+    await rememberStatement({ text: entry.statement, id: entry.id, source_type: entry["source-type"],
+      risk_id: entry["risk-id"], parts: entry.parts }, { used: true });
+  } catch (err) { showError(err.message); return; }
+  const dialog = $("#library-pick");
+  if (dialog && dialog.open) dialog.close();
+  const current = state.selected?.control && controlById(state.selected.control);
+  if (mode === "add" || !current) {
+    if (!state.project && !state.selectedRisk) {
+      return showError("Load a policy before using a library statement.");
+    }
+    const clauseId = current?.clause || state.selected?.clause || "";
+    const riskId = current?.risk_id || state.selectedRisk || "";
+    addControlFromLibrary(entry, { clauseId, riskId });
+    return;
+  }
+  current.text = entry.statement;
+  if (current.origin !== "person") current.origin = "person";
+  saveLocal();
+  showView("work");
+  render();
+  const box = $("#editor textarea.statement");
+  if (box) box.focus();
+}
+
+function libraryPickRows(entries, { add = true } = {}) {
+  if (!entries.length) return [el("p", { class: "placeholder", text: "No matching statements in the library." })];
+  return entries.map((entry) => {
+    const use = el("button", { type: "button", class: "btn btn--small btn--primary library-use", text: "Use" });
+    const addBtn = add ? el("button", { type: "button", class: "btn btn--small", text: "Add" }) : null;
+    use.addEventListener("click", () => useLibraryEntry(entry, "use"));
+    if (addBtn) addBtn.addEventListener("click", () => useLibraryEntry(entry, "add"));
+    return el("div", { class: "template-row library-pick", "data-library-id": entry.id },
+      el("p", { class: "library-statement", text: entry.statement }),
+      el("p", { class: "muted", text: `${librarySourceLabel(entry)} · accepted ${formatWhen(entry["accepted-at"])}` }),
+      el("div", { class: "suggestion__actions" }, use, addBtn));
+  });
+}
+
+function renderLibraryPicks(container, query = "") {
+  const entries = loadLibrary();
+  const needle = (query || "").trim().toLowerCase();
+  const hits = (needle
+    ? entries.filter((e) => `${e.statement} ${e["risk-id"] || ""}`.toLowerCase().includes(needle))
+    : entries).slice(0, 8);
+  put(container, ...libraryPickRows(hits));
+}
+
+function openLibraryPick() {
+  const dialog = $("#library-pick");
+  const list = $("#library-pick-list");
+  const search = $("#library-pick-search");
+  if (!dialog || !list) return;
+  if (search) search.value = "";
+  renderLibraryPicks(list, "");
+  if (dialog.showModal) dialog.showModal();
 }
 
 function nextRiskId() {
@@ -1320,6 +1547,9 @@ async function addRiskTemplate(risk, templateId, status, button) {
     const data = await call({ action: "draft_risk_controls", risk, template_ids: [templateId] });
     if (status && data.controls[0]) data.controls[0].status = status;
     appendRiskControls(data);
+    if (status === "accepted" && data.controls[0]) {
+      try { await rememberStatement(data.controls[0]); } catch (err) { showError(err.message); }
+    }
   });
 }
 
@@ -1373,9 +1603,12 @@ function renderRiskDrawer(risk) {
     });
     const aiBtn = aiReady() ? el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" }) : null;
     if (aiBtn) aiBtn.addEventListener("click", () => aiRedraftRisk(risk, aiBtn));
+    const lib = loadLibrary().slice(0, 4);
     put(suggestionsBox,
       el("h3", { class: "props-card__title", text: "Draft controls" }),
       rows.length ? rows : el("p", { class: "placeholder", text: "No matching templates. Add a control from the editor." }),
+      lib.length ? el("h3", { class: "props-card__title", text: "From library" }) : null,
+      lib.length ? libraryPickRows(lib, { add: true }) : null,
       aiBtn,
       el("p", { class: "disclaimer", text: "Templates are deterministic. Optional AI may produce inaccurate wording." }),
     );
@@ -1482,13 +1715,25 @@ function step(delta) {
   if (next) select({ control: next.id });
 }
 
-function setStatus(ids, status) {
+async function setStatus(ids, status) {
   for (const id of ids) {
     const c = controlById(id);
     if (c) c.status = status;
   }
   saveLocal();
   render();
+  if (status === "accepted") {
+    for (const id of ids) {
+      const c = controlById(id);
+      if (c && (c.text || "").trim()) {
+        try { await rememberStatement(c); } catch (err) { showError(err.message); }
+      }
+    }
+    if (state.view === "library") renderLibrary();
+    else if (state.view === "work" && state.selected?.control) {
+      renderProps(controlById(state.selected.control), state.lastCheck[state.selected.control]);
+    }
+  }
 }
 
 async function redraftClause(clause, button) {
@@ -1579,7 +1824,17 @@ function download(name, mime, data) {
 
 async function exportAs(format, button) {
   await busy(button, "Preparing…", async () => {
-    const out = await call({ action: "export", format, project: state.project });
+    let out;
+    if (format === "library-json" || format === "library-csv") {
+      out = await call({
+        action: "library_export",
+        library: loadLibrary(),
+        format: format === "library-json" ? "json" : "csv",
+      });
+    } else {
+      if (!state.project) throw new Error("Load a policy before exporting.");
+      out = await call({ action: "export", format, project: state.project });
+    }
     if (out.content_base64) {
       const bytes = Uint8Array.from(atob(out.content_base64), (ch) => ch.charCodeAt(0));
       download(out.name, out.mime, new Blob([bytes], { type: out.mime }));
@@ -1751,6 +2006,10 @@ function init() {
     if (!file) return;
     busy(null, "", async () => previewRiskFile(file));
   });
+  $("#library-pick-search")?.addEventListener("input", () => {
+    const list = $("#library-pick-list");
+    if (list) renderLibraryPicks(list, $("#library-pick-search").value);
+  });
 
   $("#sidebar-toggle")?.addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("sidebar-collapsed");
@@ -1769,6 +2028,11 @@ function init() {
     }
     if (e.key === "Escape" && $("#export-dialog")?.open) {
       $("#export-dialog").close();
+      e.preventDefault();
+      return;
+    }
+    if (e.key === "Escape" && $("#library-pick")?.open) {
+      $("#library-pick").close();
       e.preventDefault();
       return;
     }

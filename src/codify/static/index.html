@@ -42,6 +42,10 @@
         <span class="nav-btn__icon" aria-hidden="true">▣</span>
         <span class="nav-btn__label">Catalog</span>
       </button>
+      <button type="button" class="nav-btn" data-view="library" data-nav="library" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">▤</span>
+        <span class="nav-btn__label">Library</span>
+      </button>
       <button type="button" class="nav-btn" data-nav="export" id="export-open" aria-haspopup="dialog">
         <span class="nav-btn__icon" aria-hidden="true">↓</span>
         <span class="nav-btn__label">Export</span>
@@ -195,6 +199,10 @@
         <div id="risks-body"></div>
       </section>
 
+      <section id="library" class="library-view" aria-labelledby="library-title" hidden>
+        <div id="library-body"></div>
+      </section>
+
       <!-- Guide -->
       <section id="guide" class="guide-view" aria-labelledby="guide-title" hidden>
         <h2 id="guide-title" class="section-title section-title--first">Writing control statements</h2>
@@ -261,6 +269,20 @@
             <p>CSV of identified risks. Parsed and saved on this device only.</p>
           </div>
           <button type="button" class="btn" data-export="risks">Download</button>
+        </li>
+        <li class="export-list__row">
+          <div>
+            <strong>Statement library</strong>
+            <p>JSON of accepted statements on this device. Nothing is uploaded.</p>
+          </div>
+          <button type="button" class="btn" data-export="library-json">Download</button>
+        </li>
+        <li class="export-list__row">
+          <div>
+            <strong>Statement library (CSV)</strong>
+            <p>Same rows, formula-escaped.</p>
+          </div>
+          <button type="button" class="btn" data-export="library-csv">Download</button>
         </li>
       </ul>
     </form>
@@ -386,6 +408,23 @@
     </form>
   </dialog>
   <input type="file" id="risk-file" hidden accept=".csv,.json,text/csv,application/json">
+
+  <dialog id="library-pick" class="dialog" aria-labelledby="library-pick-title">
+    <form method="dialog">
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="library-pick-title">From library</h2>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
+      </div>
+      <p class="dialog__lede">Reusable statements on this device. Use one, then tweak and Accept. Nothing is uploaded.</p>
+      <label class="field">
+        <span class="visually-hidden">Search the library</span>
+        <input id="library-pick-search" type="search" placeholder="Search statements" autocomplete="off">
+      </label>
+      <div id="library-pick-list"></div>
+    </form>
+  </dialog>
 
   <script type="module" src="app.js"></script>
 </body>
