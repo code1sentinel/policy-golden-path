@@ -23,6 +23,9 @@ const state = {
   guide: null,
   config: null,
   editorTab: "statement", // statement | oscal
+  view: "workspace",
+  dismissed: {},       // control id -> dismissed review suggestion texts
+  lastCheck: {},       // control id -> {assessment, parts}
 };
 
 // ---------------------------------------------------------------- helpers
@@ -464,12 +467,55 @@ async function aiBulk() {
 
 // ---------------------------------------------------------------- views
 
+function navFor(view) {
+  if (view === "work") return "clauses";
+  if (view === "workspace") return "workspace";
+  return view;
+}
+
 function showView(view) {
-  for (const b of $$("[data-view]")) b.setAttribute("aria-pressed", String(b.dataset.view === view));
+  if (view === "workspace" && state.project) view = "work";
+  if (view === "work" && !state.project) view = "workspace";
+  state.view = view;
+  const nav = navFor(view);
+  for (const b of $$("[data-nav]")) {
+    if (b.dataset.nav === "export") continue;
+    b.setAttribute("aria-pressed", String(b.dataset.nav === nav));
+  }
   $("#guide").hidden = view !== "guide";
-  $("#start").hidden = view !== "work" || !!state.project;
-  $("#work").hidden = view !== "work" || !state.project;
-  if (view === "work" && !state.project) renderResume();
+  $("#start").hidden = view !== "workspace";
+  $("#work").hidden = view !== "work";
+  $("#catalog").hidden = view !== "catalog";
+  $("#risks").hidden = view !== "risks";
+  const exportTop = $("#export-open-top");
+  const closeBtn = $("#close-project");
+  if (exportTop) exportTop.hidden = !state.project;
+  if (closeBtn) closeBtn.hidden = !state.project;
+  if (view === "workspace" && !state.project) renderResume();
+  if (view === "catalog") renderCatalog();
+  if (view === "risks") renderRisks();
+  renderCrumb();
+}
+
+function renderCrumb() {
+  const crumb = $("#crumb");
+  if (!crumb) return;
+  const item = (text, last = false) => el("span", { class: last ? "crumb__item" : "crumb__item", text });
+  const sep = () => el("span", { class: "crumb__sep", "aria-hidden": "true", text: "/" });
+  const parts = ["Workspace"];
+  if (state.view === "work" && state.project) {
+    parts.push(state.project.title || "Clauses");
+    if (state.selected?.control) parts.push("Control");
+    else if (state.selected?.clause) parts.push("Clause");
+  } else if (state.view === "catalog") parts.push("Catalog");
+  else if (state.view === "risks") parts.push("Risks");
+  else if (state.view === "guide") parts.push("Guide");
+  const nodes = [];
+  parts.forEach((p, i) => {
+    if (i) nodes.push(sep());
+    nodes.push(item(p, i === parts.length - 1));
+  });
+  crumb.replaceChildren(...nodes);
 }
 
 function renderResume() {
@@ -496,6 +542,8 @@ function openProject(data) {
   saveLocal();
   showView("work");
   render();
+  renderCatalog();
+  renderRisks();
   if (state.selected) {
     const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
     document.getElementById(id)?.scrollIntoView({ block: "nearest" });
@@ -550,6 +598,9 @@ function render() {
   renderEditor();
   renderBulk();
   renderMoreLabel();
+  renderCrumb();
+  if (state.view === "catalog") renderCatalog();
+  if (state.view === "risks") renderRisks();
 }
 
 function renderMoreLabel() {
@@ -647,13 +698,24 @@ function emptyGlyph() {
   return svg;
 }
 
-function emptyState(line, actionLabel, onAction, extraClass) {
-  const action = el("button", { type: "button", class: "btn", text: actionLabel });
-  action.addEventListener("click", onAction);
-  return el("div", { class: extraClass ? `empty ${extraClass}` : "empty" },
+function emptyState(line, actionLabel, onAction, extraClass, extraActions) {
+  const children = [
     el("div", { class: "empty__icon", "aria-hidden": "true" }, emptyGlyph()),
     el("p", { class: "empty__line", text: line }),
-    action);
+  ];
+  const actions = [];
+  if (actionLabel && onAction) {
+    const action = el("button", { type: "button", class: extraActions && extraActions.length ? "btn btn--primary" : "btn", text: actionLabel });
+    action.addEventListener("click", onAction);
+    actions.push(action);
+  }
+  for (const extra of extraActions || []) {
+    const b = el("button", { type: "button", class: extra.primary ? "btn btn--primary" : "btn", text: extra.label });
+    b.addEventListener("click", extra.onClick);
+    actions.push(b);
+  }
+  if (actions.length) children.push(el("div", { class: "empty__actions" }, actions));
+  return el("div", { class: extraClass ? `empty ${extraClass}` : "empty" }, ...children);
 }
 
 function showAllFilters() {
@@ -719,8 +781,12 @@ function renderEditor() {
   const box = $("#editor");
   const sel = state.selected;
   if (sel?.control && controlById(sel.control)) return renderControlEditor(box, controlById(sel.control));
-  if (sel?.clause && clauseById(sel.clause)) return renderClauseEditor(box, clauseById(sel.clause));
+  if (sel?.clause && clauseById(sel.clause)) {
+    renderProps(null);
+    return renderClauseEditor(box, clauseById(sel.clause));
+  }
   box.replaceChildren(emptyState("Select a clause to draft its control.", "Open first draft", openFirstDraft));
+  renderProps(null);
 }
 
 function legacyBox(clause) {
@@ -733,6 +799,22 @@ function partsList(parts) {
     el("b", { text: label }), el("span", { text: parts && parts[k] ? parts[k] : "missing" })));
   if (parts && parts.tools) items.push(el("li", { class: "p-tools is-warning" }, el("b", { text: "Tool named" }), el("span", { text: parts.tools })));
   return el("ul", { class: "parts", "aria-label": "Parts of the statement" }, items);
+}
+
+function partsSubitems(parts) {
+  const rows = [["action", "Action"], ["scope", "Scope"], ["limit", "Limit"], ["purpose", "Purpose"]];
+  const found = rows.filter(([k]) => parts && parts[k]).length;
+  const items = rows.map(([k, label]) => el("li", { class: parts && parts[k] ? "" : "is-missing" },
+    el("span", { class: "dot", "aria-hidden": "true" }),
+    el("span", {}, el("b", { text: label }), " ", parts && parts[k] ? parts[k] : "missing")));
+  if (parts && parts.tools) {
+    items.push(el("li", { class: "is-warning" },
+      el("span", { class: "dot", "aria-hidden": "true" }),
+      el("span", {}, el("b", { text: "Tool named" }), " ", parts.tools)));
+  }
+  return el("div", {},
+    el("p", { class: "subitems__head", text: `Parts ${found}/${rows.length}` }),
+    el("ul", { class: "subitems", "aria-label": "Parts of the statement" }, items));
 }
 
 function scoreLine(assessment) {
@@ -821,6 +903,7 @@ function renderControlEditor(box, c) {
     tabs);
   if (state.editorTab === "oscal") {
     put(box, where, oscalPanel(c));
+    renderProps(c, state.lastCheck[c.id]);
     return;
   }
 
@@ -838,7 +921,10 @@ function renderControlEditor(box, c) {
     try {
       const data = await call({ action: "check", text: c.text || " ", risk: c.risk || "" });
       state.scores[c.id] = { confidence: data.assessment.confidence, improvements: data.assessment.improvements };
+      state.lastCheck[c.id] = data;
       showResult(result, data);
+      sub.replaceChildren(partsSubitems(data.parts));
+      renderProps(c, data);
       const pill = $(`#ctl-${CSS.escape(c.id)} .score`);
       if (pill) pill.replaceWith(scorePill(c.id));
       saveSoon();
@@ -888,23 +974,149 @@ function renderControlEditor(box, c) {
       el("label", { class: "field" }, el("span", { text: "Risk it treats" }), risk),
       c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
 
+  const sub = el("div", { class: "editor__parts" });
   put(box,
     where,
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field field--hero" }, statement),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
     result,
+    sub,
     extras,
     el("div", { class: "editor__foot" }, openClause, redraft, add, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
-  call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => showResult(result, data)).catch((err) => {
+  call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => {
+    state.lastCheck[c.id] = data;
+    showResult(result, data);
+    sub.replaceChildren(partsSubitems(data.parts));
+    renderProps(c, data);
+  }).catch((err) => {
     result.replaceChildren(el("p", { class: "placeholder", text: c.text ? err.message : "Write the control statement to check it." }));
+    renderProps(c);
   });
 }
 
 function showResult(box, data) {
   box.replaceChildren(...[scoreLine(data.assessment), partsList(data.parts), improvementsList(data.assessment.improvements)].filter(Boolean));
+}
+
+function renderProps(control, data) {
+  const box = $("#props");
+  if (!box) return;
+  if (!control) {
+    box.replaceChildren(el("p", { class: "placeholder", text: "Select a control to see its properties." }));
+    return;
+  }
+  const clause = clauseById(control.clause);
+  const score = scoreOf(control.id);
+  const propsCard = el("div", { class: "props-card" },
+    el("h3", { class: "props-card__title", text: "Properties" }),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Status" }),
+      el("span", { class: `state state--${control.status}`, text: STATUS_LABELS[control.status] })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Control ID" }),
+      el("span", { class: "prop-row__value", text: control.id })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Source" }),
+      el("span", { class: "prop-row__value", text: "Clause" })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Class" }),
+      el("span", { class: "prop-row__value", text: ORIGIN_LABELS[control.origin] || control.origin })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Score" }),
+      el("span", { class: "prop-row__value", text: score === null ? "–" : pct(score) })),
+  );
+  const suggestions = [];
+  const draft = el("div", { class: "suggestion" },
+    el("p", { class: "suggestion__text", text: control.status === "accepted" ? "This control is accepted." : "Use this drafted control statement." }),
+    el("div", { class: "suggestion__actions" },
+      control.status === "accepted" ? null : el("button", { type: "button", class: "btn btn--small btn--primary", text: "Accept" }),
+      el("button", { type: "button", class: "btn btn--small", text: "Dismiss" }),
+    ));
+  const acceptBtn = $(".suggestion__actions .btn--primary", draft);
+  const dismissBtn = $$(".suggestion__actions .btn", draft).pop();
+  if (acceptBtn) acceptBtn.addEventListener("click", () => setStatus([control.id], "accepted"));
+  if (dismissBtn) dismissBtn.addEventListener("click", () => step(1));
+  suggestions.push(draft);
+
+  const hidden = new Set(state.dismissed[control.id] || []);
+  const improvements = (data && data.assessment && data.assessment.improvements) || (state.scores[control.id] && state.scores[control.id].improvements) || [];
+  for (const tip of improvements) {
+    if (hidden.has(tip)) continue;
+    const row = el("div", { class: "suggestion" },
+      el("p", { class: "suggestion__text", text: tip }),
+      el("div", { class: "suggestion__actions" },
+        el("button", { type: "button", class: "btn btn--small", text: "Dismiss" })));
+    $("button", row).addEventListener("click", () => {
+      state.dismissed[control.id] = [...(state.dismissed[control.id] || []), tip];
+      renderProps(control, data);
+    });
+    suggestions.push(row);
+  }
+
+  let aiCard = null;
+  if (control.origin === "ai" && clause) {
+    const tryAgain = el("button", { type: "button", class: "btn btn--small", text: "Try again" });
+    const useThis = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Use this" });
+    tryAgain.addEventListener("click", () => aiRedraft(clause, tryAgain));
+    useThis.addEventListener("click", () => setStatus([control.id], "reviewed"));
+    aiCard = el("div", { class: "props-card" },
+      el("h3", { class: "props-card__title", text: "AI assist" }),
+      el("p", { class: "suggestion__text", text: "This draft came from the model you chose. Check it against the clause before you accept it." }),
+      el("div", { class: "suggestion__actions" }, tryAgain, useThis),
+      el("p", { class: "disclaimer", text: "Optional AI may produce inaccurate wording. The rule draft needs no AI." }));
+  }
+
+  box.replaceChildren(...[propsCard,
+    el("div", { class: "props-card" },
+      el("h3", { class: "props-card__title", text: "Review suggestions" }),
+      suggestions.length ? suggestions : el("p", { class: "placeholder", text: "No suggestions." })),
+    aiCard].filter(Boolean));
+}
+
+function controlSourceLabel(control) {
+  return control.clause ? `Clause` : "—";
+}
+
+function renderCatalog() {
+  const box = $("#catalog-body");
+  if (!box) return;
+  if (!state.project) {
+    box.replaceChildren(emptyState("No policy loaded.", "Paste a clause", () => showView("workspace"), "empty--list"));
+    return;
+  }
+  const rows = state.project.controls;
+  if (!rows.length) {
+    box.replaceChildren(emptyState("No controls yet.", "Open first draft", () => { showView("work"); openFirstDraft(); }, "empty--list"));
+    return;
+  }
+  const body = rows.map((c) => {
+    const open = el("button", { type: "button", text: c.text || "(empty)" });
+    open.addEventListener("click", () => { showView("work"); select({ control: c.id }); });
+    return el("tr", {},
+      el("td", { text: c.id }),
+      el("td", {}, open),
+      el("td", { text: controlSourceLabel(c) }),
+      el("td", {}, el("span", { class: `state state--${c.status}`, text: STATUS_LABELS[c.status] })));
+  });
+  box.replaceChildren(el("div", { class: "catalog-body" },
+    el("table", { class: "data-table" },
+      el("thead", {}, el("tr", {},
+        el("th", { text: "ID" }), el("th", { text: "Control" }),
+        el("th", { text: "Source" }), el("th", { text: "Status" }))),
+      el("tbody", {}, body))));
+}
+
+function renderRisks() {
+  const box = $("#risks-body");
+  if (!box) return;
+  box.replaceChildren(emptyState(
+    "No risks yet.",
+    null,
+    null,
+    "",
+  ));
+  const empty = $(".empty", box);
+  if (empty) {
+    empty.append(el("p", { class: "hint", text: "A later slice will add a risk register here. Clause-only input is unchanged." }));
+  }
 }
 
 function renderClauseEditor(box, clause) {
@@ -1032,8 +1244,6 @@ function download(name, mime, data) {
 }
 
 async function exportAs(format, button) {
-  $("#export-menu").hidden = true;
-  $("#export-more").setAttribute("aria-expanded", "false");
   await busy(button, "Preparing…", async () => {
     const out = await call({ action: "export", format, project: state.project });
     if (out.content_base64) {
@@ -1043,6 +1253,14 @@ async function exportAs(format, button) {
       download(out.name, out.mime, out.content);
     }
   });
+  const dialog = $("#export-dialog");
+  if (dialog && dialog.open) dialog.close();
+}
+
+function openExportDialog() {
+  if (!state.project) return showError("Load a policy before exporting.");
+  const dialog = $("#export-dialog");
+  if (dialog && dialog.showModal) dialog.showModal();
 }
 
 // ---------------------------------------------------------------- guide
@@ -1066,7 +1284,12 @@ function renderGuide() {
 function init() {
   if (BROWSER) for (const n of $$("[data-browser-only]")) n.hidden = false;
 
-  for (const b of $$("[data-view]")) b.addEventListener("click", () => showView(b.dataset.view));
+  for (const b of $$("[data-nav]")) {
+    b.addEventListener("click", () => {
+      if (b.dataset.nav === "export") return openExportDialog();
+      showView(b.dataset.view || b.dataset.nav);
+    });
+  }
 
   $("#paste-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1110,7 +1333,7 @@ function init() {
     showNotice("");
     state.project = null;
     state.selected = null;
-    showView("work");
+    showView("workspace");
   });
 
   for (const b of $$("[data-filter]")) {
@@ -1164,21 +1387,27 @@ function init() {
     });
   }
 
-  const more = $("#export-more");
-  more.addEventListener("click", () => {
-    const menu = $("#export-menu");
-    menu.hidden = !menu.hidden;
-    more.setAttribute("aria-expanded", String(!menu.hidden));
-  });
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".menu")) { $("#export-menu").hidden = true; more.setAttribute("aria-expanded", "false"); }
-  });
+  const openExport = () => openExportDialog();
+  $("#export-open-top")?.addEventListener("click", openExport);
   for (const b of $$("[data-export]")) b.addEventListener("click", () => exportAs(b.dataset.export, b));
 
+  $("#sidebar-toggle")?.addEventListener("click", () => {
+    const collapsed = document.body.classList.toggle("sidebar-collapsed");
+    $("#sidebar-toggle").setAttribute("aria-expanded", String(!collapsed));
+    $("#sidebar-toggle").setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+  });
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("#export-menu").hidden) {
-      $("#export-menu").hidden = true;
-      more.setAttribute("aria-expanded", "false");
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && state.project) {
+      const c = state.selected?.control && controlById(state.selected.control);
+      if (c) {
+        e.preventDefault();
+        setStatus([c.id], "accepted");
+      }
+      return;
+    }
+    if (e.key === "Escape" && $("#export-dialog")?.open) {
+      $("#export-dialog").close();
       e.preventDefault();
       return;
     }
@@ -1194,7 +1423,7 @@ function init() {
 
   backend.config().then((c) => { state.config = c; }).catch(() => {});
   backend.guide().then((g) => { state.guide = g; renderGuide(); }).catch(() => {});
-  showView("work");
+  showView("workspace");
   if (BROWSER) startPython().catch(() => {});  // warm up while the person reads the page
 }
 

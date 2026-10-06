@@ -22,6 +22,11 @@ def control(page, cid):
     return next(c for c in saved_project(page)["controls"] if c["id"] == cid)
 
 
+def export_oscal(page):
+    page.click("#export-open-top")
+    return page.expect_download()
+
+
 def turn_on_ai(page):
     page.click("#ai-open")
     page.fill("#ai-key", "sk-test")
@@ -100,12 +105,13 @@ def test_close_and_resume(demo):
 # --- Exports ---------------------------------------------------------------------------------------------
 
 def test_oscal_export_opens_again(demo, tmp_path):
-    with demo.expect_download() as dl:
-        demo.click(".work__actions [data-export='oscal']")
+    with export_oscal(demo) as dl:
+        demo.click("#export-dialog [data-export='oscal']")
     path = tmp_path / "catalog.json"
     dl.value.save_as(path)
     catalog = json.loads(path.read_text())["catalog"]
     assert sum(len(g["controls"]) for g in catalog["groups"]) == 38
+    expect(demo.locator("#export-dialog")).to_be_hidden()
     demo.click("#close-project")
     demo.set_input_files("#file", str(path))
     expect(demo.locator("#work-summary")).to_contain_text("43 clauses → 38 controls")
@@ -133,8 +139,8 @@ def test_ai_drafts_one_clause_and_keeps_the_key_out_of_the_project(demo, provide
     user = sent["body"]["messages"][0]["content"]
     assert "Legacy clause 5.1" in user and "5.2" not in user  # one clause only
     assert control(demo, "5.1")["origin"] == "ai"
-    with demo.expect_download() as dl:
-        demo.click(".work__actions [data-export='oscal']")
+    with export_oscal(demo) as dl:
+        demo.click("#export-dialog [data-export='oscal']")
     dl.value.save_as(tmp_path / "c.json")
     assert "sk-test" not in (tmp_path / "c.json").read_text()
     assert "sk-test" not in demo.evaluate("localStorage.getItem('codify:project')")

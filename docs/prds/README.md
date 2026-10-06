@@ -7,3 +7,6 @@ own file here, copied from
 
 UI features must fill in **Design references** with Mobbin screen links
 before implementation.
+
+- [ui-overhaul.md](ui-overhaul.md) — authoring app shell (PR A)
+
