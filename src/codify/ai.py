@@ -120,7 +120,8 @@ def statement(parts: dict) -> str:
     return words[0].upper() + words[1:] + "."
 
 
-def from_reply(clause_id: str, reply: str, model: str = "") -> list[dict]:
+def from_reply(clause_id: str, reply: str, model: str = "", source_type: str = "clause",
+               risk_id: str = "") -> list[dict]:
     """Project controls from an AI reply, each marked as drafted by AI and left as a draft."""
     if len(reply) > MAX_REPLY:
         raise ValueError("the AI's reply is too long")
@@ -129,6 +130,9 @@ def from_reply(clause_id: str, reply: str, model: str = "") -> list[dict]:
     if not isinstance(items, list):
         raise ValueError("the AI's reply has no 'controls' list")
     by = f"Drafted by AI ({model})" if model else "Drafted by AI"
+    source_type = source_type if source_type in ("clause", "risk") else "clause"
+    id_base = risk_id or clause_id or "c1"
+    check_against = "the identified risk" if source_type == "risk" else "the legacy clause"
     controls = []
     for item in items[:MAX_CONTROLS]:
         if not isinstance(item, dict):
@@ -136,15 +140,67 @@ def from_reply(clause_id: str, reply: str, model: str = "") -> list[dict]:
         text = statement(item)
         if not text:
             continue
-        notes = [f"{by}: check it against the legacy clause before accepting it."]
+        notes = [f"{by}: check it against {check_against} before accepting it."]
         first = _part(item.get("action")).split(" ")[0].lower()
         if first and first not in VERBS:
             notes.append(f'"{_part(item.get("action"))}" is not a verb Codify recognises; start with the action.')
         raw = item.get("notes") if isinstance(item.get("notes"), list) else []
         notes += [n for n in (_part(x) for x in raw[:10]) if n]
-        controls.append({"clause": clause_id, "text": text, "guidance": _part(item.get("guidance")),
+        controls.append({"clause": "" if source_type == "risk" else clause_id, "text": text,
+                         "guidance": _part(item.get("guidance")),
                          "risk": _part(item.get("risk")), "who": "", "notes": notes,
-                         "status": "draft", "origin": "ai"})
+                         "status": "draft", "origin": "ai",
+                         "source_type": source_type, "risk_id": risk_id})
     if not controls:
         raise ValueError("the AI returned no control statements")
-    return [{"id": cid, **c} for cid, c in zip(_control_ids(clause_id, len(controls)), controls)]
+    return [{"id": cid, **c} for cid, c in zip(_control_ids(id_base, len(controls)), controls)]
+
+
+RISK_SYSTEM = """You help GRC professionals turn identified risks into control statements: action first, \
+tool-neutral, and testable.
+
+A control statement says what must be done, testably, and nothing about who does it or with which product. \
+You give each statement in parts, which Codify joins in this order:
+
+- action: the imperative verb that starts the statement, e.g. "Review", "Encrypt", "Back up", "Prohibit", "Require".
+- scope: what the action applies to.
+- limit: how often, how fast or when. Empty if the requirement is standing (configure, restrict, encrypt).
+- purpose: why, starting with "to". Empty if none is plainly implied.
+
+Rules:
+1. One requirement per control. Split a risk that needs several treatments.
+2. Start with the action. Never start with a subject.
+3. Name no products, vendors or tools in the statement. Put them in guidance as examples.
+4. Keep every value as a parameter in square brackets. Replace vague timing with "[N]".
+5. Drop hedges and subjective words; say what would make the requirement testable instead.
+6. Do not invent assets or threats the risk does not support.
+7. risk: one sentence on what could happen without the control.
+8. notes: short, for the person reviewing. Empty list if nothing.
+
+Reply with JSON only, no prose and no code fence:
+{"controls": [{"action": "", "scope": "", "limit": "", "purpose": "", "guidance": "", "risk": "", "notes": []}]}"""
+
+
+def risk_prompt(risk: dict) -> dict:
+    """The system and user messages for one risk, with template drafts as a starting point."""
+    from .risks import suggest_templates
+
+    rid = risk.get("id") or "R-001"
+    lines = [
+        f"Identified risk {rid}: {risk.get('title') or ''}",
+        risk.get("description") or "",
+        "",
+        f"Asset or process: {risk.get('asset') or '(not given)'}",
+        f"Threat: {risk.get('threat') or '(not given)'}",
+        f"Vulnerability: {risk.get('vulnerability') or '(not given)'}",
+        f"Likelihood {risk.get('likelihood')}, impact {risk.get('impact')} (score {risk.get('score')}).",
+        "",
+    ]
+    templates = suggest_templates(risk)
+    if templates:
+        lines.append("Codify's template drafts, a starting point you may improve, split or merge:")
+        for t in templates:
+            lines.append(f"- {t['statement']}")
+        lines.append("")
+    lines.append("Write the control statements that treat this risk.")
+    return {"system": RISK_SYSTEM, "user": "\n".join(lines).strip(), "schema": SCHEMA}

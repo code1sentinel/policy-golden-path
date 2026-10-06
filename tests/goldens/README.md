@@ -17,3 +17,9 @@ frozen in the test.
 
 `unnumbered-lock-screens-control.json` is that catalog's first control
 object (`control_oscal`), with the derived-from href frozen.
+
+`risk-only.json` is a catalog with one risk (R-001) and one template
+control, traced with `source-type=risk`, `risk-id`, and `rel=reference`.
+
+`mixed-clause-risk.json` is the unnumbered lock-screens clause plus that
+same risk-derived control.

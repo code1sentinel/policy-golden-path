@@ -1,0 +1,6 @@
+id,title,description,asset,likelihood,impact,threat,vulnerability,owner,status
+R-001,Unauthorised access to agency systems,A compromised account could reach systems beyond need-to-know.,Agency systems,4,5,Stolen credentials,Excessive access rights,Jane Smith,identified
+R-002,Malware on agency desktops,Malware could disrupt desktops and leak files.,Agency desktops,3,4,Malware,Unpatched endpoints,IT Operations,treating
+R-003,Loss of backup data,A failure or disaster could make systems unrecoverable.,Servers and backups,2,5,Disaster,Backups stored with production,IT Operations,identified
+R-004,Weak passwords on user accounts,Guessable passwords allow account takeover.,User accounts,3,4,Credential stuffing,Short passwords,Identity team,identified
+R-005,Vendor access left in place,A supplier could retain access after the engagement ends.,Third-party connections,2,4,Insider misuse,No recertification of vendor accounts,Procurement,identified

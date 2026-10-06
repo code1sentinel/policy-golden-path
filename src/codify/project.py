@@ -8,10 +8,11 @@ The project is plain data (JSON), shared with the web page:
 
 Its file form is an OSCAL catalog: the deliverable and the save file in one.
 Each control carries its status, origin and the legacy wording it came from;
-every legacy clause, with its type, is kept in the catalog's back matter, so
-opening the catalog again resumes the work exactly. A catalog that Codify did
-not make opens too: each of its controls becomes a clause and a control to
-work on.
+every legacy clause, with its type, is kept in the catalog's back matter, and
+each risk is a back-matter resource with controls linked by `rel=reference`
+([ADR 0008](../../docs/adr/0008-risk-input-and-oscal-tracing.md)). Opening the
+catalog again resumes the work exactly. A catalog that Codify did not make
+opens too: each of its controls becomes a clause and a control to work on.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from . import __version__
 from .classify import REQUIREMENT, SCOPE, TYPE_LABELS, TYPES, sort_clauses
 from .clauses import Clause, Policy
 from .draft import draft
+from .risks import assign_ids, draft_from_templates, normalize_risk
 
 NS = "https://grcengineering.club/ns/codify"
 OSCAL_VERSION = "1.1.2"
@@ -51,15 +53,46 @@ def new_project(policy: Policy, source: str = "") -> dict:
                         "type": result.type, "reason": result.reason, "duplicate_of": result.duplicate_of})
         if result.type == REQUIREMENT and not result.duplicate_of:
             controls += draft_controls(clause.id, clause.text)
-    return {"uuid": str(uuid.uuid4()), "title": policy.title, "source": source, "version": __version__,
-            "clauses": clauses, "controls": controls}
+    return empty_project(title=policy.title, source=source, clauses=clauses, controls=controls)
+
+
+def empty_project(title: str = "", source: str = "", clauses: list | None = None,
+                  controls: list | None = None, risks: list | None = None) -> dict:
+    return {"uuid": str(uuid.uuid4()), "title": title, "source": source, "version": __version__,
+            "clauses": list(clauses or []), "controls": list(controls or []), "risks": list(risks or [])}
+
+
+def merge_risks(project: dict, risks: list[dict], draft: bool = True) -> dict:
+    """Add or replace risks on a project. Optionally draft template controls for new risks."""
+    existing = {r["id"]: i for i, r in enumerate(project.get("risks") or [])}
+    out = list(project.get("risks") or [])
+    new_ids: list[str] = []
+    for raw in risks:
+        risk = normalize_risk(raw, index=len(out))
+        if risk["id"] in existing:
+            out[existing[risk["id"]]] = risk
+        else:
+            existing[risk["id"]] = len(out)
+            out.append(risk)
+            new_ids.append(risk["id"])
+    project = {**project, "risks": assign_ids(out)}
+    if draft:
+        have = {c.get("risk_id") for c in project.get("controls") or []}
+        extra = []
+        for risk in project["risks"]:
+            if risk["id"] in have or risk["id"] not in new_ids:
+                continue
+            extra.extend(draft_from_templates(risk))
+        if extra:
+            project["controls"] = list(project.get("controls") or []) + extra
+    return project
 
 
 def draft_controls(clause_id: str, text: str) -> list[dict]:
     """Rule-based drafts for one requirement clause, as project controls."""
     drafts = draft(text)
     return [{"id": cid, "clause": clause_id, "text": d.text, "guidance": d.guidance, "risk": "", "who": d.who,
-             "notes": d.notes, "status": "draft", "origin": "rules"}
+             "notes": d.notes, "status": "draft", "origin": "rules", "source_type": "clause", "risk_id": ""}
             for cid, d in zip(_control_ids(clause_id, len(drafts)), drafts)]
 
 
@@ -75,6 +108,7 @@ def summary(project: dict) -> dict:
         "context": sum(by_type[t] for t in TYPES if t not in (REQUIREMENT, "not-a-control")),
         "duplicates": sum(1 for c in clauses if c.get("duplicate_of")),
         "by_status": {s: sum(1 for c in controls if c["status"] == s) for s in STATUSES},
+        "risks": len(project.get("risks") or []),
     }
 
 
@@ -166,14 +200,21 @@ def to_oscal(project: dict) -> dict:
     """The project as an OSCAL catalog: one group per policy section, one control per control statement."""
     pid = project.get("uuid") or str(uuid.uuid4())
     clause_uuid = {c["id"]: str(uuid.uuid5(uuid.UUID(pid), "clause:" + c["id"])) for c in project["clauses"]}
+    risk_uuid = {r["id"]: str(uuid.uuid5(uuid.UUID(pid), "risk:" + r["id"])) for r in project.get("risks") or []}
     clauses = {c["id"]: c for c in project["clauses"]}
 
     groups: dict[str, dict] = {}
     for control in project["controls"]:
-        clause = clauses.get(control["clause"], {})
-        section = clause.get("section") or "0"
+        clause = clauses.get(control.get("clause") or "", {})
+        source_type = control.get("source_type") or ("risk" if control.get("risk_id") else "clause")
+        if source_type == "risk":
+            section = "risks"
+            heading = "Risks"
+        else:
+            section = clause.get("section") or "0"
+            heading = clause.get("heading") or ("Policy" if section == "0" else f"Section {section}")
         group = groups.setdefault(section, {"id": _token(section, "s-"),
-                                            "title": clause.get("heading") or ("Policy" if section == "0" else f"Section {section}"),
+                                            "title": heading,
                                             "controls": []})
         cid = _token(control["id"], "c-")
         prose, params = to_params(cid, control["text"])
@@ -188,17 +229,24 @@ def to_oscal(project: dict) -> dict:
         entry = {
             "id": cid,
             "title": _title(control["text"]),
-            "props": _props(_prop("label", control["id"], ns=False), _prop("legacy-clause", control["clause"]),
+            "props": _props(_prop("label", control["id"], ns=False), _prop("legacy-clause", control.get("clause")),
                             _prop("status", control.get("status", "draft")),
                             _prop("origin", control.get("origin", "rules")),
+                            _prop("source-type", source_type),
+                            _prop("risk-id", control.get("risk_id")),
                             _prop("risk-statement", control.get("risk")),
                             _prop("responsible-role", control.get("who"))),
             "parts": parts,
         }
         if params:
             entry["params"] = params
-        if control["clause"] in clause_uuid:
-            entry["links"] = [{"href": "#" + clause_uuid[control["clause"]], "rel": "derived-from"}]
+        links = []
+        if control.get("clause") in clause_uuid:
+            links.append({"href": "#" + clause_uuid[control["clause"]], "rel": "derived-from"})
+        if control.get("risk_id") in risk_uuid:
+            links.append({"href": "#" + risk_uuid[control["risk_id"]], "rel": "reference"})
+        if links:
+            entry["links"] = links
         group["controls"].append(entry)
 
     scope = [c["text"] for c in project["clauses"] if c["type"] == SCOPE]
@@ -222,6 +270,20 @@ def to_oscal(project: dict) -> dict:
                             _prop("section", c.get("section")), _prop("heading", c.get("heading")),
                             _prop("reason", c.get("reason")), _prop("duplicate-of", c.get("duplicate_of"))),
         })
+    for r in project.get("risks") or []:
+        resource = {
+            "uuid": risk_uuid[r["id"]],
+            "title": r.get("title") or r["id"],
+            "props": _props(_prop("risk-id", r["id"]), _prop("asset", r.get("asset")),
+                            _prop("likelihood", str(r.get("likelihood", ""))),
+                            _prop("impact", str(r.get("impact", ""))),
+                            _prop("score", str(r.get("score", ""))),
+                            _prop("threat", r.get("threat")), _prop("vulnerability", r.get("vulnerability")),
+                            _prop("owner", r.get("owner")), _prop("status", r.get("status"))),
+        }
+        if r.get("description"):
+            resource["description"] = r["description"]
+        resources.append(resource)
     catalog = {"uuid": pid, "metadata": metadata}
     if groups:
         catalog["groups"] = [groups[k] for k in sorted(groups, key=_section_key)]
@@ -241,6 +303,8 @@ def control_oscal(project: dict, control_id: str) -> dict:
 
 
 def _section_key(section: str) -> tuple:
+    if section == "risks":
+        return (10**9,)
     return tuple(int(p) if p.isdigit() else 0 for p in re.split(r"\D+", section) if p) or (0,)
 
 
@@ -283,7 +347,22 @@ def from_oscal(data: dict) -> dict:
             clauses.append({"id": p["clause-id"], "text": r.get("description", ""), "section": p.get("section", ""),
                             "heading": p.get("heading", ""), "type": p.get("clause-type", REQUIREMENT),
                             "reason": p.get("reason", ""), "duplicate_of": p.get("duplicate-of")})
-    ours = bool(clauses)
+    risks = []
+    for r in resources:
+        p = _ns_props(r)
+        if "risk-id" not in p:
+            continue
+        try:
+            risks.append(normalize_risk({
+                "id": p["risk-id"], "title": r.get("title", p["risk-id"]),
+                "description": r.get("description", ""), "asset": p.get("asset", ""),
+                "likelihood": p.get("likelihood", "1"), "impact": p.get("impact", "1"),
+                "threat": p.get("threat", ""), "vulnerability": p.get("vulnerability", ""),
+                "owner": p.get("owner", ""), "status": p.get("status", "identified"),
+            }))
+        except ValueError:
+            continue
+    ours = bool(clauses) or bool(risks)
     title = meta_props.get("source-policy") or re.sub(r":\s*control statements$", "", meta.get("title", "Catalog"))
     controls = []
     for group, control in _walk(root):
@@ -297,21 +376,25 @@ def from_oscal(data: dict) -> dict:
             (x["value"] for x in control.get("props", []) if x.get("name") == "risk-statement"), "")
         notes = [n[2:] if n.startswith("- ") else n
                  for n in _part_text(control, "drafting-notes").split("\n- ") if n.strip()] if ours else []
-        clause_id = p.get("legacy-clause") or label
+        source_type = p.get("source-type") or "clause"
+        risk_id = p.get("risk-id") or ""
+        clause_id = p.get("legacy-clause") or ("" if source_type == "risk" else label)
         controls.append({"id": label, "clause": clause_id, "text": text,
                          "guidance": _part_text(control, "guidance"), "risk": risk,
                          "who": p.get("responsible-role", ""), "notes": notes,
                          "status": p.get("status", "draft") if p.get("status") in STATUSES else "draft",
-                         "origin": p.get("origin", "rules" if ours else "catalog")})
+                         "origin": p.get("origin", "rules" if ours else "catalog"),
+                         "source_type": source_type if source_type in ("clause", "risk") else "clause",
+                         "risk_id": risk_id})
         if not ours:
-            clauses.append({"id": clause_id, "text": text, "section": group.get("id", ""),
+            clauses.append({"id": clause_id or label, "text": text, "section": group.get("id", ""),
                             "heading": group.get("title", ""), "type": REQUIREMENT,
                             "reason": "a control in the catalog opened", "duplicate_of": None})
-    if not clauses:
+    if not clauses and not controls and not risks:
         raise ValueError("this catalog has no controls with statements")
     return {"uuid": root.get("uuid") or str(uuid.uuid4()), "title": title,
             "source": meta_props.get("source-file", ""), "version": __version__,
-            "clauses": clauses, "controls": controls}
+            "clauses": clauses, "controls": controls, "risks": risks}
 
 
 # --- Spreadsheet and report ---------------------------------------------------------------------------

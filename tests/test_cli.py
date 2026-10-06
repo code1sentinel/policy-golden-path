@@ -21,6 +21,21 @@ def test_writes_oscal_report_and_excel(examples, tmp_path):
     assert (tmp_path / "c.xlsx").read_bytes()[:2] == b"PK"
 
 
+def test_risks_flag_traces_controls_in_oscal(examples, tmp_path):
+    policy = str(examples / "acme-information-security-policy-2016.md")
+    risks = str(examples / "acme-risk-register.csv")
+    out = tmp_path / "mixed.json"
+    assert main([policy, "--risks", risks, "-f", "oscal", "-o", str(out)]) == 0
+    catalog = json.loads(out.read_text())["catalog"]
+    resources = catalog["back-matter"]["resources"]
+    assert any(any(p.get("name") == "risk-id" and p.get("value") == "R-001" for p in r.get("props", []))
+               for r in resources)
+    risk_group = next(g for g in catalog["groups"] if g["id"] == "s-risks")
+    assert risk_group["controls"]
+    assert any(p.get("name") == "source-type" and p.get("value") == "risk"
+               for c in risk_group["controls"] for p in c["props"])
+
+
 def test_errors(tmp_path, capsys):
     assert main([str(tmp_path / "missing.docx")]) == 2
     bad = tmp_path / "bad.json"

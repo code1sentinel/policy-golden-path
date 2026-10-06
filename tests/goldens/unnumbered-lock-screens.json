@@ -35,6 +35,11 @@
                 "name": "origin",
                 "value": "rules",
                 "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "source-type",
+                "value": "clause",
+                "ns": "https://grcengineering.club/ns/codify"
               }
             ],
             "parts": [

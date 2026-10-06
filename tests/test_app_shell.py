@@ -22,6 +22,8 @@ def test_shell_has_sidebar_nav_and_properties_panel():
     assert "openExportDialog" in JS
     assert "renderCatalog" in JS
     assert "renderProps" in JS
+    assert "renderRiskDrawer" in JS
+    assert "suggest_risk_controls" in JS
 
 
 def test_accept_shortcut_is_ctrl_or_meta_enter():
@@ -35,4 +37,5 @@ def test_export_dialog_has_one_download_per_format():
     assert INDEX.count('data-export="xlsx"') == 1
     assert INDEX.count('data-export="csv"') == 1
     assert INDEX.count('data-export="report"') == 1
+    assert INDEX.count('data-export="risks"') == 1
     assert "Download" in INDEX.split('id="export-dialog"', 1)[1]
