@@ -12,6 +12,10 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- Authoring app shell ([ADR 0007](docs/adr/0007-authoring-app-shell.md)):
+  collapsible sidebar (Workspace, Clauses, Risks, Catalog, Export, Guide),
+  breadcrumb, centred writing column, properties/review panel, Catalog
+  table, export dialog, and `⌘`/`Ctrl`+Enter to accept.
 - Development workflow: `AGENTS.md`, product PRD, ADRs, slice issue template,
   pull request template, `CONTRIBUTING.md`, and retro/PRD templates.
 - CI jobs for `ruff`, `mypy` (lenient), `pip-audit`, and `gitleaks`. Existing
@@ -30,10 +34,11 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   editor and filter panes offer **Open first draft** and **Show all**.
 - Workspace and Guide are quieter: the statement is the editor hero,
   Risk sits in extras, Guide is a single column, and the club/version
-  footer is gone.
+  footer is gone. The 2026-10-06 overhaul then replaced the page chrome
+  with the authoring app shell.
 - Editor tabs **Statement | OSCAL JSON** show this control's OSCAL with
-  line numbers and a local **Copy**. **Save OSCAL (.json)** is a split
-  button; Excel, CSV, and the conversion report sit under the chevron.
+  line numbers and a local **Copy**. **Export** is a dialog of download
+  targets (OSCAL, Excel, CSV, report).
 - Light / Dark / System theme (defaults to the OS, stored as
   `codify:theme`). AI drafting is a status chip, not a view tab.
   Accent and canvas tokens are indigo on cool gray in both themes.

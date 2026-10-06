@@ -1,4 +1,4 @@
-"""OSCAL JSON tab, copy, and the split export button."""
+"""OSCAL JSON tab, copy, and the export dialog."""
 
 from playwright.sync_api import expect
 
@@ -17,16 +17,17 @@ def test_oscal_tab_shows_this_control_and_copy_announces(demo):
     expect(demo.locator("textarea.statement")).to_be_visible()
 
 
-def test_save_oscal_is_a_split_button_without_a_duplicate(demo, tmp_path):
-    expect(demo.locator(".work__actions [data-export='oscal']")).to_have_text("Save OSCAL (.json)")
-    expect(demo.locator("#export-menu [data-export='oscal']")).to_have_count(0)
-    demo.click("#export-more")
-    expect(demo.locator("#export-menu")).to_be_visible()
-    expect(demo.locator("#export-menu [data-export='xlsx']")).to_be_visible()
-    expect(demo.locator("#export-menu [data-export='csv']")).to_be_visible()
-    expect(demo.locator("#export-menu [data-export='report']")).to_be_visible()
+def test_export_dialog_lists_each_format_once(demo, tmp_path):
+    expect(demo.locator("#export-open-top")).to_be_visible()
+    expect(demo.locator("#export-dialog")).to_be_hidden()
+    demo.click("#export-open-top")
+    expect(demo.locator("#export-dialog")).to_be_visible()
+    expect(demo.locator("#export-dialog [data-export='oscal']")).to_have_count(1)
+    expect(demo.locator("#export-dialog [data-export='xlsx']")).to_be_visible()
+    expect(demo.locator("#export-dialog [data-export='csv']")).to_be_visible()
+    expect(demo.locator("#export-dialog [data-export='report']")).to_be_visible()
     with demo.expect_download() as dl:
-        demo.click(".work__actions [data-export='oscal']")
+        demo.click("#export-dialog [data-export='oscal']")
     path = tmp_path / "catalog.json"
     dl.value.save_as(path)
     assert path.read_text().startswith("{")

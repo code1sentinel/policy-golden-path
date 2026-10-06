@@ -9,153 +9,255 @@
   <link rel="stylesheet" href="app.css">
   <script src="theme.js"></script>
 </head>
-<body>
+<body class="app">
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="top">
-    <div class="wrap top__row">
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar__brand">
+      <button type="button" class="icon-btn sidebar__toggle" id="sidebar-toggle" aria-label="Collapse sidebar" aria-controls="sidebar" aria-expanded="true">
+        <span aria-hidden="true">‹</span>
+      </button>
       <div class="brand">
         <span class="brand__mark" aria-hidden="true"></span>
-        <div>
+        <div class="brand__text">
           <h1 class="brand__name">Codify</h1>
           <p class="brand__tag">Turn legacy policy clauses into OSCAL control statements.</p>
         </div>
       </div>
-      <div class="top__end">
-        <nav class="views" aria-label="Views">
-          <button type="button" class="view-btn" data-view="work" aria-pressed="true">Workspace</button>
-          <button type="button" class="view-btn" data-view="guide" aria-pressed="false">Guide</button>
-        </nav>
-        <div class="top__tools">
-          <button type="button" class="status-chip" id="ai-open" aria-haspopup="dialog">AI: Off</button>
-          <div class="theme-toggle" role="radiogroup" aria-label="Theme">
-            <button type="button" role="radio" aria-checked="false" data-theme-choice="light">Light</button>
-            <button type="button" role="radio" aria-checked="false" data-theme-choice="dark">Dark</button>
-            <button type="button" role="radio" aria-checked="true" data-theme-choice="system">System</button>
-          </div>
-        </div>
-      </div>
     </div>
-  </header>
+    <nav class="sidebar__nav" aria-label="Views">
+      <button type="button" class="nav-btn" data-view="workspace" data-nav="workspace" aria-pressed="true">
+        <span class="nav-btn__icon" aria-hidden="true">⌂</span>
+        <span class="nav-btn__label">Workspace</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="work" data-nav="clauses" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">≡</span>
+        <span class="nav-btn__label">Clauses</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="risks" data-nav="risks" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">◎</span>
+        <span class="nav-btn__label">Risks</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="catalog" data-nav="catalog" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">▣</span>
+        <span class="nav-btn__label">Catalog</span>
+      </button>
+      <button type="button" class="nav-btn" data-nav="export" id="export-open" aria-haspopup="dialog">
+        <span class="nav-btn__icon" aria-hidden="true">↓</span>
+        <span class="nav-btn__label">Export</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="guide" data-nav="guide" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">?</span>
+        <span class="nav-btn__label">Guide</span>
+      </button>
+    </nav>
+  </aside>
 
-  <main id="main" class="wrap">
-    <p class="local-note" data-browser-only hidden>Runs in your browser: your policy never leaves this device.</p>
-    <p id="loading" class="loading" role="status" hidden>Loading Codify in your browser. This takes a few seconds on the first visit only.</p>
-    <div id="error" class="error" role="alert" hidden></div>
-    <div id="notice" class="loading" role="status" hidden></div>
-
-    <!-- Start: no project open -->
-    <section id="start" class="start" aria-labelledby="start-title">
-      <h2 id="start-title" class="section-title section-title--first">Turn a policy into control statements</h2>
-      <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control.</p>
-
-      <div id="resume" class="card resume" hidden>
-        <p class="resume__text"><strong>Continue where you left off:</strong> <span id="resume-title"></span> <span id="resume-when" class="muted"></span></p>
-        <div class="actions">
-          <button type="button" class="btn btn--primary" id="resume-open">Continue</button>
-          <button type="button" class="btn btn--quiet" id="resume-discard">Discard</button>
-        </div>
-      </div>
-
-      <div class="card start__load" id="drop">
-        <form id="paste-form" novalidate>
-          <label class="field">
-            <span class="visually-hidden">Clause</span>
-            <textarea class="start__clause" name="text" rows="8" placeholder="Access to systems shall be granted on a need-to-know basis.&#10;User accounts shall be reviewed regularly."></textarea>
-          </label>
-          <div class="actions">
-            <button type="submit" class="btn btn--primary btn--lg" id="paste-submit">Codify</button>
-            <label class="btn btn--file">
-              Open a file
-              <input type="file" id="file" accept=".docx,.csv,.xlsx,.json,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/json,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-            </label>
+  <div class="app__frame">
+    <header class="top">
+      <div class="top__row">
+        <nav class="crumb" id="crumb" aria-label="Breadcrumb">
+          <span class="crumb__item">Workspace</span>
+        </nav>
+        <div class="top__end">
+          <div class="actions work__actions" id="top-actions">
+            <button type="button" class="btn btn--primary" id="export-open-top" hidden>Export</button>
+            <button type="button" class="btn btn--quiet" id="close-project" hidden>Close</button>
           </div>
-        </form>
-        <p class="start__examples">
-          <button type="button" class="example-chip" id="demo">Try an example</button>
-        </p>
-      </div>
-    </section>
-
-    <!-- Workspace: a project is open -->
-    <section id="work" class="work" aria-labelledby="work-title" hidden>
-      <div class="work__head">
-        <div class="work__title">
-          <h2 id="work-title" class="section-title section-title--first"></h2>
-          <p id="work-summary" class="work__summary"></p>
-          <div id="work-progress" class="progress" aria-label="Review progress"></div>
-        </div>
-        <div class="actions work__actions">
-          <div class="menu split">
-            <button type="button" class="btn" data-export="oscal">Save OSCAL (.json)</button>
-            <button type="button" class="btn split__chevron" id="export-more" aria-haspopup="true" aria-expanded="false" aria-label="More export formats">
-              <span aria-hidden="true">▾</span>
-            </button>
-            <div class="menu__list" id="export-menu" role="menu" hidden>
-              <button type="button" role="menuitem" data-export="xlsx">Excel (.xlsx)</button>
-              <button type="button" role="menuitem" data-export="csv">CSV</button>
-              <button type="button" role="menuitem" data-export="report">Conversion report (.md)</button>
+          <div class="top__tools">
+            <button type="button" class="status-chip" id="ai-open" aria-haspopup="dialog">AI: Off</button>
+            <div class="theme-toggle" role="radiogroup" aria-label="Theme">
+              <button type="button" role="radio" aria-checked="false" data-theme-choice="light">Light</button>
+              <button type="button" role="radio" aria-checked="false" data-theme-choice="dark">Dark</button>
+              <button type="button" role="radio" aria-checked="true" data-theme-choice="system">System</button>
             </div>
           </div>
-          <button type="button" class="btn btn--quiet" id="close-project">Close</button>
         </div>
       </div>
+    </header>
 
-      <div id="ai-progress" class="loading ai-progress" role="status" hidden>
-        <span id="ai-progress-text"></span>
-        <button type="button" class="btn btn--small" id="ai-stop">Stop</button>
-      </div>
+    <main id="main">
+      <p class="local-note" data-browser-only hidden>Runs in your browser: your policy never leaves this device.</p>
+      <p id="loading" class="loading" role="status" hidden>Loading Codify in your browser. This takes a few seconds on the first visit only.</p>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div id="notice" class="loading" role="status" hidden></div>
 
-      <div class="workspace">
-        <div class="pane pane--list">
-          <div class="pane__bar">
-            <span class="pane__label">Clauses</span>
-            <details id="work-more" class="fold">
-              <summary>More</summary>
-              <div class="fold__body">
-                <div class="filters" role="group" aria-label="Show">
-                  <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
-                  <button type="button" class="chip" data-filter="draft" aria-pressed="false">Drafts</button>
-                  <button type="button" class="chip" data-filter="reviewed" aria-pressed="false">Reviewed</button>
-                  <button type="button" class="chip" data-filter="accepted" aria-pressed="false">Accepted</button>
-                  <button type="button" class="chip" data-filter="low" aria-pressed="false">Below 80%</button>
-                  <button type="button" class="chip" data-filter="other" aria-pressed="false">Not converted</button>
-                </div>
-                <div class="select-tools" role="group" aria-label="Select">
-                  <button type="button" class="btn btn--small btn--quiet" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
-                  <button type="button" class="btn btn--small btn--quiet" id="select-shown" title="Every control the filter shows">Select shown</button>
-                </div>
+      <!-- Start: no project open -->
+      <section id="start" class="start" aria-labelledby="start-title">
+        <div class="start__layout">
+          <div class="start__main">
+            <h2 id="start-title" class="section-title section-title--first">Turn a policy into control statements</h2>
+            <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control.</p>
+
+            <div id="resume" class="card resume" hidden>
+              <p class="resume__text"><strong>Continue where you left off:</strong> <span id="resume-title"></span> <span id="resume-when" class="muted"></span></p>
+              <div class="actions">
+                <button type="button" class="btn btn--primary" id="resume-open">Continue</button>
+                <button type="button" class="btn btn--quiet" id="resume-discard">Discard</button>
               </div>
-            </details>
+            </div>
+
+            <div class="card start__load" id="drop">
+              <form id="paste-form" novalidate>
+                <label class="field">
+                  <span class="visually-hidden">Clause</span>
+                  <textarea class="start__clause" name="text" rows="8" placeholder="Access to systems shall be granted on a need-to-know basis.&#10;User accounts shall be reviewed regularly."></textarea>
+                </label>
+                <div class="actions">
+                  <button type="submit" class="btn btn--primary btn--lg" id="paste-submit">Codify</button>
+                  <label class="btn btn--file">
+                    Open a file
+                    <input type="file" id="file" accept=".docx,.csv,.xlsx,.json,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/json,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                  </label>
+                </div>
+              </form>
+              <p class="start__examples">
+                <button type="button" class="example-chip" id="demo">Try an example</button>
+              </p>
+            </div>
           </div>
-          <div id="list" class="list" aria-label="Clauses and controls"></div>
+          <aside class="start__aside" aria-label="Set up this workspace">
+            <div class="checklist">
+              <h3 class="checklist__title">Set up this workspace</h3>
+              <ol class="checklist__list">
+                <li>Paste a clause or open a file</li>
+                <li>Review the drafted control</li>
+                <li>Accept and export the catalog</li>
+              </ol>
+            </div>
+          </aside>
         </div>
-        <aside id="editor" class="editor" aria-live="polite">
-          <p class="placeholder">Select a clause to draft its control.</p>
-        </aside>
-      </div>
+      </section>
 
-      <div id="selection-bar" class="selection-bar" hidden role="toolbar" aria-label="Bulk actions">
-        <span id="selected-count" class="selection-bar__count" aria-live="polite">0 selected</span>
-        <div class="selection-bar__actions">
-          <button type="button" class="btn btn--small" data-bulk="reviewed">Mark reviewed</button>
-          <button type="button" class="btn btn--small btn--primary" data-bulk="accepted">Mark accepted</button>
-          <button type="button" class="btn btn--small" id="ai-bulk" hidden title="Draft the clauses of the selected controls again with AI, one request per clause">Draft with AI</button>
+      <!-- Workspace: a project is open -->
+      <section id="work" class="work" aria-labelledby="work-title" hidden>
+        <div class="work__head">
+          <div class="work__title">
+            <h2 id="work-title" class="section-title section-title--first"></h2>
+            <p id="work-summary" class="work__summary"></p>
+            <div id="work-progress" class="progress" aria-label="Review progress"></div>
+          </div>
+          <ol class="flow" aria-label="Guided flow">
+            <li>Clause</li>
+            <li>Draft</li>
+            <li>Review</li>
+            <li>Accept</li>
+          </ol>
         </div>
-        <button type="button" class="btn btn--small btn--quiet" id="select-none">Clear</button>
-      </div>
-    </section>
 
-    <!-- Guide -->
-    <section id="guide" class="guide-view" aria-labelledby="guide-title" hidden>
-      <h2 id="guide-title" class="section-title section-title--first">Writing control statements</h2>
-      <p id="guide-summary" class="guide-summary"></p>
-      <div class="anatomy">
-        <p class="anatomy__example"><span class="part part--action">Review</span> <span class="part part--scope">privileged and payment access</span> <span class="part part--limit">at least every [90] days</span> <span class="part part--purpose">to remove access that is no longer needed</span>.</p>
+        <div id="ai-progress" class="loading ai-progress" role="status" hidden>
+          <span id="ai-progress-text"></span>
+          <button type="button" class="btn btn--small" id="ai-stop">Stop</button>
+        </div>
+
+        <div class="workspace">
+          <div class="pane pane--list">
+            <div class="pane__bar">
+              <span class="pane__label">Clauses</span>
+              <details id="work-more" class="fold">
+                <summary>More</summary>
+                <div class="fold__body">
+                  <div class="filters" role="group" aria-label="Show">
+                    <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+                    <button type="button" class="chip" data-filter="draft" aria-pressed="false">Drafts</button>
+                    <button type="button" class="chip" data-filter="reviewed" aria-pressed="false">Reviewed</button>
+                    <button type="button" class="chip" data-filter="accepted" aria-pressed="false">Accepted</button>
+                    <button type="button" class="chip" data-filter="low" aria-pressed="false">Below 80%</button>
+                    <button type="button" class="chip" data-filter="other" aria-pressed="false">Not converted</button>
+                  </div>
+                  <div class="select-tools" role="group" aria-label="Select">
+                    <button type="button" class="btn btn--small btn--quiet" id="select-ready" title="Drafts scoring 80% or more with no drafting notes left to decide">Select ready drafts</button>
+                    <button type="button" class="btn btn--small btn--quiet" id="select-shown" title="Every control the filter shows">Select shown</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+            <div id="list" class="list" aria-label="Clauses and controls"></div>
+          </div>
+          <aside id="editor" class="editor" aria-live="polite">
+            <p class="placeholder">Select a clause to draft its control.</p>
+          </aside>
+          <aside id="props" class="props" aria-label="Properties and review">
+            <p class="placeholder">Select a control to see its properties.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="catalog" class="catalog-view" aria-labelledby="catalog-title" hidden>
+        <div class="view-head">
+          <h2 id="catalog-title" class="section-title section-title--first">Catalog</h2>
+          <p class="view-head__lede">Accepted and drafted control statements, with the clause they came from.</p>
+        </div>
+        <div id="catalog-body"></div>
+      </section>
+
+      <section id="risks" class="risks-view" aria-labelledby="risks-title" hidden>
+        <div id="risks-body"></div>
+      </section>
+
+      <!-- Guide -->
+      <section id="guide" class="guide-view" aria-labelledby="guide-title" hidden>
+        <h2 id="guide-title" class="section-title section-title--first">Writing control statements</h2>
+        <p id="guide-summary" class="guide-summary"></p>
+        <div class="anatomy">
+          <p class="anatomy__example"><span class="part part--action">Review</span> <span class="part part--scope">privileged and payment access</span> <span class="part part--limit">at least every [90] days</span> <span class="part part--purpose">to remove access that is no longer needed</span>.</p>
+        </div>
+        <div id="guide-list" class="guide-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="selection-bar" class="selection-bar" hidden role="toolbar" aria-label="Bulk actions">
+    <span id="selected-count" class="selection-bar__count" aria-live="polite">0 selected</span>
+    <div class="selection-bar__actions">
+      <button type="button" class="btn btn--small" data-bulk="reviewed">Mark reviewed</button>
+      <button type="button" class="btn btn--small btn--primary" data-bulk="accepted">Mark accepted</button>
+      <button type="button" class="btn btn--small" id="ai-bulk" hidden title="Draft the clauses of the selected controls again with AI, one request per clause">Draft with AI</button>
+    </div>
+    <button type="button" class="btn btn--small btn--quiet" id="select-none">Clear</button>
+  </div>
+
+  <dialog id="export-dialog" class="dialog export-dialog" aria-labelledby="export-title">
+    <form method="dialog">
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="export-title">Export</h2>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
       </div>
-      <div id="guide-list" class="guide-list"></div>
-    </section>
-  </main>
+      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded.</p>
+      <ul class="export-list" id="export-menu">
+        <li class="export-list__row">
+          <div>
+            <strong>OSCAL catalog</strong>
+            <p>JSON catalog (1.1.2). Also the save file.</p>
+          </div>
+          <button type="button" class="btn" data-export="oscal">Download</button>
+        </li>
+        <li class="export-list__row">
+          <div>
+            <strong>Excel</strong>
+            <p>One row per control (.xlsx).</p>
+          </div>
+          <button type="button" class="btn" data-export="xlsx">Download</button>
+        </li>
+        <li class="export-list__row">
+          <div>
+            <strong>CSV</strong>
+            <p>Same rows, formula-escaped.</p>
+          </div>
+          <button type="button" class="btn" data-export="csv">Download</button>
+        </li>
+        <li class="export-list__row">
+          <div>
+            <strong>Conversion report</strong>
+            <p>Markdown summary of the conversion.</p>
+          </div>
+          <button type="button" class="btn" data-export="report">Download</button>
+        </li>
+      </ul>
+    </form>
+  </dialog>
 
   <dialog id="ai-dialog" class="dialog" aria-labelledby="ai-title">
     <form id="ai-form" method="dialog" novalidate>

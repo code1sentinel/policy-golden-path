@@ -117,9 +117,10 @@ The open workspace hides Start-only chrome. The editor leads with the
 control statement; Risk sits under extras. Guide is a single column.
 See [docs/prds/workspace-guide-declutter.md](prds/workspace-guide-declutter.md).
 
-**Future UI work must list Mobbin (`https://mobbin.com`) screen links here
-or in `docs/prds/<feature>.md` before implementation.** If a request has no
-links, ask for them; do not invent a design.
+The 2026-10-06 authoring app shell rebuilt Workspace around a sidebar,
+writing column, and properties/review panel. See
+[docs/prds/ui-overhaul.md](prds/ui-overhaul.md) and
+[ADR 0007](adr/0007-authoring-app-shell.md).
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |

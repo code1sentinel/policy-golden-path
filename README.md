@@ -160,23 +160,28 @@ the rule drafts never use AI.
 
 ## Reviewing
 
-The workspace lists requirement clauses, with their controls under each. Select a
-control to edit the statement next to its legacy clause. Mark it **reviewed** or
-**accepted**, then go to the next clause. Add the risk it treats (its purpose);
-guidance and who implements it sit under disclosure in the editor.
+The workspace is an authoring app: a collapsible sidebar (Workspace, Clauses,
+Risks, Catalog, Export, Guide), a top bar with a breadcrumb, a centred writing
+column, and a right properties/review panel. Select a control to edit the
+statement next to its legacy clause. Parts of the statement show as sub-items.
+Mark it **reviewed** or **accepted**, then go to the next clause. Add the risk
+it treats (its purpose); guidance and who implements it sit under disclosure
+in the editor.
 
 - **Filters and bulk** sit under **More** in the clause list: drafts, reviewed,
   accepted, below 80%, or the clauses that did not become controls. "Select ready
   drafts" ticks drafts scoring 80% or more with no notes left to decide, and
   "Select shown" every control the filter shows; then mark them reviewed or
   accepted, or draft them again with AI.
-- **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> next and previous,
-  <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted.
-- **Saving**: work is kept in your browser as you go. **Save OSCAL (.json)**
-  downloads the catalog, which is the file to keep, share or put in git, and
-  opens again later. Excel, CSV, and the conversion report sit under the
-  chevron next to that button. The editor's **OSCAL JSON** tab shows this
-  control so you can read or copy it without downloading the file.
+- **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> (or arrows) next and previous,
+  <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+  accept (also from the statement field).
+- **Saving**: work is kept in your browser as you go. **Export** opens a dialog
+  with a Download button for the OSCAL catalog (the file to keep, share or put
+  in git), Excel, CSV, and the conversion report. The editor's **OSCAL JSON**
+  tab shows this control so you can read or copy it without downloading the file.
+- **Catalog** lists every control with a source column (clause). **Risks** is
+  a destination for a later slice; clause-only input is unchanged.
 
 ## What comes out
 

@@ -47,13 +47,13 @@ def test_editor_has_statement_and_oscal_tabs():
     assert "navigator.clipboard" in JS
 
 
-def test_export_is_a_split_button_without_a_duplicate_oscal_item():
-    assert "Save OSCAL (.json)" in INDEX
+def test_export_is_a_dialog_without_a_duplicate_oscal_item():
     assert "Save OSCAL catalog" not in INDEX
+    assert 'id="export-dialog"' in INDEX
+    assert 'id="export-open-top"' in INDEX
     menu = INDEX.split('id="export-menu"', 1)[1]
     assert 'data-export="xlsx"' in menu
     assert 'data-export="csv"' in menu
     assert 'data-export="report"' in menu
-    assert menu.count('data-export="oscal"') == 0
-    assert "split__chevron" in INDEX or 'id="export-more"' in INDEX
+    assert menu.count('data-export="oscal"') == 1
     assert INDEX.count('data-export="oscal"') == 1
