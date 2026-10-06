@@ -492,6 +492,49 @@ body:has(#risks:not([hidden])) #risks { flex: 1; min-height: 0; display: flex; f
 .data-table tr:last-child td { border-bottom: 0; }
 .data-table button { appearance: none; background: none; border: 0; color: var(--text); font: 13px/1.4 var(--font); text-align: left; cursor: pointer; padding: 0; }
 .catalog-body { overflow: auto; flex: 1; min-height: 0; }
+.risks-view { display: flex; flex-direction: column; min-height: 0; }
+.risks-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.risks-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 0; min-height: 0; flex: 1; }
+.risks-main { min-width: 0; overflow: auto; padding-right: 16px; }
+.risk-drawer {
+  border-left: 1px solid var(--border-soft); padding: 4px 0 24px 20px; overflow: auto; min-width: 0;
+}
+.heatmap-wrap { margin: 0 0 16px; }
+.heatmap-wrap h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.heatmap { display: grid; grid-template-columns: 28px repeat(5, 32px); grid-template-rows: repeat(5, 32px) 18px; gap: 3px; align-items: stretch; }
+.heat-cell {
+  border: 1px solid var(--border-soft); border-radius: 4px; background: var(--surface);
+  font-size: 10px; display: grid; place-items: center; color: var(--muted);
+}
+.heat-cell.is-hit { background: color-mix(in srgb, var(--orange) 35%, var(--surface)); color: var(--text); border-color: var(--orange); }
+.heat-label { font-size: 10px; color: var(--muted); display: grid; place-items: center; }
+.score-badge {
+  display: inline-flex; min-width: 1.6em; justify-content: center; font: 700 12px var(--font);
+  padding: 2px 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border);
+}
+.score-badge.is-high { background: var(--danger-dim); border-color: var(--danger-line); color: var(--danger); }
+.score-badge.is-med { background: color-mix(in srgb, var(--orange) 18%, var(--surface)); }
+.template-row, .mapping-row {
+  display: grid; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-soft);
+}
+.template-row:last-child, .mapping-row:last-child { border-bottom: 0; }
+.template-row p { margin: 0; font-size: 13px; }
+.mapping-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; }
+.mapping-tick { color: var(--ready); font-weight: 700; }
+.stepper { display: flex; gap: 16px; list-style: none; margin: 0 0 14px; padding: 0; font-size: 12px; color: var(--muted); }
+.stepper li { display: flex; align-items: center; gap: 6px; }
+.stepper li::before {
+  content: counter(step); counter-increment: step; width: 18px; height: 18px; border-radius: 50%;
+  display: grid; place-items: center; border: 1px solid var(--border); font-size: 10px; font-weight: 700;
+}
+.stepper { counter-reset: step; }
+.stepper li.is-current { color: var(--text); }
+.stepper li.is-current::before { background: var(--orange); border-color: var(--orange); color: var(--on-accent); }
+.linked-ctl { margin: 0 0 6px; font-size: 13px; }
+@media (max-width: 980px) {
+  .risks-layout { grid-template-columns: 1fr; }
+  .risk-drawer { border-left: 0; border-top: 1px solid var(--border-soft); padding: 16px 0 0; }
+}
 
 /* Guide ------------------------------------------------------------------- */
 

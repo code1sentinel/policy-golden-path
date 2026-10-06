@@ -42,7 +42,9 @@ They are a starting point to edit, not finished controls.
   CSV/Excel (`.xlsx`), or a saved OSCAL catalog. There is no Title field
   and clause numbers are optional ([ADR 0006](adr/0006-clause-only-input.md)).
   Multi-clause files may still split on the policy's own numbering and
-  Word headings.
+  Word headings. A local risk register (CSV/JSON or typed in the app) is
+  a parallel input ([ADR 0008](adr/0008-risk-input-and-oscal-tracing.md));
+  it does not replace clause-only input.
 - **Sort:** requirement, scope, definition, role, exception, not-a-control;
   flag duplicates; show the reason; allow the type to be changed.
 - **Draft:** rule-based split, active voice, drop the organisation as subject,
@@ -69,7 +71,8 @@ They are a starting point to edit, not finished controls.
 - Hosting policy text or API keys on a Codify server.
 - Server-side calls to AI providers.
 - Authentication, multi-user, or exposing `codify-web` on a public interface.
-- FAIR-CAM / risk-register product surfaces (removed before Codify 1.0).
+- FAIR quantitative scoring and residual-risk workflow (the local risk
+  register is in; see [docs/prds/risk-to-controls.md](prds/risk-to-controls.md)).
 - Implementation statements (Codify scores catalog control statements only).
 
 ## Success criteria

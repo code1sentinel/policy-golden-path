@@ -11,11 +11,13 @@ const TYPE_LABELS = {
 };
 const STATUS_LABELS = { draft: "Draft", reviewed: "Reviewed", accepted: "Accepted" };
 const ORIGIN_LABELS = { rules: "drafted by rules", ai: "drafted by AI", catalog: "from the catalog", person: "edited" };
+const RISK_STATUS_LABELS = { identified: "Identified", treating: "Treating", accepted: "Accepted", closed: "Closed" };
+const RISK_FIELDS = ["id", "title", "description", "asset", "likelihood", "impact", "threat", "vulnerability", "owner", "status"];
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
 const SAVE_KEY = "codify:project";
 
 const state = {
-  project: null,       // {uuid, title, source, clauses: [...], controls: [...]}
+  project: null,       // {uuid, title, source, clauses: [...], controls: [...], risks: [...]}
   scores: {},          // control id -> {confidence, improvements}
   selected: null,      // {control: id} or {clause: id}
   filter: "all",
@@ -26,6 +28,9 @@ const state = {
   view: "workspace",
   dismissed: {},       // control id -> dismissed review suggestion texts
   lastCheck: {},       // control id -> {assessment, parts}
+  selectedRisk: null,  // risk id
+  dismissedTemplates: {},  // risk id -> template ids
+  importPreview: null,
 };
 
 // ---------------------------------------------------------------- helpers
@@ -492,6 +497,7 @@ function showView(view) {
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
   if (view === "workspace" && !state.project) renderResume();
+  if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
   if (view === "risks") renderRisks();
   renderCrumb();
@@ -508,7 +514,11 @@ function renderCrumb() {
     if (state.selected?.control) parts.push("Control");
     else if (state.selected?.clause) parts.push("Clause");
   } else if (state.view === "catalog") parts.push("Catalog");
-  else if (state.view === "risks") parts.push("Risks");
+  else if (state.view === "risks") {
+    parts.push("Risks");
+    const risk = state.selectedRisk && riskById(state.selectedRisk);
+    if (risk) parts.push(risk.title);
+  }
   else if (state.view === "guide") parts.push("Guide");
   const nodes = [];
   parts.forEach((p, i) => {
@@ -576,7 +586,18 @@ async function openFile(file) {
 const clauseById = (id) => state.project.clauses.find((c) => c.id === id);
 const controlById = (id) => state.project.controls.find((c) => c.id === id);
 const controlsOf = (clauseId) => state.project.controls.filter((c) => c.clause === clauseId);
+const riskById = (id) => (state.project.risks || []).find((r) => r.id === id);
+const controlsOfRisk = (riskId) => state.project.controls.filter((c) => c.risk_id === riskId);
 const scoreOf = (id) => (state.scores[id] ? state.scores[id].confidence : null);
+
+function ensureProject() {
+  if (!state.project) {
+    const uuid = (crypto.randomUUID && crypto.randomUUID()) || `00000000-0000-4000-8000-${String(Date.now()).slice(-12)}`;
+    state.project = { uuid, title: "", source: "", version: "", clauses: [], controls: [], risks: [] };
+    state.scores = {};
+  }
+  if (!Array.isArray(state.project.risks)) state.project.risks = [];
+}
 
 function matches(control) {
   const f = state.filter;
@@ -620,6 +641,7 @@ function renderHead() {
   const summary = $("#work-summary");
   summary.replaceChildren(
     el("strong", { text: `${plural(p.clauses.length, "clause")} → ${plural(p.controls.length, "control")}` }),
+    (p.risks || []).length ? el("span", { text: ` · ${plural(p.risks.length, "risk")}` }) : null,
   );
   summary.title = `${n("requirement")} requirement clauses (${dup} duplicate) · ${context} context · ${n("not-a-control")} not controls`;
   const counts = { draft: 0, reviewed: 0, accepted: 0 };
@@ -745,6 +767,18 @@ function renderList() {
       section = heading;
     }
     nodes.push(clauseCard(clause, controls));
+  }
+  if (state.filter !== "other") {
+    const byRisk = {};
+    for (const c of state.project.controls) {
+      if (!(c.source_type === "risk" || c.risk_id) || !matches(c)) continue;
+      (byRisk[c.risk_id || "risk"] ||= []).push(c);
+    }
+    for (const [rid, controls] of Object.entries(byRisk)) {
+      const risk = riskById(rid);
+      nodes.push(el("p", { class: "section-head", text: risk ? `Risk · ${risk.title}` : "From risks" }));
+      for (const c of controls) nodes.push(controlRow(c));
+    }
   }
   if (!nodes.length) {
     nodes.push(emptyState("Nothing matches this filter.", "Show all", showAllFilters, "empty--list"));
@@ -894,7 +928,9 @@ function oscalPanel(c) {
 }
 
 function renderControlEditor(box, c) {
+  const isRisk = c.source_type === "risk" || !!c.risk_id;
   const clause = clauseById(c.clause) || { id: c.clause, text: "" };
+  const risk = isRisk ? riskById(c.risk_id) : null;
   const visible = visibleControls();
   const index = visible.findIndex((x) => x.id === c.id);
   const tabs = editorTabs();
@@ -912,8 +948,8 @@ function renderControlEditor(box, c) {
   const result = el("div", { class: "result" });
   const guidance = el("textarea", { rows: "2", placeholder: "Tools or how-to examples, e.g. AWS Backup" });
   guidance.value = c.guidance || "";
-  const risk = el("textarea", { rows: "2", placeholder: "What could happen without this control" });
-  risk.value = c.risk || "";
+  const riskBox = el("textarea", { rows: "2", placeholder: "What could happen without this control" });
+  riskBox.value = c.risk || "";
   const who = el("input", { placeholder: "e.g. The IT Department", autocomplete: "off" });
   who.value = c.who || "";
 
@@ -940,7 +976,7 @@ function renderControlEditor(box, c) {
     saveSoon();
   });
   guidance.addEventListener("input", () => { c.guidance = guidance.value.trim(); saveSoon(); });
-  risk.addEventListener("input", () => { c.risk = risk.value.trim(); check(); saveSoon(); });
+  riskBox.addEventListener("input", () => { c.risk = riskBox.value.trim(); check(); saveSoon(); });
   who.addEventListener("input", () => { c.who = who.value.trim(); saveSoon(); });
 
   const reviewed = el("button", { type: "button", class: "btn", "aria-pressed": String(c.status === "reviewed"), text: "Reviewed" });
@@ -951,9 +987,9 @@ function renderControlEditor(box, c) {
   next.disabled = index < 0 || index >= visible.length - 1;
   next.addEventListener("click", () => step(1));
   let aiBtn = null;
-  if (aiReady() && clause.text) {
+  if (aiReady() && (clause.text || risk)) {
     aiBtn = el("button", { type: "button", class: "btn", text: "Draft with AI" });
-    aiBtn.addEventListener("click", () => aiRedraft(clause, aiBtn));
+    aiBtn.addEventListener("click", () => (risk ? aiRedraftRisk(risk, aiBtn) : aiRedraft(clause, aiBtn)));
   }
 
   const add = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Add a control from this clause" });
@@ -962,8 +998,15 @@ function renderControlEditor(box, c) {
   redraft.addEventListener("click", () => redraftClause(clause, redraft));
   const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Delete this control" });
   remove.addEventListener("click", () => deleteControl(c));
-  const openClause = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Open clause" });
-  openClause.addEventListener("click", () => select({ clause: clause.id }));
+  const openClause = el("button", { type: "button", class: "btn btn--small btn--quiet", text: isRisk ? "Open risk" : "Open clause" });
+  openClause.addEventListener("click", () => {
+    if (isRisk && c.risk_id) {
+      state.selectedRisk = c.risk_id;
+      showView("risks");
+    } else {
+      select({ clause: clause.id });
+    }
+  });
 
   const extras = el("details", { class: "fold fold--block" },
     el("summary", { text: "Guidance, risk, who" }),
@@ -971,19 +1014,20 @@ function renderControlEditor(box, c) {
       el("div", { class: "grid2" },
         el("label", { class: "field" }, el("span", {}, "Guidance ", el("em", { text: "tools, how-to" })), guidance),
         el("label", { class: "field" }, el("span", {}, "Who ", el("em", { text: "who implements it" })), who)),
-      el("label", { class: "field" }, el("span", { text: "Risk it treats" }), risk),
+      el("label", { class: "field" }, el("span", { text: "Risk it treats" }), riskBox),
       c.notes && c.notes.length ? el("ul", { class: "notes" }, c.notes.map((n) => el("li", { text: n }))) : null));
 
   const sub = el("div", { class: "editor__parts" });
   put(box,
     where,
-    clause.text ? legacyBox(clause) : null,
+    isRisk && risk ? el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Risk" }),
+      `${risk.id} · ${risk.title}`) : (clause.text ? legacyBox(clause) : null),
     el("label", { class: "field field--hero" }, statement),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, aiBtn),
     result,
     sub,
     extras,
-    el("div", { class: "editor__foot" }, openClause, redraft, add, remove),
+    el("div", { class: "editor__foot" }, openClause, isRisk ? null : redraft, isRisk ? null : add, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
   call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => {
@@ -1017,7 +1061,7 @@ function renderProps(control, data) {
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Control ID" }),
       el("span", { class: "prop-row__value", text: control.id })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Source" }),
-      el("span", { class: "prop-row__value", text: "Clause" })),
+      el("span", { class: "prop-row__value", text: controlSourceLabel(control) })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Class" }),
       el("span", { class: "prop-row__value", text: ORIGIN_LABELS[control.origin] || control.origin })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Score" }),
@@ -1052,14 +1096,18 @@ function renderProps(control, data) {
   }
 
   let aiCard = null;
-  if (control.origin === "ai" && clause) {
+  if (control.origin === "ai") {
     const tryAgain = el("button", { type: "button", class: "btn btn--small", text: "Try again" });
     const useThis = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Use this" });
-    tryAgain.addEventListener("click", () => aiRedraft(clause, tryAgain));
+    const risk = riskById(control.risk_id);
+    tryAgain.addEventListener("click", () => {
+      if (risk) aiRedraftRisk(risk, tryAgain);
+      else if (clause) aiRedraft(clause, tryAgain);
+    });
     useThis.addEventListener("click", () => setStatus([control.id], "reviewed"));
     aiCard = el("div", { class: "props-card" },
       el("h3", { class: "props-card__title", text: "AI assist" }),
-      el("p", { class: "suggestion__text", text: "This draft came from the model you chose. Check it against the clause before you accept it." }),
+      el("p", { class: "suggestion__text", text: "This draft came from the model you chose. Check it against the source before you accept it." }),
       el("div", { class: "suggestion__actions" }, tryAgain, useThis),
       el("p", { class: "disclaimer", text: "Optional AI may produce inaccurate wording. The rule draft needs no AI." }));
   }
@@ -1072,7 +1120,8 @@ function renderProps(control, data) {
 }
 
 function controlSourceLabel(control) {
-  return control.clause ? `Clause` : "—";
+  if (control.source_type === "risk" || control.risk_id) return control.risk_id || "Risk";
+  return control.clause ? "Clause" : "—";
 }
 
 function renderCatalog() {
@@ -1104,19 +1153,304 @@ function renderCatalog() {
       el("tbody", {}, body))));
 }
 
+function nextRiskId() {
+  const used = new Set((state.project?.risks || []).map((r) => r.id));
+  let n = 1;
+  while (used.has(`R-${String(n).padStart(3, "0")}`)) n += 1;
+  return `R-${String(n).padStart(3, "0")}`;
+}
+
+function uniqueControlId(base) {
+  const used = new Set(state.project.controls.map((c) => c.id));
+  if (!used.has(base)) return base;
+  let n = 1;
+  while (used.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+function scoreBadge(n) {
+  const cls = n >= 15 ? "is-high" : n >= 8 ? "is-med" : "";
+  return el("span", { class: `score-badge ${cls}`.trim(), text: String(n) });
+}
+
+function renderHeatmap(risks) {
+  const counts = {};
+  for (const r of risks) counts[`${r.likelihood},${r.impact}`] = (counts[`${r.likelihood},${r.impact}`] || 0) + 1;
+  const cells = [];
+  for (let impact = 5; impact >= 1; impact--) {
+    cells.push(el("span", { class: "heat-label", text: String(impact) }));
+    for (let likelihood = 1; likelihood <= 5; likelihood++) {
+      const n = counts[`${likelihood},${impact}`] || 0;
+      cells.push(el("div", { class: n ? "heat-cell is-hit" : "heat-cell", title: `Likelihood ${likelihood}, impact ${impact}`, text: n ? String(n) : "" }));
+    }
+  }
+  cells.push(el("span", { class: "heat-label", text: "" }));
+  for (let likelihood = 1; likelihood <= 5; likelihood++) cells.push(el("span", { class: "heat-label", text: String(likelihood) }));
+  return el("div", { class: "heatmap-wrap" },
+    el("h3", { text: "Inherent risk" }),
+    el("div", { class: "heatmap", "aria-label": "Likelihood by impact" }, cells));
+}
+
+function openRiskForm(risk) {
+  ensureProject();
+  $("#risk-dialog-title").textContent = risk ? "Edit risk" : "Add a risk";
+  $("#risk-editing").value = risk ? risk.id : "";
+  $("#risk-title").value = risk ? risk.title : "";
+  $("#risk-description").value = risk ? risk.description : "";
+  $("#risk-asset").value = risk ? risk.asset : "";
+  $("#risk-owner").value = risk ? risk.owner : "";
+  $("#risk-threat").value = risk ? risk.threat : "";
+  $("#risk-vulnerability").value = risk ? risk.vulnerability : "";
+  $("#risk-likelihood").value = risk ? risk.likelihood : 3;
+  $("#risk-impact").value = risk ? risk.impact : 3;
+  $("#risk-status").value = risk ? risk.status : "identified";
+  $("#risk-form-error").hidden = true;
+  $("#risk-dialog").showModal();
+}
+
+function saveRiskFromForm() {
+  const title = $("#risk-title").value.trim();
+  if (!title) throw new Error("Enter a scenario title.");
+  const likelihood = Number($("#risk-likelihood").value);
+  const impact = Number($("#risk-impact").value);
+  if (!(likelihood >= 1 && likelihood <= 5) || !(impact >= 1 && impact <= 5)) {
+    throw new Error("Likelihood and impact must be numbers from 1 to 5.");
+  }
+  ensureProject();
+  const editing = $("#risk-editing").value;
+  const risk = {
+    id: editing || nextRiskId(),
+    title,
+    description: $("#risk-description").value.trim(),
+    asset: $("#risk-asset").value.trim(),
+    likelihood, impact, score: likelihood * impact,
+    threat: $("#risk-threat").value.trim(),
+    vulnerability: $("#risk-vulnerability").value.trim(),
+    owner: $("#risk-owner").value.trim(),
+    status: $("#risk-status").value || "identified",
+  };
+  const at = state.project.risks.findIndex((r) => r.id === risk.id);
+  if (at >= 0) state.project.risks[at] = risk;
+  else state.project.risks.push(risk);
+  state.selectedRisk = risk.id;
+  saveLocal();
+  showView("risks");
+  renderRisks();
+}
+
+function openRiskImport() {
+  $("#risk-file").click();
+}
+
+async function previewRiskFile(file) {
+  const payload = await readFile(file);
+  const parsed = await call({ action: "import_risks", ...payload });
+  state.importPreview = parsed;
+  $("#risk-import-summary").textContent =
+    `${parsed.risks.length} ${parsed.risks.length === 1 ? "risk" : "risks"} recognised`
+    + (parsed.errors?.length ? ` · ${parsed.errors.length} row${parsed.errors.length === 1 ? "" : "s"} skipped` : "")
+    + ". Nothing left this device.";
+  const fields = ["", ...RISK_FIELDS];
+  const rows = (parsed.columns || []).map((col, i) => {
+    const match = (parsed.recognised || []).find((r) => r.column === col || r.index === i);
+    const select = el("select", { "data-col": String(i), "aria-label": `Map ${col}` },
+      fields.map((f) => el("option", { value: f, text: f || "(ignore)" })));
+    if (match) select.value = match.field;
+    const tick = el("span", { class: match ? "mapping-tick" : "muted", text: match ? "Recognised" : "Map this column" });
+    return el("div", { class: "mapping-row" }, el("strong", { text: col }), tick, select);
+  });
+  $("#risk-mapping").replaceChildren(...(rows.length ? rows : [el("p", { class: "placeholder", text: "No columns found." })]));
+  const err = $("#risk-import-errors");
+  if (parsed.errors?.length) {
+    err.hidden = false;
+    err.textContent = parsed.errors.map((e) => `Row ${e.row}: ${e.error}`).join(" · ");
+  } else {
+    err.hidden = true;
+    err.textContent = "";
+  }
+  $("#risk-import-dialog").showModal();
+}
+
+function mappingFromDialog() {
+  const mapping = {};
+  for (const sel of $$("#risk-mapping select")) {
+    if (sel.value) mapping[sel.dataset.col] = sel.value;
+  }
+  return mapping;
+}
+
+async function applyRiskImport() {
+  const preview = state.importPreview;
+  if (!preview) throw new Error("Choose a CSV or JSON file first.");
+  const file = $("#risk-file");
+  let parsed = preview;
+  const mapping = mappingFromDialog();
+  if (preview.columns?.length && file.files[0]) {
+    const payload = await readFile(file.files[0]);
+    parsed = await call({ action: "import_risks", ...payload, mapping });
+  }
+  ensureProject();
+  const byId = Object.fromEntries(state.project.risks.map((r, i) => [r.id, i]));
+  for (const r of parsed.risks) {
+    if (r.id in byId) state.project.risks[byId[r.id]] = r;
+    else {
+      byId[r.id] = state.project.risks.length;
+      state.project.risks.push(r);
+    }
+  }
+  state.importPreview = null;
+  if (parsed.risks[0]) state.selectedRisk = parsed.risks[0].id;
+  saveLocal();
+  showView("risks");
+  renderRisks();
+}
+
+function appendRiskControls(data) {
+  const incoming = (data.controls || []).map((c) => ({ ...c, id: uniqueControlId(c.id) }));
+  state.project.controls.push(...incoming);
+  Object.assign(state.scores, data.scores || {});
+  if (incoming[0]) state.selected = { control: incoming[0].id };
+  saveLocal();
+  showView("work");
+  render();
+}
+
+async function addRiskTemplate(risk, templateId, status, button) {
+  await busy(button, "Adding…", async () => {
+    const data = await call({ action: "draft_risk_controls", risk, template_ids: [templateId] });
+    if (status && data.controls[0]) data.controls[0].status = status;
+    appendRiskControls(data);
+  });
+}
+
+function dismissTemplate(riskId, templateId) {
+  state.dismissedTemplates[riskId] = [...(state.dismissedTemplates[riskId] || []), templateId];
+  renderRisks();
+}
+
+async function aiDraftRisk(risk) {
+  const prompt = await call({ action: "ai_prompt", risk });
+  const reply = await PROVIDERS[ai.provider].send(ai.key, ai.model, prompt);
+  return call({ action: "ai_reply", risk_id: risk.id, source_type: "risk", reply, model: ai.model });
+}
+
+async function aiRedraftRisk(risk, button) {
+  if (!aiReady()) return openAiDialog();
+  const existing = controlsOfRisk(risk.id);
+  if (existing.some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai"))
+      && !confirm(`Replace the ${plural(existing.length, "control")} from this risk, including your edits, with AI drafts?`)) return;
+  await busy(button, "Drafting with AI…", async () => {
+    const data = await aiDraftRisk(risk);
+    for (const c of controlsOfRisk(risk.id)) { delete state.scores[c.id]; state.checked.delete(c.id); }
+    state.project.controls = state.project.controls.filter((c) => c.risk_id !== risk.id);
+    state.project.controls.push(...data.controls);
+    Object.assign(state.scores, data.scores);
+    state.selected = data.controls[0] ? { control: data.controls[0].id } : null;
+    saveLocal();
+    showView("work");
+    render();
+  });
+}
+
+function renderRiskDrawer(risk) {
+  const linked = controlsOfRisk(risk.id);
+  const open = (c) => { showView("work"); select({ control: c.id }); };
+  const suggestionsBox = el("div", { id: "risk-templates", class: "props-card" },
+    el("h3", { class: "props-card__title", text: "Draft controls" }),
+    el("p", { class: "placeholder", text: "Loading templates…" }));
+  call({ action: "suggest_risk_controls", risk }).then((data) => {
+    const hidden = new Set(state.dismissedTemplates[risk.id] || []);
+    const rows = data.suggestions.filter((s) => !hidden.has(s.id)).map((s) => {
+      const add = el("button", { type: "button", class: "btn btn--small", text: "Add", "data-template": s.id });
+      const accept = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Accept" });
+      const dismiss = el("button", { type: "button", class: "btn btn--small", text: "Dismiss" });
+      add.addEventListener("click", () => addRiskTemplate(risk, s.id, "draft", add));
+      accept.addEventListener("click", () => addRiskTemplate(risk, s.id, "accepted", accept));
+      dismiss.addEventListener("click", () => dismissTemplate(risk.id, s.id));
+      return el("div", { class: "template-row", "data-template": s.id },
+        el("p", {}, el("strong", { text: s.label }), " — ", s.statement),
+        el("div", { class: "suggestion__actions" }, add, accept, dismiss));
+    });
+    const aiBtn = aiReady() ? el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" }) : null;
+    if (aiBtn) aiBtn.addEventListener("click", () => aiRedraftRisk(risk, aiBtn));
+    put(suggestionsBox,
+      el("h3", { class: "props-card__title", text: "Draft controls" }),
+      rows.length ? rows : el("p", { class: "placeholder", text: "No matching templates. Add a control from the editor." }),
+      aiBtn,
+      el("p", { class: "disclaimer", text: "Templates are deterministic. Optional AI may produce inaccurate wording." }),
+    );
+  }).catch((err) => { suggestionsBox.replaceChildren(el("p", { class: "placeholder", text: err.message })); });
+
+  const edit = el("button", { type: "button", class: "btn btn--small", text: "Edit" });
+  edit.addEventListener("click", () => openRiskForm(risk));
+  return el("aside", { class: "risk-drawer", id: "risk-drawer", "aria-label": "Risk details" },
+    el("h3", { class: "section-title", text: risk.title }),
+    el("p", { class: "muted", text: `${risk.id} · score ${risk.score} · ${RISK_STATUS_LABELS[risk.status] || risk.status}` }),
+    risk.description ? el("p", { text: risk.description }) : null,
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Asset" }), el("span", { class: "prop-row__value", text: risk.asset || "—" })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Owner" }), el("span", { class: "prop-row__value", text: risk.owner || "—" })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Threat" }), el("span", { class: "prop-row__value", text: risk.threat || "—" })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Vulnerability" }), el("span", { class: "prop-row__value", text: risk.vulnerability || "—" })),
+    el("p", { class: "subitems__head", text: `Linked controls (${linked.length})` }),
+    linked.length ? linked.map((c) => {
+      const b = el("button", { type: "button", class: "linked-ctl", text: c.text || "(empty)" });
+      b.addEventListener("click", () => open(c));
+      return b;
+    }) : el("p", { class: "placeholder", text: "None yet. Add a template below." }),
+    suggestionsBox,
+    el("div", { class: "actions" }, edit),
+  );
+}
+
 function renderRisks() {
   const box = $("#risks-body");
   if (!box) return;
-  box.replaceChildren(emptyState(
-    "No risks yet.",
-    null,
-    null,
-    "",
-  ));
-  const empty = $(".empty", box);
-  if (empty) {
-    empty.append(el("p", { class: "hint", text: "A later slice will add a risk register here. Clause-only input is unchanged." }));
+  const risks = state.project?.risks || [];
+  const add = () => openRiskForm(null);
+  if (!risks.length) {
+    box.replaceChildren(
+      el("div", { class: "view-head" },
+        el("h2", { id: "risks-title", class: "section-title section-title--first", text: "Risk register" }),
+        el("p", { class: "view-head__lede", text: "Identify risks on this device and draft control statements from them." })),
+      emptyState("No risks yet.", "Create", add, "empty--list",
+        [{ label: "Import", onClick: openRiskImport }]),
+    );
+    const createBtn = box.querySelector(".empty__actions .btn--primary");
+    if (createBtn) createBtn.id = "risk-add";
+    const importBtn = box.querySelector(".empty__actions .btn:not(.btn--primary)");
+    if (importBtn) importBtn.id = "risk-import";
+    return;
   }
+  const addBtn = el("button", { type: "button", class: "btn btn--primary", id: "risk-add", text: "Add scenario" });
+  const importBtn = el("button", { type: "button", class: "btn", id: "risk-import", text: "Import" });
+  addBtn.addEventListener("click", add);
+  importBtn.addEventListener("click", openRiskImport);
+  const body = risks.map((r) => {
+    const open = el("button", { type: "button", text: r.title });
+    open.addEventListener("click", () => { state.selectedRisk = r.id; renderRisks(); });
+    return el("tr", { "aria-current": String(state.selectedRisk === r.id) },
+      el("td", { text: r.id }),
+      el("td", {}, open),
+      el("td", { text: r.owner || "—" }),
+      el("td", {}, scoreBadge(r.score)),
+      el("td", { text: RISK_STATUS_LABELS[r.status] || r.status }));
+  });
+  const table = el("table", { class: "data-table risk-table" },
+    el("thead", {}, el("tr", {},
+      el("th", { text: "ID" }), el("th", { text: "Scenario" }), el("th", { text: "Owner" }),
+      el("th", { text: "Inherent" }), el("th", { text: "Status" }))),
+    el("tbody", {}, body));
+  const selected = riskById(state.selectedRisk) || risks[0];
+  if (selected && !state.selectedRisk) state.selectedRisk = selected.id;
+  const main = el("div", { class: "risks-main" }, renderHeatmap(risks), table);
+  box.replaceChildren(
+    el("div", { class: "risks-toolbar" },
+      el("div", { class: "view-head" },
+        el("h2", { id: "risks-title", class: "section-title section-title--first", text: "Risk register" }),
+        el("p", { class: "view-head__lede", text: "Review each risk, then draft and accept control statements." })),
+      el("div", { class: "actions" }, importBtn, addBtn)),
+    el("div", { class: "risks-layout" }, main, selected ? renderRiskDrawer(selected) : null),
+  );
 }
 
 function renderClauseEditor(box, clause) {
@@ -1208,7 +1542,7 @@ function addControl(clause) {
   let n = controlsOf(clause.id).length + 1;
   let id = `${clause.id.replace(/[^A-Za-z0-9.]+/g, "")}-${n}`;
   while (used.has(id)) id = `${clause.id.replace(/[^A-Za-z0-9.]+/g, "")}-${++n}`;
-  const control = { id, clause: clause.id, text: "", guidance: "", risk: "", who: "", notes: [], status: "draft", origin: "person" };
+  const control = { id, clause: clause.id, text: "", guidance: "", risk: "", who: "", notes: [], status: "draft", origin: "person", source_type: "clause", risk_id: "" };
   const last = state.project.controls.map((c) => c.clause).lastIndexOf(clause.id);
   state.project.controls.splice(last >= 0 ? last + 1 : insertionPoint(clause), 0, control);
   state.selected = { control: id };
@@ -1390,6 +1724,33 @@ function init() {
   const openExport = () => openExportDialog();
   $("#export-open-top")?.addEventListener("click", openExport);
   for (const b of $$("[data-export]")) b.addEventListener("click", () => exportAs(b.dataset.export, b));
+
+  $("#risk-form")?.addEventListener("submit", (e) => {
+    const action = e.submitter ? e.submitter.value : "cancel";
+    if (action !== "save") return;
+    e.preventDefault();
+    try {
+      saveRiskFromForm();
+      $("#risk-dialog").close();
+    } catch (err) {
+      const box = $("#risk-form-error");
+      box.textContent = err.message;
+      box.hidden = false;
+    }
+  });
+  $("#risk-import-form")?.addEventListener("submit", (e) => {
+    if ((e.submitter ? e.submitter.value : "") !== "import") return;
+    e.preventDefault();
+    busy($("#risk-import-apply"), "Importing…", async () => {
+      await applyRiskImport();
+      $("#risk-import-dialog").close();
+    });
+  });
+  $("#risk-file")?.addEventListener("change", () => {
+    const file = $("#risk-file").files[0];
+    if (!file) return;
+    busy(null, "", async () => previewRiskFile(file));
+  });
 
   $("#sidebar-toggle")?.addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("sidebar-collapsed");

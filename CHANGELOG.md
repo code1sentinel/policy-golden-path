@@ -12,6 +12,11 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- Risk → control statements ([ADR 0008](docs/adr/0008-risk-input-and-oscal-tracing.md)):
+  local risk register (table, heatmap, detail drawer, CSV/JSON import with
+  column mapping, CSV export), deterministic control templates, optional
+  existing AI chip, OSCAL tracing (`source-type`, `risk-id`, `rel=reference`),
+  and `codify POLICY --risks FILE`.
 - Authoring app shell ([ADR 0007](docs/adr/0007-authoring-app-shell.md)):
   collapsible sidebar (Workspace, Clauses, Risks, Catalog, Export, Guide),
   breadcrumb, centred writing column, properties/review panel, Catalog

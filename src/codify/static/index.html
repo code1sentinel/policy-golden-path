@@ -186,7 +186,7 @@
       <section id="catalog" class="catalog-view" aria-labelledby="catalog-title" hidden>
         <div class="view-head">
           <h2 id="catalog-title" class="section-title section-title--first">Catalog</h2>
-          <p class="view-head__lede">Accepted and drafted control statements, with the clause they came from.</p>
+          <p class="view-head__lede">Accepted and drafted control statements, with the clause or risk they came from.</p>
         </div>
         <div id="catalog-body"></div>
       </section>
@@ -255,6 +255,13 @@
           </div>
           <button type="button" class="btn" data-export="report">Download</button>
         </li>
+        <li class="export-list__row">
+          <div>
+            <strong>Risk register</strong>
+            <p>CSV of identified risks. Parsed and saved on this device only.</p>
+          </div>
+          <button type="button" class="btn" data-export="risks">Download</button>
+        </li>
       </ul>
     </form>
   </dialog>
@@ -299,6 +306,86 @@
       </div>
     </form>
   </dialog>
+
+  <dialog id="risk-dialog" class="dialog" aria-labelledby="risk-dialog-title">
+    <form id="risk-form" method="dialog" novalidate>
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="risk-dialog-title">Add a risk</h2>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" formnovalidate aria-label="Close">×</button>
+      </div>
+      <p class="dialog__lede">Stays on this device. Likelihood × impact becomes the inherent score.</p>
+      <ol class="stepper" aria-label="Add a risk">
+        <li class="is-current">Details</li>
+        <li>Score</li>
+      </ol>
+      <input type="hidden" id="risk-editing" value="">
+      <label class="field"><span>Scenario</span>
+        <input id="risk-title" name="risk-title" maxlength="500" required autocomplete="off">
+      </label>
+      <label class="field"><span>Description <em>optional</em></span>
+        <textarea id="risk-description" name="risk-description" rows="3"></textarea>
+      </label>
+      <div class="grid2">
+        <label class="field"><span>Asset or process <em>optional</em></span>
+          <input id="risk-asset" name="risk-asset" maxlength="500" autocomplete="off">
+        </label>
+        <label class="field"><span>Owner <em>optional</em></span>
+          <input id="risk-owner" name="risk-owner" maxlength="500" autocomplete="off">
+        </label>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>Threat <em>optional</em></span>
+          <input id="risk-threat" name="risk-threat" maxlength="500" autocomplete="off">
+        </label>
+        <label class="field"><span>Vulnerability <em>optional</em></span>
+          <input id="risk-vulnerability" name="risk-vulnerability" maxlength="500" autocomplete="off">
+        </label>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>Likelihood (1–5)</span>
+          <input id="risk-likelihood" name="risk-likelihood" type="number" min="1" max="5" value="3">
+        </label>
+        <label class="field"><span>Impact (1–5)</span>
+          <input id="risk-impact" name="risk-impact" type="number" min="1" max="5" value="3">
+        </label>
+      </div>
+      <label class="field"><span>Status</span>
+        <select id="risk-status" name="risk-status">
+          <option value="identified">Identified</option>
+          <option value="treating">Treating</option>
+          <option value="accepted">Accepted</option>
+          <option value="closed">Closed</option>
+        </select>
+      </label>
+      <p id="risk-form-error" class="error" role="alert" hidden></p>
+      <div class="dialog__actions actions">
+        <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
+        <button type="submit" class="btn btn--primary" value="save" id="risk-save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="risk-import-dialog" class="dialog" aria-labelledby="risk-import-title">
+    <form id="risk-import-form" method="dialog" novalidate>
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="risk-import-title">Import risks</h2>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" formnovalidate aria-label="Close">×</button>
+      </div>
+      <p class="dialog__lede">CSV or JSON is read on this device. Map each column to a risk field, then import. Nothing is uploaded.</p>
+      <p id="risk-import-summary" class="hint"></p>
+      <div id="risk-mapping" class="mapping"></div>
+      <p id="risk-import-errors" class="error" role="alert" hidden></p>
+      <div class="dialog__actions actions">
+        <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
+        <button type="submit" class="btn btn--primary" value="import" id="risk-import-apply">Import</button>
+      </div>
+    </form>
+  </dialog>
+  <input type="file" id="risk-file" hidden accept=".csv,.json,text/csv,application/json">
 
   <script type="module" src="app.js"></script>
 </body>
