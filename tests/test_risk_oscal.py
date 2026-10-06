@@ -40,6 +40,8 @@ def _freeze(catalog: dict) -> dict:
     cat["uuid"] = FROZEN_CATALOG
     cat["metadata"]["last-modified"] = FROZEN_WHEN
     cat["metadata"]["props"] = [p for p in cat["metadata"].get("props", []) if p.get("name") != "generator"]
+    if not cat["metadata"]["props"]:
+        cat["metadata"].pop("props", None)
     for resource in cat.get("back-matter", {}).get("resources", []):
         names = {p["name"] for p in resource.get("props", [])}
         if "risk-id" in names:

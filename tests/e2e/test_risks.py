@@ -4,7 +4,18 @@ import json
 
 from playwright.sync_api import expect
 
-from tests.e2e.test_web import export_oscal, turn_on_ai
+
+def export_oscal(page):
+    page.click("#export-open-top")
+    return page.expect_download()
+
+
+def turn_on_ai(page):
+    page.click("#ai-open")
+    page.fill("#ai-key", "sk-test")
+    page.check("#ai-ack")
+    page.click("#ai-on")
+    expect(page.locator("#ai-open")).to_have_text("AI: On · Anthropic")
 
 CSV = """id,title,description,asset,likelihood,impact,threat,vulnerability,owner,status
 R-001,Unauthorised access to agency systems,A compromised account could reach systems beyond need-to-know.,Agency systems,4,5,Stolen credentials,Excessive access rights,Jane Smith,identified
