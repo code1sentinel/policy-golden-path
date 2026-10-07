@@ -88,6 +88,8 @@ def provider():
 @pytest.fixture
 def page(browser, base_url, provider):
     context = browser.new_context(viewport={"width": 1360, "height": 900}, accept_downloads=True)
+    # Shared fixtures land on the paste start. First-visit splash has its own tests.
+    context.add_init_script("localStorage.setItem('codify:splash-seen', '1');")
     context.route("https://fonts.googleapis.com/**", lambda route: route.abort())
     context.route("https://fonts.gstatic.com/**", lambda route: route.abort())
     for host in PROVIDER_HOSTS:

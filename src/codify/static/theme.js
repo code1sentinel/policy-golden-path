@@ -64,6 +64,11 @@
   }
 
   apply();
+  try {
+    if (!localStorage.getItem("codify:splash-seen") && !localStorage.getItem("codify:project")) {
+      root.setAttribute("data-splash", "open");
+    }
+  } catch (err) { /* private mode */ }
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
     if (readPref() === "system") apply();
   });

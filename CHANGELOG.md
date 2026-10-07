@@ -12,6 +12,10 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- First-visit welcome splash (Linear-style hierarchy, Codify tokens):
+  centered mark, “Welcome to Codify”, one lede, **Get started**. Dismiss
+  is stored as `codify:splash-seen`; a saved project skips the splash so
+  resume stays instant. See [docs/prds/welcome-splash.md](docs/prds/welcome-splash.md).
 - Device-wide Statement library ([ADR 0009](docs/adr/0009-device-wide-statement-library.md)):
   after Accept, the statement is saved on this device (deduped by
   normalized text), reusable from **Library** or **From library** in the
