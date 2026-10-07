@@ -2,13 +2,8 @@
 
 from playwright.sync_api import expect
 
-from .test_risks import CSV
-from .test_statement_library import (
-    CLAUSE,
-    accept_current,
-    open_pasted,
-    wait_for_library_entries,
-)
+from test_risks import CSV
+from test_statement_library import CLAUSE, accept_current, open_pasted, wait_for_library_entries
 
 
 def import_demo_risk(page, tmp_path):
