@@ -33,6 +33,12 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Risks and Library follow GRC SaaS patterns from Vanta Mobbin flows
+  ([ADR 0010](docs/adr/0010-vanta-grc-surfaces.md)): Library vs Register
+  sub-nav, category pills, Add / Added / Remove, a recommended-controls
+  modal on the existing Accept path, and a statement list + detail
+  slide-over. Draft, Catalog, and Export keep the same indigo tokens.
+  No new stores or outbound calls.
 - Happy path is clause text only ([ADR 0006](docs/adr/0006-clause-only-input.md)):
   unnumbered paragraphs are clauses, a leading number stays in the pasted
   text, and OSCAL control ids/titles are minted internally.

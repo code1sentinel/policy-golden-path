@@ -26,6 +26,8 @@ def test_shell_has_sidebar_nav_and_properties_panel():
     assert "renderRiskDrawer" in JS
     assert "suggest_risk_controls" in JS
     assert "renderLibrary" in JS
+    assert "renderLibraryDetail" in JS
+    assert "openRecommendDialog" in JS
     assert "LIBRARY_KEY" in JS
     assert "codify:statements" in JS
 
