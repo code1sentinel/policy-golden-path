@@ -1636,6 +1636,9 @@ async function addRiskTemplate(risk, templateId, status, button) {
     appendRiskControls(data);
     if (status === "accepted" && data.controls[0]) {
       try { await rememberStatement(data.controls[0]); } catch (err) { showError(err.message); }
+      if (state.view === "work" && state.selected?.control) {
+        renderProps(controlById(state.selected.control), state.lastCheck[state.selected.control]);
+      }
     }
   });
 }
@@ -1909,6 +1912,7 @@ function renderRisks() {
       ? renderRiskLibrary(risks)
       : el("div", { class: "risks-layout" }, main, selected ? renderRiskDrawer(selected) : null),
   );
+  renderCrumb();
 }
 
 function renderClauseEditor(box, clause) {
