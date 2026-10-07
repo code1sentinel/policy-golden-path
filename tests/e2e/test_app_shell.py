@@ -9,6 +9,7 @@ def test_sidebar_lists_the_authoring_destinations(page):
     expect(nav.get_by_role("button", name="Clauses")).to_be_visible()
     expect(nav.get_by_role("button", name="Risks")).to_be_visible()
     expect(nav.get_by_role("button", name="Catalog")).to_be_visible()
+    expect(nav.get_by_role("button", name="Library")).to_be_visible()
     expect(nav.get_by_role("button", name="Export")).to_be_visible()
     expect(nav.get_by_role("button", name="Guide")).to_be_visible()
 
@@ -35,6 +36,10 @@ def test_clauses_catalog_and_risks_views(demo):
     demo.click("[data-nav='risks']")
     expect(demo.locator("#risks:not([hidden])")).to_be_visible()
     expect(demo.locator("#risks")).to_contain_text("No risks yet.")
+
+    demo.click("[data-nav='library']")
+    expect(demo.locator("#library:not([hidden])")).to_be_visible()
+    expect(demo.locator("#library")).to_contain_text("No statements saved yet")
 
 
 def test_ctrl_enter_accepts_the_current_control(demo):

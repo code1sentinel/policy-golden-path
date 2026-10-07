@@ -162,7 +162,7 @@ the rule drafts never use AI.
 ## Reviewing
 
 The workspace is an authoring app: a collapsible sidebar (Workspace, Clauses,
-Risks, Catalog, Export, Guide), a top bar with a breadcrumb, a centred writing
+Risks, Catalog, Library, Export, Guide), a top bar with a breadcrumb, a centred writing
 column, and a right properties/review panel. Select a control to edit the
 statement next to its legacy clause. Parts of the statement show as sub-items.
 Mark it **reviewed** or **accepted**, then go to the next clause. Add the risk
@@ -179,13 +179,21 @@ in the editor.
   accept (also from the statement field).
 - **Saving**: work is kept in your browser as you go. **Export** opens a dialog
   with a Download button for the OSCAL catalog (the file to keep, share or put
-  in git), Excel, CSV, the conversion report, and the risk register CSV. The editor's **OSCAL JSON**
+  in git), Excel, CSV, the conversion report, the risk register CSV, and the
+  device-wide statement library (JSON/CSV). The editor's **OSCAL JSON**
   tab shows this control so you can read or copy it without downloading the file.
 - **Catalog** lists every control with a source column (clause, or a risk id
   such as `R-001`). **Risks** is a local register: add or import CSV/JSON,
   pick deterministic control templates (or the optional AI chip), accept
   them like clause drafts. Clause-only input is unchanged
   ([ADR 0006](docs/adr/0006-clause-only-input.md)).
+- **Library** keeps accepted control statements on this device
+  (`codify:statements`, separate from the project autosave). Accept a
+  control and it is upserted there (deduped by normalized text). **Use**
+  or **Add** from the editor or the Library view fills a draft; Accept
+  still goes through the usual score-and-catalog path. Remove leaves the
+  catalog alone. Nothing is uploaded
+  ([ADR 0009](docs/adr/0009-device-wide-statement-library.md)).
 
 ## What comes out
 

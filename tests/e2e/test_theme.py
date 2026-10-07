@@ -55,5 +55,5 @@ def test_theme_toggle_makes_no_third_party_requests(browser, base_url):
 
 def test_ai_chip_is_not_a_view_tab(page):
     expect(page.locator("#ai-open")).to_have_text("AI: Off")
-    expect(page.locator("nav.sidebar__nav [data-view]")).to_have_count(5)
+    expect(page.locator("nav.sidebar__nav [data-view]")).to_have_count(6)
     expect(page.locator("nav.sidebar__nav #ai-open")).to_have_count(0)

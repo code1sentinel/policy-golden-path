@@ -285,20 +285,24 @@ input:focus, select:focus, textarea:focus { border-color: var(--orange); outline
 
 body:has(#work:not([hidden])),
 body:has(#catalog:not([hidden])),
-body:has(#risks:not([hidden])) { overflow: hidden; height: 100vh; }
+body:has(#risks:not([hidden])),
+body:has(#library:not([hidden])) { overflow: hidden; height: 100vh; }
 body:has(#work:not([hidden])) .app__frame,
 body:has(#catalog:not([hidden])) .app__frame,
-body:has(#risks:not([hidden])) .app__frame {
+body:has(#risks:not([hidden])) .app__frame,
+body:has(#library:not([hidden])) .app__frame {
   height: 100vh; overflow: hidden;
 }
 body:has(#work:not([hidden])) main,
 body:has(#catalog:not([hidden])) main,
-body:has(#risks:not([hidden])) main {
+body:has(#risks:not([hidden])) main,
+body:has(#library:not([hidden])) main {
   flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: 12px; padding-bottom: 12px;
 }
 body:has(#work:not([hidden])) #work,
 body:has(#catalog:not([hidden])) #catalog,
-body:has(#risks:not([hidden])) #risks { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+body:has(#risks:not([hidden])) #risks,
+body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .work__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 12px; }
 .work__title { min-width: 0; flex: 1 1 280px; }
@@ -536,6 +540,22 @@ body:has(#risks:not([hidden])) #risks { flex: 1; min-height: 0; display: flex; f
   .risk-drawer { border-left: 0; border-top: 1px solid var(--border-soft); padding: 16px 0 0; }
 }
 
+/* Statement library ------------------------------------------------------- */
+
+.library-view { min-height: 0; display: flex; flex-direction: column; }
+.library-toolbar {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-end;
+  margin-bottom: 16px;
+}
+.library-toolbar__tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.library-toolbar__tools input[type="search"] { min-width: 220px; }
+.library-count { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.library-table .library-statement { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.library-row__actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.library-pick .library-statement { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+#library-pick { width: min(560px, calc(100vw - 32px)); }
+#library-pick-list { display: grid; gap: 0; max-height: min(50vh, 420px); overflow: auto; }
+
 /* Guide ------------------------------------------------------------------- */
 
 .guide-view { max-width: 40rem; margin: 0 auto; padding-bottom: 64px; }
@@ -577,10 +597,12 @@ body:has(#risks:not([hidden])) #risks { flex: 1; min-height: 0; display: flex; f
   body.sidebar-collapsed { grid-template-columns: 1fr; }
   body:has(#work:not([hidden])),
   body:has(#catalog:not([hidden])),
-  body:has(#risks:not([hidden])) { overflow: auto; height: auto; }
+  body:has(#risks:not([hidden])),
+  body:has(#library:not([hidden])) { overflow: auto; height: auto; }
   body:has(#work:not([hidden])) .app__frame,
   body:has(#catalog:not([hidden])) .app__frame,
-  body:has(#risks:not([hidden])) .app__frame { height: auto; overflow: visible; }
+  body:has(#risks:not([hidden])) .app__frame,
+  body:has(#library:not([hidden])) .app__frame { height: auto; overflow: visible; }
   body:has(#work:not([hidden])) main, body:has(#work:not([hidden])) #work { display: block; min-height: 0; }
   .workspace { grid-template-columns: 1fr; height: auto; min-height: 0; overflow: visible; display: flex; flex-direction: column; }
   .pane--list { border-right: 0; border-top: 1px solid var(--border-soft); min-height: 0; overflow: visible; order: 1; }

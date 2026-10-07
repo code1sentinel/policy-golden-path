@@ -9,4 +9,6 @@ UI features must fill in **Design references** with Mobbin screen links
 before implementation.
 
 - [ui-overhaul.md](ui-overhaul.md) — authoring app shell (PR A)
+- [risk-to-controls.md](risk-to-controls.md) — risk register → catalog controls
+- [statement-library.md](statement-library.md) — device-wide accepted statements
 

@@ -55,9 +55,11 @@ They are a starting point to edit, not finished controls.
 - **Review:** workspace lists requirement clauses; edit the statement next to
   the legacy clause; **Statement | OSCAL JSON** tabs on the current control;
   mark reviewed or accepted; filters and bulk actions under More; keyboard
-  `j` / `k` / `r` / `a`.
+  `j` / `k` / `r` / `a`. Accept also upserts the statement into a device-wide
+  **Library** ([ADR 0009](adr/0009-device-wide-statement-library.md)).
 - **Export:** **Save OSCAL (.json)** (catalog 1.1.2, also the save file);
-  Excel, CSV (formula-escaped), and the Markdown report under a chevron.
+  Excel, CSV (formula-escaped), the Markdown report, the risk register, and
+  the statement library (JSON/CSV) from the export dialog.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -125,6 +127,11 @@ writing column, and properties/review panel. See
 [docs/prds/ui-overhaul.md](prds/ui-overhaul.md) and
 [ADR 0007](adr/0007-authoring-app-shell.md).
 
+Accepted statements also land in a device-wide Statement library, reusable
+across projects on this machine. See
+[docs/prds/statement-library.md](prds/statement-library.md) and
+[ADR 0009](adr/0009-device-wide-statement-library.md).
+
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
 | Krea AI — single prompt + Generate | https://mobbin.com/screens/323e22c9-d758-4bf1-aee3-dcc9e284a2ef | Start: one hero input, one primary |
@@ -158,6 +165,8 @@ writing column, and properties/review panel. See
   [ADR 0005](adr/0005-remove-im8-mapping.md).
 - Clause-only happy-path input ([ADR 0006](adr/0006-clause-only-input.md)):
   no Title field; clause numbers are not required or shown.
+- Device-wide statement library is a separate `codify:statements` store, not
+  the catalog ([ADR 0009](adr/0009-device-wide-statement-library.md)).
 - Standard-library runtime for the package; optional `dev` / `e2e` only for
   tests.
 
