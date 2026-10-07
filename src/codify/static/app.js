@@ -30,6 +30,11 @@ const state = {
   dismissed: {},       // control id -> dismissed review suggestion texts
   lastCheck: {},       // control id -> {assessment, parts}
   selectedRisk: null,  // risk id
+  riskPane: "register", // library | register
+  riskQuery: "",
+  selectedLibrary: null, // library entry id
+  libraryPickId: null,
+  recommendRiskId: null,
   dismissedTemplates: {},  // risk id -> template ids
   importPreview: null,
 };
@@ -58,6 +63,7 @@ function showNotice(message) {
   const box = $("#notice");
   box.textContent = message || "";
   box.hidden = !message;
+  box.classList.toggle("toast", Boolean(message));
 }
 
 function friendlyNetworkMessage(message) {
@@ -541,6 +547,7 @@ function showView(view) {
   const closeBtn = $("#close-project");
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
+  if (view !== "risks") closeRecommendDialog();
   if (view === "workspace" && !state.project) renderResume();
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
@@ -562,6 +569,7 @@ function renderCrumb() {
   } else if (state.view === "catalog") parts.push("Catalog");
   else if (state.view === "risks") {
     parts.push("Risks");
+    parts.push(state.riskPane === "library" ? "Library" : "Register");
     const risk = state.selectedRisk && riskById(state.selectedRisk);
     if (risk) parts.push(risk.title);
   }
@@ -1212,7 +1220,7 @@ function renderCatalog() {
     return el("tr", {},
       el("td", { text: c.id }),
       el("td", {}, open),
-      el("td", { text: controlSourceLabel(c) }),
+      el("td", {}, el("span", { class: "pill", text: controlSourceLabel(c) })),
       el("td", {}, el("span", { class: `state state--${c.status}`, text: STATUS_LABELS[c.status] })));
   });
   box.replaceChildren(el("div", { class: "catalog-body" },
@@ -1221,6 +1229,46 @@ function renderCatalog() {
         el("th", { text: "ID" }), el("th", { text: "Control" }),
         el("th", { text: "Source" }), el("th", { text: "Status" }))),
       el("tbody", {}, body))));
+}
+
+function statementLead(text) {
+  const raw = (text || "").trim();
+  if (!raw) return "(empty)";
+  const match = raw.match(/^[^.]*\.(?:\s|$)/);
+  return match ? match[0].trim() : raw;
+}
+
+function renderLibraryDetail(entry) {
+  if (!entry) {
+    return el("aside", { class: "library-detail", id: "library-detail", "aria-label": "Statement details" },
+      el("p", { class: "placeholder", text: "Select a statement to see its details." }));
+  }
+  const use = el("button", { type: "button", class: "btn btn--primary library-use", text: "Use" });
+  const add = el("button", { type: "button", class: "btn library-add", text: "Add" });
+  const removeBtn = el("button", { type: "button", class: "btn btn--quiet library-remove", text: "Remove" });
+  use.addEventListener("click", () => useLibraryEntry(entry, "use"));
+  add.addEventListener("click", () => useLibraryEntry(entry, "add"));
+  removeBtn.addEventListener("click", () => removeLibraryEntry(entry));
+  const source = librarySourceLabel(entry);
+  const domain = (entry["source-type"] || entry.source_type) === "risk" ? "Risk" : "Control statement";
+  return el("aside", { class: "library-detail", id: "library-detail", "aria-label": "Statement details" },
+    el("h3", { class: "library-detail__title", text: statementLead(entry.statement) }),
+    el("p", { class: "library-detail__statement", text: entry.statement }),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "ID" }),
+      el("span", { class: "prop-row__value", text: entry.id })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Source" }),
+      el("span", { class: "prop-row__value" }, el("span", { class: "pill", text: source }))),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Domain" }),
+      el("span", { class: "prop-row__value", text: domain })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Framework" }),
+      el("span", { class: "prop-row__value", text: "OSCAL 1.1.2" })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Related" }),
+      el("span", { class: "prop-row__value", text: entry["risk-id"] || entry.risk_id || "Clause" })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Accepted" }),
+      el("span", { class: "prop-row__value", text: formatWhen(entry["accepted-at"]) })),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Last used" }),
+      el("span", { class: "prop-row__value", text: formatWhen(entry["last-used-at"]) })),
+    el("div", { class: "library-detail__actions actions" }, use, add, removeBtn));
 }
 
 function renderLibrary() {
@@ -1263,27 +1311,33 @@ function renderLibrary() {
     box.replaceChildren(head, empty);
     return;
   }
-  const rows = filtered.map((entry) => {
-    const use = el("button", { type: "button", class: "btn btn--small btn--primary library-use", text: "Use" });
-    const removeBtn = el("button", { type: "button", class: "btn btn--small library-remove", text: "Remove" });
-    use.addEventListener("click", () => useLibraryEntry(entry, "use"));
-    removeBtn.addEventListener("click", () => removeLibraryEntry(entry));
-    return el("tr", { class: "library-row", "data-library-id": entry.id },
-      el("td", {}, el("p", { class: "library-statement", text: entry.statement })),
-      el("td", { text: librarySourceLabel(entry) }),
-      el("td", { text: formatWhen(entry["accepted-at"]) }),
-      el("td", { text: formatWhen(entry["last-used-at"]) }),
-      el("td", { class: "library-row__actions" }, use, removeBtn));
-  });
-  box.replaceChildren(head,
+  const ids = new Set(filtered.map((e) => e.id));
+  if (!state.selectedLibrary || !ids.has(state.selectedLibrary)) state.selectedLibrary = filtered[0].id;
+  const selected = filtered.find((e) => e.id === state.selectedLibrary) || filtered[0];
+  const list = el("div", { class: "library-list", "aria-label": "Saved statements" },
     el("p", { class: "library-count", text: `Statement library (${filtered.length})` }),
-    el("div", { class: "catalog-body" },
-      el("table", { class: "data-table library-table" },
-        el("thead", {}, el("tr", {},
-          el("th", { text: "Statement" }), el("th", { text: "Source" }),
-          el("th", { text: "Accepted" }), el("th", { text: "Last used" }),
-          el("th", { text: "Actions" }))),
-        el("tbody", {}, rows))));
+    filtered.map((entry) => {
+      const use = el("button", { type: "button", class: "btn btn--small btn--primary library-use", text: "Use" });
+      const removeBtn = el("button", { type: "button", class: "btn btn--small library-remove", text: "Remove" });
+      use.addEventListener("click", (e) => { e.stopPropagation(); useLibraryEntry(entry, "use"); });
+      removeBtn.addEventListener("click", (e) => { e.stopPropagation(); removeLibraryEntry(entry); });
+      const row = el("article", {
+        class: "library-row", "data-library-id": entry.id,
+        "aria-current": String(entry.id === state.selectedLibrary),
+      },
+        el("p", { class: "library-statement", text: entry.statement }),
+        el("div", { class: "library-row__meta" },
+          el("span", { class: "pill", text: librarySourceLabel(entry) }),
+          el("span", { class: "muted", text: formatWhen(entry["accepted-at"]) })),
+        el("div", { class: "library-row__actions" }, use, removeBtn));
+      row.addEventListener("click", (e) => {
+        if (e.target.closest("button")) return;
+        state.selectedLibrary = entry.id;
+        renderLibrary();
+      });
+      return row;
+    }));
+  box.replaceChildren(head, el("div", { class: "library-layout" }, list, renderLibraryDetail(selected)));
 }
 
 async function removeLibraryEntry(entry) {
@@ -1354,11 +1408,42 @@ function libraryPickRows(entries, { add = true } = {}) {
     const addBtn = add ? el("button", { type: "button", class: "btn btn--small", text: "Add" }) : null;
     use.addEventListener("click", () => useLibraryEntry(entry, "use"));
     if (addBtn) addBtn.addEventListener("click", () => useLibraryEntry(entry, "add"));
-    return el("div", { class: "template-row library-pick", "data-library-id": entry.id },
+    const row = el("div", {
+      class: "template-row library-pick", "data-library-id": entry.id,
+      "aria-current": String(state.libraryPickId === entry.id),
+    },
       el("p", { class: "library-statement", text: entry.statement }),
       el("p", { class: "muted", text: `${librarySourceLabel(entry)} · accepted ${formatWhen(entry["accepted-at"])}` }),
       el("div", { class: "suggestion__actions" }, use, addBtn));
+    row.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+      state.libraryPickId = entry.id;
+      const list = $("#library-pick-list");
+      if (list && $("#library-pick")?.open) renderLibraryPicks(list, $("#library-pick-search")?.value || "");
+    });
+    return row;
   });
+}
+
+function renderLibraryPickDetail(hits) {
+  const box = $("#library-pick-detail");
+  if (!box) return;
+  const entry = hits.find((e) => e.id === state.libraryPickId) || hits[0];
+  if (!entry) {
+    box.replaceChildren(el("p", { class: "placeholder", text: "Select a statement." }));
+    return;
+  }
+  state.libraryPickId = entry.id;
+  const use = el("button", { type: "button", class: "btn btn--primary library-use", text: "Use" });
+  const add = el("button", { type: "button", class: "btn", text: "Add" });
+  use.addEventListener("click", () => useLibraryEntry(entry, "use"));
+  add.addEventListener("click", () => useLibraryEntry(entry, "add"));
+  box.replaceChildren(
+    el("h3", { class: "library-detail__title", text: statementLead(entry.statement) }),
+    el("p", { class: "library-detail__statement", text: entry.statement }),
+    el("p", { class: "muted", text: `${librarySourceLabel(entry)} · OSCAL 1.1.2` }),
+    el("div", { class: "actions" }, use, add),
+  );
 }
 
 function renderLibraryPicks(container, query = "") {
@@ -1368,6 +1453,7 @@ function renderLibraryPicks(container, query = "") {
     ? entries.filter((e) => `${e.statement} ${e["risk-id"] || ""}`.toLowerCase().includes(needle))
     : entries).slice(0, 8);
   put(container, ...libraryPickRows(hits));
+  renderLibraryPickDetail(hits);
 }
 
 function openLibraryPick() {
@@ -1538,6 +1624,7 @@ function appendRiskControls(data) {
   Object.assign(state.scores, data.scores || {});
   if (incoming[0]) state.selected = { control: incoming[0].id };
   saveLocal();
+  closeRecommendDialog();
   showView("work");
   render();
 }
@@ -1555,7 +1642,9 @@ async function addRiskTemplate(risk, templateId, status, button) {
 
 function dismissTemplate(riskId, templateId) {
   state.dismissedTemplates[riskId] = [...(state.dismissedTemplates[riskId] || []), templateId];
-  renderRisks();
+  const risk = riskById(riskId);
+  if (state.view === "risks") renderRisks();
+  if ($("#recommend-dialog")?.open && risk) fillRecommendList($("#recommend-list"), risk, { heading: false });
 }
 
 async function aiDraftRisk(risk) {
@@ -1582,15 +1671,27 @@ async function aiRedraftRisk(risk, button) {
   });
 }
 
-function renderRiskDrawer(risk) {
-  const linked = controlsOfRisk(risk.id);
-  const open = (c) => { showView("work"); select({ control: c.id }); };
-  const suggestionsBox = el("div", { id: "risk-templates", class: "props-card" },
-    el("h3", { class: "props-card__title", text: "Draft controls" }),
-    el("p", { class: "placeholder", text: "Loading templates…" }));
+function riskCategory(risk) {
+  return ((risk.asset || risk.threat || "Uncategorised").trim()) || "Uncategorised";
+}
+
+function riskHasControls(risk) {
+  return controlsOfRisk(risk.id).length > 0;
+}
+
+function closeRecommendDialog() {
+  const dialog = $("#recommend-dialog");
+  if (dialog && dialog.open) dialog.close();
+  state.recommendRiskId = null;
+}
+
+function fillRecommendList(container, risk, { heading = true } = {}) {
+  if (!container || !risk) return;
+  container.replaceChildren(el("p", { class: "placeholder", text: "Loading templates…" }));
   call({ action: "suggest_risk_controls", risk }).then((data) => {
     const hidden = new Set(state.dismissedTemplates[risk.id] || []);
-    const rows = data.suggestions.filter((s) => !hidden.has(s.id)).map((s) => {
+    const visible = data.suggestions.filter((s) => !hidden.has(s.id));
+    const rows = visible.map((s) => {
       const add = el("button", { type: "button", class: "btn btn--small", text: "Add", "data-template": s.id });
       const accept = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Accept" });
       const dismiss = el("button", { type: "button", class: "btn btn--small", text: "Dismiss" });
@@ -1604,22 +1705,132 @@ function renderRiskDrawer(risk) {
     const aiBtn = aiReady() ? el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" }) : null;
     if (aiBtn) aiBtn.addEventListener("click", () => aiRedraftRisk(risk, aiBtn));
     const lib = loadLibrary().slice(0, 4);
-    put(suggestionsBox,
-      el("h3", { class: "props-card__title", text: "Draft controls" }),
+    const title = $("#recommend-title");
+    if (title && container.id === "recommend-list") {
+      title.textContent = `Add ${visible.length} recommended control${visible.length === 1 ? "" : "s"}?`;
+    }
+    put(container,
+      heading ? el("h3", { class: "props-card__title", text: "Recommended controls" }) : null,
       rows.length ? rows : el("p", { class: "placeholder", text: "No matching templates. Add a control from the editor." }),
       lib.length ? el("h3", { class: "props-card__title", text: "From library" }) : null,
       lib.length ? libraryPickRows(lib, { add: true }) : null,
       aiBtn,
       el("p", { class: "disclaimer", text: "Templates are deterministic. Optional AI may produce inaccurate wording." }),
     );
-  }).catch((err) => { suggestionsBox.replaceChildren(el("p", { class: "placeholder", text: err.message })); });
+  }).catch((err) => { container.replaceChildren(el("p", { class: "placeholder", text: err.message })); });
+}
 
+function openRecommendDialog(risk) {
+  const dialog = $("#recommend-dialog");
+  if (!dialog || !risk) return;
+  state.recommendRiskId = risk.id;
+  state.selectedRisk = risk.id;
+  const scenario = $("#recommend-scenario");
+  if (scenario) scenario.textContent = risk.description || risk.title;
+  fillRecommendList($("#recommend-list"), risk, { heading: false });
+  if (dialog.showModal && !dialog.open) dialog.showModal();
+}
+
+async function addAllRecommended(button) {
+  const risk = riskById(state.recommendRiskId || state.selectedRisk);
+  if (!risk) return;
+  await busy(button, "Adding…", async () => {
+    const data = await call({ action: "suggest_risk_controls", risk });
+    const hidden = new Set(state.dismissedTemplates[risk.id] || []);
+    const ids = data.suggestions.filter((s) => !hidden.has(s.id)).map((s) => s.id);
+    if (!ids.length) return;
+    const drafted = await call({ action: "draft_risk_controls", risk, template_ids: ids });
+    appendRiskControls(drafted);
+    showNotice("Successfully added recommended controls");
+  });
+}
+
+function removeRisk(risk) {
+  if (!state.project) return;
+  if (!confirm("Remove this risk from the register? Catalog controls stay.")) return;
+  state.project.risks = state.project.risks.filter((r) => r.id !== risk.id);
+  if (state.selectedRisk === risk.id) state.selectedRisk = null;
+  saveLocal();
+  renderRisks();
+}
+
+function renderRiskSubnav() {
+  return el("nav", { class: "subnav", id: "risks-subnav", "aria-label": "Risk views" },
+    [["library", "Library"], ["register", "Register"]].map(([id, label]) => {
+      const b = el("button", {
+        type: "button", class: "subnav__btn", "data-risk-pane": id,
+        "aria-pressed": String(state.riskPane === id), text: label,
+      });
+      b.addEventListener("click", () => { state.riskPane = id; renderRisks(); });
+      return b;
+    }));
+}
+
+function riskSearchInput() {
+  const search = el("input", {
+    id: "risk-search", type: "search", placeholder: "Search",
+    "aria-label": "Search risks", autocomplete: "off",
+  });
+  search.value = state.riskQuery || "";
+  search.addEventListener("input", () => {
+    state.riskQuery = search.value;
+    renderRisks();
+    const again = $("#risk-search");
+    if (again) { again.focus(); again.setSelectionRange(search.value.length, search.value.length); }
+  });
+  return search;
+}
+
+function filteredRisks(risks) {
+  const query = (state.riskQuery || "").trim().toLowerCase();
+  if (!query) return risks;
+  return risks.filter((r) => `${r.title} ${r.asset || ""} ${r.threat || ""} ${r.id} ${r.owner || ""}`.toLowerCase().includes(query));
+}
+
+function renderRiskLibrary(risks) {
+  const rows = filteredRisks(risks).map((r) => {
+    const added = riskHasControls(r);
+    const add = el("button", {
+      type: "button", class: "btn btn--small btn--primary risk-add-controls",
+      text: added ? "Add more" : "Add",
+    });
+    add.addEventListener("click", (e) => { e.stopPropagation(); openRecommendDialog(r); });
+    const remove = el("button", { type: "button", class: "btn btn--small risk-remove", text: "Remove" });
+    remove.addEventListener("click", (e) => { e.stopPropagation(); removeRisk(r); });
+    const open = el("button", { type: "button", class: "risk-scenario", text: r.title });
+    open.addEventListener("click", () => { state.selectedRisk = r.id; state.riskPane = "register"; renderRisks(); });
+    return el("tr", { class: "risk-library-row", "data-risk-id": r.id, "aria-current": String(state.selectedRisk === r.id) },
+      el("td", {}, open, r.description ? el("p", { class: "muted risk-library-desc", text: r.description }) : null),
+      el("td", {}, el("span", { class: "pill", text: riskCategory(r) })),
+      el("td", { class: "risk-library-actions" },
+        added ? el("span", { class: "ready-chip is-ready", text: "Added" }) : null,
+        add, remove));
+  });
+  return el("div", { class: "catalog-body" },
+    el("table", { class: "data-table risk-library-table" },
+      el("thead", {}, el("tr", {},
+        el("th", { text: "Scenario" }), el("th", { text: "Category" }), el("th", { text: "Add recommended" }))),
+      el("tbody", {}, rows.length ? rows : el("tr", {},
+        el("td", { colspan: "3" }, el("p", { class: "placeholder", text: "No scenarios match that search." }))))));
+}
+
+function renderRiskDrawer(risk) {
+  const linked = controlsOfRisk(risk.id);
+  const open = (c) => { showView("work"); select({ control: c.id }); };
+  const suggestionsBox = el("div", { id: "risk-templates", class: "recommend-panel props-card" },
+    el("h3", { class: "props-card__title", text: "Recommended controls" }),
+    el("p", { class: "placeholder", text: "Loading templates…" }));
+  fillRecommendList(suggestionsBox, risk);
   const edit = el("button", { type: "button", class: "btn btn--small", text: "Edit" });
   edit.addEventListener("click", () => openRiskForm(risk));
+  const openModal = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Add recommended controls" });
+  openModal.addEventListener("click", () => openRecommendDialog(risk));
   return el("aside", { class: "risk-drawer", id: "risk-drawer", "aria-label": "Risk details" },
     el("h3", { class: "section-title", text: risk.title }),
     el("p", { class: "muted", text: `${risk.id} · score ${risk.score} · ${RISK_STATUS_LABELS[risk.status] || risk.status}` }),
     risk.description ? el("p", { text: risk.description }) : null,
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Category" }),
+      el("span", { class: "prop-row__value" }, el("span", { class: "pill", text: riskCategory(risk) }))),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Asset" }), el("span", { class: "prop-row__value", text: risk.asset || "—" })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Owner" }), el("span", { class: "prop-row__value", text: risk.owner || "—" })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Threat" }), el("span", { class: "prop-row__value", text: risk.threat || "—" })),
@@ -1631,7 +1842,7 @@ function renderRiskDrawer(risk) {
       return b;
     }) : el("p", { class: "placeholder", text: "None yet. Add a template below." }),
     suggestionsBox,
-    el("div", { class: "actions" }, edit),
+    el("div", { class: "actions" }, edit, openModal),
   );
 }
 
@@ -1640,10 +1851,16 @@ function renderRisks() {
   if (!box) return;
   const risks = state.project?.risks || [];
   const add = () => openRiskForm(null);
+  const library = state.riskPane === "library";
+  const title = library ? "Risk library" : "Risk register";
+  const lede = library
+    ? "Select the risks that apply, then add recommended control statements. Nothing is uploaded."
+    : "Review each identified risk, then draft and accept control statements.";
   if (!risks.length) {
     box.replaceChildren(
+      renderRiskSubnav(),
       el("div", { class: "view-head" },
-        el("h2", { id: "risks-title", class: "section-title section-title--first", text: "Risk register" }),
+        el("h2", { id: "risks-title", class: "section-title section-title--first", text: title }),
         el("p", { class: "view-head__lede", text: "Identify risks on this device and draft control statements from them." })),
       emptyState("No risks yet.", "Create", add, "empty--list",
         [{ label: "Import", onClick: openRiskImport }]),
@@ -1658,31 +1875,39 @@ function renderRisks() {
   const importBtn = el("button", { type: "button", class: "btn", id: "risk-import", text: "Import" });
   addBtn.addEventListener("click", add);
   importBtn.addEventListener("click", openRiskImport);
-  const body = risks.map((r) => {
+  const shown = filteredRisks(risks);
+  const body = shown.map((r) => {
     const open = el("button", { type: "button", text: r.title });
     open.addEventListener("click", () => { state.selectedRisk = r.id; renderRisks(); });
     return el("tr", { "aria-current": String(state.selectedRisk === r.id) },
       el("td", { text: r.id }),
       el("td", {}, open),
+      el("td", {}, el("span", { class: "pill", text: riskCategory(r) })),
       el("td", { text: r.owner || "—" }),
       el("td", {}, scoreBadge(r.score)),
-      el("td", { text: RISK_STATUS_LABELS[r.status] || r.status }));
+      el("td", {}, el("span", { class: `state ${r.status === "accepted" ? "state--accepted" : "state--draft"}`, text: RISK_STATUS_LABELS[r.status] || r.status })));
   });
   const table = el("table", { class: "data-table risk-table" },
     el("thead", {}, el("tr", {},
-      el("th", { text: "ID" }), el("th", { text: "Scenario" }), el("th", { text: "Owner" }),
-      el("th", { text: "Inherent" }), el("th", { text: "Status" }))),
-    el("tbody", {}, body));
-  const selected = riskById(state.selectedRisk) || risks[0];
+      el("th", { text: "ID" }), el("th", { text: "Scenario" }), el("th", { text: "Category" }),
+      el("th", { text: "Owner" }), el("th", { text: "Inherent" }), el("th", { text: "Status" }))),
+    el("tbody", {}, body.length ? body : el("tr", {},
+      el("td", { colspan: "6" }, el("p", { class: "placeholder", text: "No risks match that search." })))));
+  const selected = riskById(state.selectedRisk) || shown[0] || risks[0];
   if (selected && !state.selectedRisk) state.selectedRisk = selected.id;
-  const main = el("div", { class: "risks-main" }, renderHeatmap(risks), table);
+  const main = el("div", { class: "risks-main" },
+    el("div", { class: "grc-card" }, renderHeatmap(risks)),
+    table);
   box.replaceChildren(
+    renderRiskSubnav(),
     el("div", { class: "risks-toolbar" },
       el("div", { class: "view-head" },
-        el("h2", { id: "risks-title", class: "section-title section-title--first", text: "Risk register" }),
-        el("p", { class: "view-head__lede", text: "Review each risk, then draft and accept control statements." })),
-      el("div", { class: "actions" }, importBtn, addBtn)),
-    el("div", { class: "risks-layout" }, main, selected ? renderRiskDrawer(selected) : null),
+        el("h2", { id: "risks-title", class: "section-title section-title--first", text: title }),
+        el("p", { class: "view-head__lede", text: lede })),
+      el("div", { class: "actions" }, riskSearchInput(), importBtn, addBtn)),
+    library
+      ? renderRiskLibrary(risks)
+      : el("div", { class: "risks-layout" }, main, selected ? renderRiskDrawer(selected) : null),
   );
 }
 
@@ -2010,6 +2235,8 @@ function init() {
     const list = $("#library-pick-list");
     if (list) renderLibraryPicks(list, $("#library-pick-search").value);
   });
+  $("#recommend-add")?.addEventListener("click", (e) => addAllRecommended(e.currentTarget));
+  $("#recommend-dialog")?.addEventListener("close", () => { state.recommendRiskId = null; });
 
   $("#sidebar-toggle")?.addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("sidebar-collapsed");
@@ -2033,6 +2260,11 @@ function init() {
     }
     if (e.key === "Escape" && $("#library-pick")?.open) {
       $("#library-pick").close();
+      e.preventDefault();
+      return;
+    }
+    if (e.key === "Escape" && $("#recommend-dialog")?.open) {
+      closeRecommendDialog();
       e.preventDefault();
       return;
     }

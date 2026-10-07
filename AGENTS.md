@@ -38,6 +38,7 @@ Relevant decisions already on file:
 - [`0007-authoring-app-shell.md`](docs/adr/0007-authoring-app-shell.md)
 - [`0008-risk-input-and-oscal-tracing.md`](docs/adr/0008-risk-input-and-oscal-tracing.md)
 - [`0009-device-wide-statement-library.md`](docs/adr/0009-device-wide-statement-library.md)
+- [`0010-vanta-grc-surfaces.md`](docs/adr/0010-vanta-grc-surfaces.md)
 
 ## 3. Thin vertical slices, one PR each
 

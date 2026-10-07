@@ -422,7 +422,28 @@
         <span class="visually-hidden">Search the library</span>
         <input id="library-pick-search" type="search" placeholder="Search statements" autocomplete="off">
       </label>
-      <div id="library-pick-list"></div>
+      <div class="picker">
+        <div id="library-pick-list"></div>
+        <aside id="library-pick-detail" class="picker__detail" aria-label="Statement preview"></aside>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="recommend-dialog" class="dialog recommend-dialog" aria-labelledby="recommend-title">
+    <form method="dialog">
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="recommend-title">Add recommended controls?</h2>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
+      </div>
+      <p id="recommend-scenario" class="recommend-scenario"></p>
+      <p class="recommend-label">Recommended controls</p>
+      <div id="recommend-list"></div>
+      <div class="dialog__actions actions">
+        <button type="submit" class="btn btn--quiet" value="cancel" id="recommend-dismiss">Not now</button>
+        <button type="button" class="btn btn--primary" id="recommend-add">Add controls</button>
+      </div>
     </form>
   </dialog>
 

@@ -183,12 +183,15 @@ in the editor.
   device-wide statement library (JSON/CSV). The editor's **OSCAL JSON**
   tab shows this control so you can read or copy it without downloading the file.
 - **Catalog** lists every control with a source column (clause, or a risk id
-  such as `R-001`). **Risks** is a local register: add or import CSV/JSON,
-  pick deterministic control templates (or the optional AI chip), accept
-  them like clause drafts. Clause-only input is unchanged
-  ([ADR 0006](docs/adr/0006-clause-only-input.md)).
+  such as `R-001`). **Risks** is a local register with **Library** and
+  **Register** views: add or import CSV/JSON, add recommended control
+  templates from a focused modal (or the optional AI chip), accept them
+  like clause drafts. Clause-only input is unchanged
+  ([ADR 0006](docs/adr/0006-clause-only-input.md),
+  [ADR 0010](docs/adr/0010-vanta-grc-surfaces.md)).
 - **Library** keeps accepted control statements on this device
-  (`codify:statements`, separate from the project autosave). Accept a
+  (`codify:statements`, separate from the project autosave). The view is a
+  list plus a detail slide-over (source, OSCAL 1.1.2 refs). Accept a
   control and it is upserted there (deduped by normalized text). **Use**
   or **Add** from the editor or the Library view fills a draft; Accept
   still goes through the usual score-and-catalog path. Remove leaves the
