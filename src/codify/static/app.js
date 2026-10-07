@@ -16,6 +16,7 @@ const RISK_FIELDS = ["id", "title", "description", "asset", "likelihood", "impac
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
 const SAVE_KEY = "codify:project";
 const LIBRARY_KEY = "codify:statements";
+const SPLASH_KEY = "codify:splash-seen";
 
 const state = {
   project: null,       // {uuid, title, source, clauses: [...], controls: [...], risks: [...]}
@@ -539,6 +540,7 @@ function showView(view) {
   }
   $("#guide").hidden = view !== "guide";
   $("#start").hidden = view !== "workspace";
+  applySplash();
   $("#work").hidden = view !== "work";
   $("#catalog").hidden = view !== "catalog";
   $("#risks").hidden = view !== "risks";
@@ -590,6 +592,36 @@ function renderResume() {
   $("#resume-title").textContent = saved.project.title || "Untitled policy";
   const when = new Date(saved.saved);
   $("#resume-when").textContent = isNaN(when) ? "" : `(saved ${when.toLocaleString()})`;
+}
+
+function splashSeen() {
+  try { return Boolean(localStorage.getItem(SPLASH_KEY)); } catch { return false; }
+}
+
+function shouldShowSplash() {
+  return !splashSeen() && !loadLocal();
+}
+
+function applySplash() {
+  const splash = $("#splash");
+  if (!splash) return;
+  const open = !state.project && state.view === "workspace" && shouldShowSplash();
+  splash.hidden = !open;
+  if (open) {
+    document.documentElement.setAttribute("data-splash", "open");
+    $("#start").hidden = true;
+  } else {
+    document.documentElement.removeAttribute("data-splash");
+  }
+}
+
+function dismissSplash() {
+  try { localStorage.setItem(SPLASH_KEY, "1"); } catch { /* ignore */ }
+  document.documentElement.removeAttribute("data-splash");
+  const splash = $("#splash");
+  if (splash) splash.hidden = true;
+  if (!state.project) showView("workspace");
+  $("#paste-form textarea")?.focus();
 }
 
 // ---------------------------------------------------------------- opening a project
@@ -2108,6 +2140,8 @@ function init() {
       showView(b.dataset.view || b.dataset.nav);
     });
   }
+
+  $("#splash-continue")?.addEventListener("click", dismissSplash);
 
   $("#paste-form").addEventListener("submit", (e) => {
     e.preventDefault();

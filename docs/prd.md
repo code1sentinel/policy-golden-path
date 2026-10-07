@@ -102,6 +102,11 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
+A first visit shows a short welcome splash (mark, “Welcome to Codify”,
+one lede, **Get started**) instead of the paste start. After dismiss, or
+when a resume card would show, the paste start appears as before. See
+[docs/prds/welcome-splash.md](prds/welcome-splash.md).
+
 Start is one clause box and one **Codify** button; the demo is a quiet
 example chip. Empty editor and filter panes include a next-step action.
 The start page has no club or version footer. See
@@ -140,6 +145,7 @@ local stores and Accept path. See
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
+| Linear — welcome splash | https://mobbin.com/screens/62773d0f-3574-4191-ac91-eb8a51697a95 | First visit: centered mark, welcome, one lede, one Get started |
 | Krea AI — single prompt + Generate | https://mobbin.com/screens/323e22c9-d758-4bf1-aee3-dcc9e284a2ef | Start: one hero input, one primary |
 | Gamma — example prompts | https://mobbin.com/screens/23a25ddc-5d71-44d3-af2b-ff2ea0ec1767 | Start: quiet example under the input |
 | Arcade — empty output | https://mobbin.com/screens/7b9d6805-0331-41c2-b7aa-165ea081bb09 | Empty pane: icon + line + next step |

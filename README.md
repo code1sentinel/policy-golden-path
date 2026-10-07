@@ -45,6 +45,10 @@ makes no requests to any third party unless you turn on AI drafting. The first v
 loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
+The first open shows a short **Welcome to Codify** splash. **Get started**
+remembers that choice on this device (`codify:splash-seen`) and opens the
+paste start. A saved project skips the splash so resume stays instant.
+
 To see it work, paste a clause and press **Codify**, or choose **Try an
 example** to open the **Acme demo policy**
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):

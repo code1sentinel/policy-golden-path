@@ -7,6 +7,7 @@ from playwright.sync_api import expect
 
 def _open(browser, base_url, color_scheme="dark", theme_pref=None):
     context = browser.new_context(viewport={"width": 1360, "height": 900}, color_scheme=color_scheme)
+    context.add_init_script("localStorage.setItem('codify:splash-seen', '1');")
     if theme_pref:
         context.add_init_script(f"localStorage.setItem('codify:theme', {theme_pref!r});")
     page = context.new_page()
