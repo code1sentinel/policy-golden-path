@@ -55,7 +55,7 @@ def test_access_control_purpose_hint_is_not_brute_force(page):
 def test_export_marks_oscal_recommended(demo):
     demo.click("#export-open-top")
     row = demo.locator("#export-dialog .export-list__row").first
-    expect(row).to_contain_text("Recommended")
+    expect(row).to_contain_text("recommended")
     expect(row).to_contain_text("OSCAL")
     expect(row).to_contain_text("Use this when")
     expect(demo.locator("#export-dialog")).not_to_contain_text("formula-escaped")
@@ -67,7 +67,7 @@ def test_glossary_explains_oscal_and_catalog_vs_library(demo):
         "title", "A standard format from NIST for writing security controls so other GRC tools can read them.")
     expect(demo.locator(".flow abbr.term", has_text="Clause")).to_be_visible()
     demo.click("[data-nav='catalog']")
-    expect(demo.locator("#catalog")).to_contain_text("this project's")
+    expect(demo.locator("#catalog")).to_contain_text("This project's")
     expect(demo.locator("#catalog")).to_contain_text("Library")
     demo.click("[data-nav='library']")
     expect(demo.locator("#library")).to_contain_text("this device")

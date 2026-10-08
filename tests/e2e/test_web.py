@@ -136,7 +136,7 @@ def test_ai_drafts_one_clause_and_keeps_the_key_out_of_the_project(demo, provide
     assert demo.evaluate("localStorage.getItem('codify:ai-key')") is None  # tab only unless remembered
     demo.click(clause("5.1") + " .clause__select")
     demo.click("#editor >> text=Draft with AI")
-    expect(demo.locator(".editor__where")).to_contain_text("drafted by AI")
+    expect(demo.locator(".editor__where")).to_contain_text("Drafted by AI")
     (sent,) = provider.requests
     assert sent["headers"]["x-api-key"] == "sk-test" and sent["body"]["model"] == "claude-sonnet-5-5"
     user = sent["body"]["messages"][0]["content"]
@@ -172,7 +172,7 @@ def test_ollama_turns_on_without_a_key_and_drafts(demo, provider):
     demo.click("#select-none")
     demo.click(clause("5.1") + " .clause__select")
     demo.click("#editor >> text=Draft with AI")
-    expect(demo.locator(".editor__where")).to_contain_text("drafted by AI")
+    expect(demo.locator(".editor__where")).to_contain_text("Drafted by AI")
     (sent,) = provider.requests
     assert "localhost:11434" in sent["url"]
     assert "authorization" not in sent["headers"] and "x-api-key" not in sent["headers"]

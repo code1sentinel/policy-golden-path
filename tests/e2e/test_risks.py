@@ -72,7 +72,7 @@ def test_risk_ai_draft_is_faked_and_keeps_keys_out(page, provider, tmp_path):
     page.click("[data-nav='risks']")
     expect(page.locator("#risk-templates")).to_contain_text("Draft with AI", timeout=30_000)
     page.click("#risk-templates >> text=Draft with AI")
-    expect(page.locator(".editor__where")).to_contain_text("drafted by AI")
+    expect(page.locator(".editor__where")).to_contain_text("Drafted by AI")
     assert provider.requests
     user = provider.requests[0]["body"]["messages"][0]["content"]
     assert "Identified risk R-001" in user
