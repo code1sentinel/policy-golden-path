@@ -10,7 +10,28 @@ const TYPE_LABELS = {
   "exception": "Exception", "not-a-control": "Not a control",
 };
 const STATUS_LABELS = { draft: "Draft", reviewed: "Reviewed", accepted: "Accepted" };
-const ORIGIN_LABELS = { rules: "drafted by rules", ai: "drafted by AI", catalog: "from the catalog", person: "edited" };
+const ORIGIN_LABELS = {
+  rules: "Drafted by Codify's rules (not AI)",
+  ai: "Drafted by AI — check before you accept",
+  catalog: "Opened from a saved catalog",
+  person: "Edited by you",
+};
+const GLOSSARY = {
+  OSCAL: "A standard format from NIST for writing security controls so other GRC tools can read them.",
+  Clause: "A paragraph from the policy you pasted.",
+  Draft: "Codify's first-pass control statement. Edit it before you accept.",
+  Review: "Check the draft against the original clause and the score.",
+  Accept: "Keep this statement in this project's catalog and on this device.",
+  Catalog: "This project's control statements — the set you export as OSCAL.",
+  Library: "Reusable accepted statements saved on this device, across projects.",
+};
+const PART_HELP = {
+  action: "Start with the verb (Review, Restrict, Encrypt).",
+  scope: "Say what this applies to (which systems, people, or data).",
+  limit: "Add a time limit to make this testable (for example, every [90] days).",
+  purpose: "Say why this control exists — the risk it treats.",
+};
+const SCORE_HELP = "How complete this statement is: testable, scoped, action-first, and has a purpose. 80% or more is usually ready to accept.";
 const RISK_STATUS_LABELS = { identified: "Identified", treating: "Treating", accepted: "Accepted", closed: "Closed" };
 const RISK_FIELDS = ["id", "title", "description", "asset", "likelihood", "impact", "threat", "vulnerability", "owner", "status"];
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
@@ -38,6 +59,7 @@ const state = {
   recommendRiskId: null,
   dismissedTemplates: {},  // risk id -> template ids
   importPreview: null,
+  resultStep: false,   // short "here's what we drafted" before the 3-pane workspace
 };
 
 // ---------------------------------------------------------------- helpers
@@ -59,6 +81,10 @@ function el(tag, attrs = {}, ...children) {
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 const plural = (n, word, many = word + "s") => `${n} ${n === 1 ? word : many}`;
+
+function term(word, meaning) {
+  return el("abbr", { class: "term", title: meaning || GLOSSARY[word] || word, text: word });
+}
 
 function showNotice(message) {
   const box = $("#notice");
@@ -524,7 +550,7 @@ async function aiBulk() {
 // ---------------------------------------------------------------- views
 
 function navFor(view) {
-  if (view === "work") return "clauses";
+  if (view === "work" || view === "result") return "clauses";
   if (view === "workspace") return "workspace";
   return view;
 }
@@ -532,6 +558,8 @@ function navFor(view) {
 function showView(view) {
   if (view === "workspace" && state.project) view = "work";
   if (view === "work" && !state.project) view = "workspace";
+  if (view === "work" && state.resultStep) view = "result";
+  if (view !== "result") state.resultStep = false;
   state.view = view;
   const nav = navFor(view);
   for (const b of $$("[data-nav]")) {
@@ -541,6 +569,7 @@ function showView(view) {
   $("#guide").hidden = view !== "guide";
   $("#start").hidden = view !== "workspace";
   applySplash();
+  if ($("#result")) $("#result").hidden = view !== "result";
   $("#work").hidden = view !== "work";
   $("#catalog").hidden = view !== "catalog";
   $("#risks").hidden = view !== "risks";
@@ -551,6 +580,7 @@ function showView(view) {
   if (closeBtn) closeBtn.hidden = !state.project;
   if (view !== "risks") closeRecommendDialog();
   if (view === "workspace" && !state.project) renderResume();
+  if (view === "result" && state.project) renderResult();
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
   if (view === "risks") renderRisks();
@@ -564,14 +594,15 @@ function renderCrumb() {
   const item = (text, last = false) => el("span", { class: last ? "crumb__item" : "crumb__item", text });
   const sep = () => el("span", { class: "crumb__sep", "aria-hidden": "true", text: "/" });
   const parts = ["Workspace"];
-  if (state.view === "work" && state.project) {
+  if (state.view === "result" && state.project) {
+    parts.push("Here's what we drafted");
+  } else if (state.view === "work" && state.project) {
     parts.push(state.project.title || "Clauses");
     if (state.selected?.control) parts.push("Control");
     else if (state.selected?.clause) parts.push("Clause");
   } else if (state.view === "catalog") parts.push("Catalog");
   else if (state.view === "risks") {
     parts.push("Risks");
-    parts.push(state.riskPane === "library" ? "Library" : "Register");
     const risk = state.selectedRisk && riskById(state.selectedRisk);
     if (risk) parts.push(risk.title);
   }
@@ -626,7 +657,7 @@ function dismissSplash() {
 
 // ---------------------------------------------------------------- opening a project
 
-function openProject(data) {
+function openProject(data, { resultStep = false } = {}) {
   showNotice("");
   state.project = data.project;
   state.scores = data.scores || {};
@@ -635,12 +666,58 @@ function openProject(data) {
   const first = state.project.controls.find((c) => c.status === "draft") || state.project.controls[0];
   state.selected = first ? { control: first.id } : null;
   state.editorTab = "statement";
+  state.resultStep = Boolean(resultStep && (state.project.controls || []).length);
   for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
   saveLocal();
-  showView("work");
-  render();
+  showView(state.resultStep ? "result" : "work");
+  if (!state.resultStep) render();
   renderCatalog();
   renderRisks();
+  if (!state.resultStep && state.selected) {
+    const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
+    document.getElementById(id)?.scrollIntoView({ block: "nearest" });
+  }
+}
+
+function clauseCounts(project) {
+  const clauses = project.clauses || [];
+  const controls = project.controls || [];
+  const reqs = clauses.filter((c) => c.type === "requirement" && !c.duplicate_of);
+  const split = reqs.filter((c) => controls.filter((x) => x.clause === c.id).length > 1).length;
+  return {
+    clauses: clauses.length,
+    requirements: reqs.length,
+    other: clauses.length - reqs.length,
+    controls: controls.length,
+    split,
+  };
+}
+
+function renderResult() {
+  const p = state.project;
+  if (!p) return;
+  const n = clauseCounts(p);
+  const lede = $("#result-lede");
+  const list = $("#result-drafts");
+  if (lede) {
+    const bits = [`${plural(n.controls, "control draft")} from ${plural(n.requirements, "requirement")}.`];
+    if (n.other) {
+      bits.push(`${plural(n.other, "other clause")} ${n.other === 1 ? "was" : "were"} not converted (definitions, scope, roles, or duplicates).`);
+    }
+    if (n.split) bits.push(`${plural(n.split, "requirement")} split into more than one control.`);
+    lede.textContent = bits.join(" ");
+  }
+  if (list) {
+    const drafts = (p.controls || []).slice(0, 3);
+    put(list, ...drafts.map((c, i) => el("li", {},
+      el("strong", { text: `Draft ${i + 1}` }),
+      c.text || "(empty)")));
+  }
+}
+
+function continueFromResult() {
+  state.resultStep = false;
+  showView("work");
   if (state.selected) {
     const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
     document.getElementById(id)?.scrollIntoView({ block: "nearest" });
@@ -727,21 +804,24 @@ function renderHead() {
   const context = n("scope") + n("definition") + n("role") + n("exception");
   $("#work-title").textContent = p.title || "Untitled policy";
   const summary = $("#work-summary");
-  summary.replaceChildren(
-    el("strong", { text: `${plural(p.clauses.length, "clause")} → ${plural(p.controls.length, "control")}` }),
+  const counts = clauseCounts(p);
+  put(summary,
+    el("strong", { text: `${plural(counts.controls, "control draft")} from ${plural(counts.requirements, "requirement")}` }),
+    counts.other ? el("span", { class: "work__summary-detail", text: `. ${plural(counts.other, "other clause")} ${counts.other === 1 ? "was" : "were"} not converted (definitions, scope, roles, or duplicates).` }) : el("span", { text: "." }),
+    counts.split ? el("span", { class: "work__summary-detail", text: ` ${plural(counts.split, "requirement")} split into more than one control.` }) : null,
     (p.risks || []).length ? el("span", { text: ` · ${plural(p.risks.length, "risk")}` }) : null,
   );
-  summary.title = `${n("requirement")} requirement clauses (${dup} duplicate) · ${context} context · ${n("not-a-control")} not controls`;
-  const counts = { draft: 0, reviewed: 0, accepted: 0 };
-  for (const c of p.controls) counts[c.status] = (counts[c.status] || 0) + 1;
+  summary.title = `${counts.requirements} requirements drafted into ${counts.controls} controls · ${dup} duplicate · ${context} context · ${n("not-a-control")} not controls`;
+  const statusCounts = { draft: 0, reviewed: 0, accepted: 0 };
+  for (const c of p.controls) statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
   const total = p.controls.length || 1;
   const bar = $("#work-progress");
   const a = el("span", { class: "p-accepted" });
   const r = el("span", { class: "p-reviewed" });
-  a.style.width = pct(counts.accepted / total);
-  r.style.width = pct(counts.reviewed / total);
+  a.style.width = pct(statusCounts.accepted / total);
+  r.style.width = pct(statusCounts.reviewed / total);
   bar.replaceChildren(a, r);
-  bar.setAttribute("aria-label", `${counts.accepted} accepted, ${counts.reviewed} reviewed, ${counts.draft} draft`);
+  bar.setAttribute("aria-label", `${statusCounts.accepted} accepted, ${statusCounts.reviewed} reviewed, ${statusCounts.draft} draft`);
   bar.title = bar.getAttribute("aria-label");
 }
 
@@ -915,10 +995,15 @@ function legacyBox(clause) {
   return el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Legacy clause" }), clause.text);
 }
 
+function partMissing(key) {
+  return el("span", { class: "part-help", text: PART_HELP[key] || "Add this part." });
+}
+
 function partsList(parts) {
   const rows = [["action", "Action"], ["scope", "Scope"], ["limit", "Limit"], ["purpose", "Purpose"]];
   const items = rows.map(([k, label]) => el("li", { class: `p-${k}${parts && parts[k] ? "" : " is-missing"}` },
-    el("b", { text: label }), el("span", { text: parts && parts[k] ? parts[k] : "missing" })));
+    el("b", { text: label }),
+    parts && parts[k] ? el("span", { text: parts[k] }) : partMissing(k)));
   if (parts && parts.tools) items.push(el("li", { class: "p-tools is-warning" }, el("b", { text: "Tool named" }), el("span", { text: parts.tools })));
   return el("ul", { class: "parts", "aria-label": "Parts of the statement" }, items);
 }
@@ -928,14 +1013,15 @@ function partsSubitems(parts) {
   const found = rows.filter(([k]) => parts && parts[k]).length;
   const items = rows.map(([k, label]) => el("li", { class: parts && parts[k] ? "" : "is-missing" },
     el("span", { class: "dot", "aria-hidden": "true" }),
-    el("span", {}, el("b", { text: label }), " ", parts && parts[k] ? parts[k] : "missing")));
+    el("span", {}, el("b", { text: label }), " ", parts && parts[k] ? parts[k] : partMissing(k))));
   if (parts && parts.tools) {
     items.push(el("li", { class: "is-warning" },
       el("span", { class: "dot", "aria-hidden": "true" }),
       el("span", {}, el("b", { text: "Tool named" }), " ", parts.tools)));
   }
   return el("div", {},
-    el("p", { class: "subitems__head", text: `Parts ${found}/${rows.length}` }),
+    el("p", { class: "subitems__head", text: `Parts ${found} of ${rows.length}` }),
+    el("p", { class: "score-help", text: "A testable control usually has these parts assessors look for: an action, what it applies to, a time limit, and why." }),
     el("ul", { class: "subitems", "aria-label": "Parts of the statement" }, items));
 }
 
@@ -944,7 +1030,8 @@ function scoreLine(assessment) {
   fill.style.width = pct(assessment.confidence);
   return el("div", { class: "scoreline" },
     el("span", { class: "scoreline__pct", text: pct(assessment.confidence) }),
-    el("span", { class: "bar", role: "img", "aria-label": `${pct(assessment.confidence)} score` }, fill));
+    el("span", { class: "bar", role: "img", "aria-label": `${pct(assessment.confidence)} score` }, fill),
+    el("p", { class: "score-help", text: SCORE_HELP }));
 }
 
 function improvementsList(items) {
@@ -964,8 +1051,10 @@ function editorTabs() {
     });
     return b;
   };
+  const oscal = make("oscal", "");
+  oscal.replaceChildren(term("OSCAL"), " JSON");
   return el("div", { class: "editor-tabs", role: "tablist", "aria-label": "Control view" },
-    make("statement", "Statement"), make("oscal", "OSCAL JSON"));
+    make("statement", "Statement"), oscal);
 }
 
 function numberedJson(text) {
@@ -1023,7 +1112,7 @@ function renderControlEditor(box, c) {
   const index = visible.findIndex((x) => x.id === c.id);
   const tabs = editorTabs();
   const where = el("div", { class: "editor__nav" },
-    el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "edited"}`),
+    el("p", { class: "editor__where" }, "Control", ` · ${ORIGIN_LABELS[c.origin] || "Edited by you"}`),
     tabs);
   if (state.editorTab === "oscal") {
     put(box, where, oscalPanel(c));
@@ -1067,11 +1156,19 @@ function renderControlEditor(box, c) {
   riskBox.addEventListener("input", () => { c.risk = riskBox.value.trim(); check(); saveSoon(); });
   who.addEventListener("input", () => { c.who = who.value.trim(); saveSoon(); });
 
-  const reviewed = el("button", { type: "button", class: "btn", "aria-pressed": String(c.status === "reviewed"), text: "Reviewed" });
+  const reviewed = el("button", {
+    type: "button", class: "btn", "aria-pressed": String(c.status === "reviewed"),
+    text: "Mark reviewed",
+    title: "You have read this draft. It is not accepted yet — use Accept when the wording is good enough to keep.",
+  });
   reviewed.addEventListener("click", () => setStatus([c.id], "reviewed"));
-  const accept = el("button", { type: "button", class: "btn btn--primary", "aria-pressed": String(c.status === "accepted"), text: "Accept" });
+  const accept = el("button", {
+    type: "button", class: "btn btn--primary", "aria-pressed": String(c.status === "accepted"),
+    text: "Accept",
+    title: "Keep this statement in this project's catalog and on this device.",
+  });
   accept.addEventListener("click", () => setStatus([c.id], "accepted"));
-  const next = el("button", { type: "button", class: "btn", text: "Next" });
+  const next = el("button", { type: "button", class: "btn", text: "Next control", title: "Open the next control without accepting this one." });
   next.disabled = index < 0 || index >= visible.length - 1;
   next.addEventListener("click", () => step(1));
   let aiBtn = null;
@@ -1113,6 +1210,7 @@ function renderControlEditor(box, c) {
     isRisk && risk ? el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Risk" }),
       `${risk.id} · ${risk.title}`) : (clause.text ? legacyBox(clause) : null),
     el("label", { class: "field field--hero" }, statement),
+    paramNote(c.text),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, fromLib, aiBtn),
     result,
     sub,
@@ -1129,6 +1227,12 @@ function renderControlEditor(box, c) {
     result.replaceChildren(el("p", { class: "placeholder", text: c.text ? err.message : "Write the control statement to check it." }));
     renderProps(c);
   });
+}
+
+function paramNote(text) {
+  if (!/\[[^\]]{1,40}\]/.test(text || "")) return null;
+  return el("p", { class: "hint param-note" },
+    "Bracketed values like [N] or [90] are blanks to fill. Replace [N] with a real number your organisation will test against.");
 }
 
 function showResult(box, data) {
@@ -1152,22 +1256,22 @@ function renderProps(control, data) {
       el("span", { class: "prop-row__value", text: control.id })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Source" }),
       el("span", { class: "prop-row__value", text: controlSourceLabel(control) })),
-    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Class" }),
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "How it was written" }),
       el("span", { class: "prop-row__value", text: ORIGIN_LABELS[control.origin] || control.origin })),
+    el("p", { class: "prop-help", text: control.origin === "rules"
+      ? "A starting point from Codify's rules. Edit freely — it is not finished until you Accept."
+      : "Edit the statement, then Accept when it is clear and testable." }),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Score" }),
       el("span", { class: "prop-row__value", text: score === null ? "–" : pct(score) })),
+    el("p", { class: "prop-help", text: SCORE_HELP }),
   );
   const suggestions = [];
   const draft = el("div", { class: "suggestion" },
-    el("p", { class: "suggestion__text", text: control.status === "accepted" ? "This control is accepted." : "Use this drafted control statement." }),
-    el("div", { class: "suggestion__actions" },
-      control.status === "accepted" ? null : el("button", { type: "button", class: "btn btn--small btn--primary", text: "Accept" }),
-      el("button", { type: "button", class: "btn btn--small", text: "Dismiss" }),
-    ));
-  const acceptBtn = $(".suggestion__actions .btn--primary", draft);
-  const dismissBtn = $$(".suggestion__actions .btn", draft).pop();
-  if (acceptBtn) acceptBtn.addEventListener("click", () => setStatus([control.id], "accepted"));
-  if (dismissBtn) dismissBtn.addEventListener("click", () => step(1));
+    el("p", { class: "suggestion__text", text: control.status === "accepted"
+      ? "This control is accepted. It is in this project's catalog."
+      : "When the statement is clear and testable, press Accept under the editor. That keeps it in this project's catalog." }),
+    control.status === "accepted" ? null : el("p", { class: "hint", text: "Mark reviewed if you have read it but it still needs work." }),
+  );
   suggestions.push(draft);
 
   const hidden = new Set(state.dismissed[control.id] || []);
@@ -1333,7 +1437,7 @@ function renderLibrary() {
   const head = el("div", { class: "library-toolbar" },
     el("div", { class: "view-head" },
       el("h2", { id: "library-title", class: "section-title section-title--first", text: "Statement library" }),
-      el("p", { class: "view-head__lede", text: "Accepted control statements on this device. Reuse them in any project. Nothing is uploaded." })),
+      el("p", { class: "view-head__lede", text: "Reusable accepted statements saved on this device, across projects. The catalog is this project's export — the library is the reuse drawer." })),
     el("div", { class: "library-toolbar__tools" }, search,
       el("div", { class: "actions" }, exportJson, exportCsv)));
   if (!filtered.length) {
@@ -2142,6 +2246,7 @@ function init() {
   }
 
   $("#splash-continue")?.addEventListener("click", dismissSplash);
+  $("#result-continue")?.addEventListener("click", continueFromResult);
 
   $("#paste-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2150,7 +2255,7 @@ function init() {
     if (!text.trim()) return showError("Paste the policy clauses first.");
     busy($("#paste-submit"), "Codifying…", async () => openProject(await call({
       action: "open", name: "pasted text", text,
-    })));
+    }), { resultStep: true }));
   });
 
   const drop = $("#drop");
@@ -2166,7 +2271,7 @@ function init() {
 
   $("#demo").addEventListener("click", (e) => busy(e.currentTarget, "Opening…", async () => {
     const text = await (await fetch("acme-policy.md")).text();
-    openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }));
+    openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }), { resultStep: true });
   }));
 
   $("#resume-open").addEventListener("click", () => {
@@ -2185,6 +2290,7 @@ function init() {
     showNotice("");
     state.project = null;
     state.selected = null;
+    state.resultStep = false;
     showView("workspace");
   });
 

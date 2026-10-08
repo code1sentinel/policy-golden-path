@@ -57,9 +57,13 @@ They are a starting point to edit, not finished controls.
   mark reviewed or accepted; filters and bulk actions under More; keyboard
   `j` / `k` / `r` / `a`. Accept also upserts the statement into a device-wide
   **Library** ([ADR 0009](adr/0009-device-wide-statement-library.md)).
-- **Export:** **Save OSCAL (.json)** (catalog 1.1.2, also the save file);
-  Excel, CSV (formula-escaped), the Markdown report, the risk register, and
-  the statement library (JSON/CSV) from the export dialog.
+  After paste or Try an example, a short result step summarises the drafts
+  before the 3-pane workspace. Review labels and the score have plain-language
+  help; Accept is the single primary.
+- **Export:** **OSCAL catalog** is the recommended download (catalog 1.1.2,
+  also the save file); Excel, CSV (spreadsheet-safe), the Markdown report,
+  the risk register, and the statement library (JSON/CSV) from the export
+  dialog.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -105,7 +109,9 @@ Google Fonts. See
 A first visit shows a short welcome splash (mark, “Welcome to Codify”,
 one lede, **Get started**) instead of the paste start. After dismiss, or
 when a resume card would show, the paste start appears as before. See
-[docs/prds/welcome-splash.md](prds/welcome-splash.md).
+[docs/prds/welcome-splash.md](prds/welcome-splash.md). First-run copy,
+the result step, review help, and export defaults are in
+[docs/prds/first-run-clarity.md](prds/first-run-clarity.md).
 
 Start is one clause box and one **Codify** button; the demo is a quiet
 example chip. Empty editor and filter panes include a next-step action.

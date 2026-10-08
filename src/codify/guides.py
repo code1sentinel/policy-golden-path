@@ -69,8 +69,8 @@ GUIDE: dict = {
         "purpose": _p(
             "Say why",
             "The purpose ties the control to the risk it treats, and helps people apply it sensibly.",
-            "Add the purpose ('to deter brute-force attacks'), or link the risk it treats. Record a risk "
-            "statement for every control.",
+            "Add the purpose (why the control exists, for example 'to remove access that is no longer "
+            "needed'), or link the risk it treats. Record a risk statement for every control.",
             "Apply rate-limiting on authentication.",
             "Apply rate-limiting on all authentication mechanisms to deter brute-force attacks.",
         ),

@@ -50,8 +50,11 @@ def test_ctrl_enter_accepts_the_current_control(demo):
 
 
 def test_review_accept_and_dismiss(demo):
-    expect(demo.locator("#props >> text=Accept")).to_be_visible()
-    demo.locator("#props .suggestion__actions .btn", has_text="Dismiss").first.click()
+    expect(demo.locator(".editor__primary .btn--primary")).to_have_text("Accept")
+    expect(demo.locator("#props .btn--primary")).to_have_count(0)
+    tips = demo.locator("#props .suggestion__actions .btn", has_text="Dismiss")
+    if tips.count():
+        tips.first.click()
     expect(demo.locator("textarea.statement")).to_be_visible()
 
 

@@ -13,4 +13,5 @@ before implementation.
 - [statement-library.md](statement-library.md) — device-wide accepted statements
 - [vanta-grc-surfaces.md](vanta-grc-surfaces.md) — Vanta-style Risks / Library IA
 - [welcome-splash.md](welcome-splash.md) — first-visit welcome, then paste start
+- [first-run-clarity.md](first-run-clarity.md) — first-time GRC walkthrough fixes
 

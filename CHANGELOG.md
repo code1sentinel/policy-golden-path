@@ -12,6 +12,12 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- First-run clarity for GRC reviewers: real editable example text on
+  Start, a “here’s what we drafted” result step after paste or Try an
+  example, one primary Accept, plain-language review labels and score
+  help, a Recommended OSCAL export, and dotted-underline glossary terms
+  for OSCAL / Catalog / Library. See
+  [docs/prds/first-run-clarity.md](docs/prds/first-run-clarity.md).
 - First-visit welcome splash (Linear-style hierarchy, Codify tokens):
   centered mark, “Welcome to Codify”, one lede, **Get started**. Dismiss
   is stored as `codify:splash-seen`; a saved project skips the splash so
@@ -37,6 +43,11 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Workspace header no longer appends a literal `null` when there are no
+  risks. Counts now read as control drafts from requirements, and say
+  why other clauses were not converted. Risks breadcrumb stays on Risks
+  (Library / Register remain tabs, not crumb parts). Purpose hints match
+  the statement instead of always using a brute-force example.
 - Risks and Library follow GRC SaaS patterns from Vanta Mobbin flows
   ([ADR 0010](docs/adr/0010-vanta-grc-surfaces.md)): Library vs Register
   sub-nav, category pills, Add / Added / Remove, a recommended-controls

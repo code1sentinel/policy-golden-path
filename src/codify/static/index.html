@@ -21,7 +21,7 @@
         <span class="brand__mark" aria-hidden="true"></span>
         <div class="brand__text">
           <h1 class="brand__name">Codify</h1>
-          <p class="brand__tag">Turn legacy policy clauses into OSCAL control statements.</p>
+          <p class="brand__tag">Turn legacy policy clauses into <abbr class="term" title="A standard format from NIST for writing security controls so other GRC tools can read them.">OSCAL</abbr> control statements.</p>
         </div>
       </div>
     </div>
@@ -40,11 +40,11 @@
       </button>
       <button type="button" class="nav-btn" data-view="catalog" data-nav="catalog" aria-pressed="false">
         <span class="nav-btn__icon" aria-hidden="true">▣</span>
-        <span class="nav-btn__label">Catalog</span>
+        <span class="nav-btn__label"><abbr class="term" title="This project's control statements — the set you export.">Catalog</abbr></span>
       </button>
       <button type="button" class="nav-btn" data-view="library" data-nav="library" aria-pressed="false">
         <span class="nav-btn__icon" aria-hidden="true">▤</span>
-        <span class="nav-btn__label">Library</span>
+        <span class="nav-btn__label"><abbr class="term" title="Reusable accepted statements saved on this device, across projects.">Library</abbr></span>
       </button>
       <button type="button" class="nav-btn" data-nav="export" id="export-open" aria-haspopup="dialog">
         <span class="nav-btn__icon" aria-hidden="true">↓</span>
@@ -90,7 +90,7 @@
         <div class="splash__inner">
           <span class="brand__mark splash__mark" aria-hidden="true"></span>
           <h2 id="splash-title" class="splash__title">Welcome to Codify</h2>
-          <p class="splash__lede">Turn legacy policy clauses into OSCAL control statements. Runs on this device.</p>
+          <p class="splash__lede">Turn legacy policy clauses into <abbr class="term" title="A standard format from NIST for writing security controls so other GRC tools can read them.">OSCAL</abbr> control statements. Runs on this device.</p>
           <button type="button" class="btn btn--primary btn--lg" id="splash-continue">Get started</button>
         </div>
       </section>
@@ -100,7 +100,7 @@
         <div class="start__layout">
           <div class="start__main">
             <h2 id="start-title" class="section-title section-title--first">Turn a policy into control statements</h2>
-            <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control.</p>
+            <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control. The box starts with an example you can edit.</p>
 
             <div id="resume" class="card resume" hidden>
               <p class="resume__text"><strong>Continue where you left off:</strong> <span id="resume-title"></span> <span id="resume-when" class="muted"></span></p>
@@ -113,8 +113,10 @@
             <div class="card start__load" id="drop">
               <form id="paste-form" novalidate>
                 <label class="field">
-                  <span class="visually-hidden">Clause</span>
-                  <textarea class="start__clause" name="text" rows="8" placeholder="Access to systems shall be granted on a need-to-know basis.&#10;User accounts shall be reviewed regularly."></textarea>
+                  <span>Example clause <em>edit or replace, then press Codify</em></span>
+                  <textarea class="start__clause" name="text" rows="8" placeholder="Paste a clause, or edit this example.">Access to systems shall be granted on a need-to-know basis.
+
+User accounts shall be reviewed regularly.</textarea>
                 </label>
                 <div class="actions">
                   <button type="submit" class="btn btn--primary btn--lg" id="paste-submit">Codify</button>
@@ -142,6 +144,18 @@
         </div>
       </section>
 
+      <section id="result" class="result-step" aria-labelledby="result-title" hidden>
+        <div class="result-step__inner">
+          <p class="result-step__kicker">First look</p>
+          <h2 id="result-title" class="result-step__title">Here's what we drafted</h2>
+          <p id="result-lede" class="result-step__lede"></p>
+          <ul id="result-drafts" class="result-step__drafts"></ul>
+          <div class="actions">
+            <button type="button" class="btn btn--primary btn--lg" id="result-continue">Review the drafts</button>
+          </div>
+        </div>
+      </section>
+
       <!-- Workspace: a project is open -->
       <section id="work" class="work" aria-labelledby="work-title" hidden>
         <div class="work__head">
@@ -150,11 +164,11 @@
             <p id="work-summary" class="work__summary"></p>
             <div id="work-progress" class="progress" aria-label="Review progress"></div>
           </div>
-          <ol class="flow" aria-label="Guided flow">
-            <li>Clause</li>
-            <li>Draft</li>
-            <li>Review</li>
-            <li>Accept</li>
+            <ol class="flow" aria-label="Guided flow">
+            <li><abbr class="term" title="A paragraph from the policy you pasted.">Clause</abbr></li>
+            <li><abbr class="term" title="Codify's first-pass control statement. Edit it before you accept.">Draft</abbr></li>
+            <li><abbr class="term" title="Check the draft against the original clause and the score.">Review</abbr></li>
+            <li><abbr class="term" title="Keep this statement in this project's catalog and on this device.">Accept</abbr></li>
           </ol>
         </div>
 
@@ -199,7 +213,7 @@
       <section id="catalog" class="catalog-view" aria-labelledby="catalog-title" hidden>
         <div class="view-head">
           <h2 id="catalog-title" class="section-title section-title--first">Catalog</h2>
-          <p class="view-head__lede">Accepted and drafted control statements, with the clause or risk they came from.</p>
+          <p class="view-head__lede">This project's control statements — the catalog you export. The Library is separate: reusable statements saved on this device.</p>
         </div>
         <div id="catalog-body"></div>
       </section>
@@ -242,54 +256,54 @@
         </div>
         <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
       </div>
-      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded.</p>
+      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded. OSCAL is the recommended save file.</p>
       <ul class="export-list" id="export-menu">
-        <li class="export-list__row">
+        <li class="export-list__row export-list__row--recommended is-recommended">
           <div>
-            <strong>OSCAL catalog</strong>
-            <p>JSON catalog (1.1.2). Also the save file.</p>
+            <strong>OSCAL catalog <span class="export-rec">(recommended)</span></strong>
+            <p>Use this when you want to save your work or hand the catalog to another GRC tool. This is also the file you reopen later.</p>
           </div>
-          <button type="button" class="btn" data-export="oscal">Download</button>
+          <button type="button" class="btn btn--primary" data-export="oscal">Download</button>
         </li>
         <li class="export-list__row">
           <div>
             <strong>Excel</strong>
-            <p>One row per control (.xlsx).</p>
+            <p>Use this when you want a spreadsheet of every control for review in Excel.</p>
           </div>
           <button type="button" class="btn" data-export="xlsx">Download</button>
         </li>
         <li class="export-list__row">
           <div>
             <strong>CSV</strong>
-            <p>Same rows, formula-escaped.</p>
+            <p>Use this when you need the same rows in a text file. Safe for Excel — cells cannot run formulas.</p>
           </div>
           <button type="button" class="btn" data-export="csv">Download</button>
         </li>
         <li class="export-list__row">
           <div>
             <strong>Conversion report</strong>
-            <p>Markdown summary of the conversion.</p>
+            <p>Use this when you want a readable summary of what was converted and what still needs work.</p>
           </div>
           <button type="button" class="btn" data-export="report">Download</button>
         </li>
         <li class="export-list__row">
           <div>
             <strong>Risk register</strong>
-            <p>CSV of identified risks. Parsed and saved on this device only.</p>
+            <p>Use this when you want a CSV of the risks you identified on this device.</p>
           </div>
           <button type="button" class="btn" data-export="risks">Download</button>
         </li>
         <li class="export-list__row">
           <div>
             <strong>Statement library</strong>
-            <p>JSON of accepted statements on this device. Nothing is uploaded.</p>
+            <p>Use this when you want a JSON copy of accepted statements saved on this device.</p>
           </div>
           <button type="button" class="btn" data-export="library-json">Download</button>
         </li>
         <li class="export-list__row">
           <div>
             <strong>Statement library (CSV)</strong>
-            <p>Same rows, formula-escaped.</p>
+            <p>Use this when you want those same saved statements as a spreadsheet-safe CSV.</p>
           </div>
           <button type="button" class="btn" data-export="library-csv">Download</button>
         </li>
