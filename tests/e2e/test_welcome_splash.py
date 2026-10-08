@@ -5,6 +5,8 @@ import re
 
 from playwright.sync_api import expect
 
+from conftest import finish_open
+
 
 def _open(browser, base_url, *, splash_seen=False, resume=False, color_scheme="dark"):
     context = browser.new_context(viewport={"width": 1360, "height": 900}, color_scheme=color_scheme)
@@ -71,8 +73,8 @@ def test_try_an_example_works_after_dismiss(browser, base_url):
     page.click("#splash-continue")
     expect(page.locator("#demo")).to_be_visible()
     page.click("#demo")
-    page.wait_for_selector("#work:not([hidden]) .ctl", timeout=120_000)
-    expect(page.locator("#work-summary")).to_contain_text("38 controls")
+    finish_open(page)
+    expect(page.locator("#work-summary")).to_contain_text("38 control drafts")
     ctx.close()
 
 

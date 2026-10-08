@@ -5,6 +5,8 @@ import re
 
 from playwright.sync_api import expect
 
+from conftest import finish_open
+
 
 def ctl(cid):
     return "#ctl-" + cid.replace(".", "\\.")
@@ -47,7 +49,8 @@ def turn_on_ollama(page):
 # --- Opening and reviewing ----------------------------------------------------------------------------
 
 def test_demo_opens_with_drafts_scored(demo):
-    expect(demo.locator("#work-summary")).to_contain_text("43 clauses → 38 controls")
+    expect(demo.locator("#work-summary")).to_contain_text("38 control drafts")
+    expect(demo.locator("#work-summary")).not_to_contain_text("null")
     expect(demo.locator(".scoreline__pct")).to_be_visible()
     expect(demo.locator("textarea.statement")).to_be_visible()
     expect(demo.locator(".editor__primary")).to_contain_text("Accept")
@@ -80,7 +83,7 @@ def test_happy_path_edit_accept_next(demo):
 def test_pasted_text_is_shown_as_text_never_as_html(page):
     page.fill("#paste-form textarea", '1.1 Users shall not run <img src=x onerror="window.pwned=1"> scripts.')
     page.click("#paste-submit")
-    page.wait_for_selector("#work:not([hidden]) .ctl", timeout=120_000)
+    finish_open(page)
     expect(page.locator(clause("1.1") + " .clause__text")).to_contain_text("<img src=x")
     assert page.evaluate("window.pwned") is None
 
@@ -99,7 +102,7 @@ def test_close_and_resume(demo):
     demo.click("#close-project")
     expect(demo.locator("#resume")).to_be_visible()
     demo.click("#resume-open")
-    expect(demo.locator("#work-summary")).to_contain_text("38 controls")
+    expect(demo.locator("#work-summary")).to_contain_text("38 control drafts")
 
 
 # --- Exports ---------------------------------------------------------------------------------------------
@@ -114,7 +117,7 @@ def test_oscal_export_opens_again(demo, tmp_path):
     expect(demo.locator("#export-dialog")).to_be_hidden()
     demo.click("#close-project")
     demo.set_input_files("#file", str(path))
-    expect(demo.locator("#work-summary")).to_contain_text("43 clauses → 38 controls")
+    expect(demo.locator("#work-summary")).to_contain_text("38 control drafts")
 
 
 # --- AI drafting -------------------------------------------------------------------------------------------
@@ -133,7 +136,7 @@ def test_ai_drafts_one_clause_and_keeps_the_key_out_of_the_project(demo, provide
     assert demo.evaluate("localStorage.getItem('codify:ai-key')") is None  # tab only unless remembered
     demo.click(clause("5.1") + " .clause__select")
     demo.click("#editor >> text=Draft with AI")
-    expect(demo.locator(".editor__where")).to_contain_text("drafted by AI")
+    expect(demo.locator(".editor__where")).to_contain_text("Drafted by AI")
     (sent,) = provider.requests
     assert sent["headers"]["x-api-key"] == "sk-test" and sent["body"]["model"] == "claude-sonnet-5-5"
     user = sent["body"]["messages"][0]["content"]
@@ -169,7 +172,7 @@ def test_ollama_turns_on_without_a_key_and_drafts(demo, provider):
     demo.click("#select-none")
     demo.click(clause("5.1") + " .clause__select")
     demo.click("#editor >> text=Draft with AI")
-    expect(demo.locator(".editor__where")).to_contain_text("drafted by AI")
+    expect(demo.locator(".editor__where")).to_contain_text("Drafted by AI")
     (sent,) = provider.requests
     assert "localhost:11434" in sent["url"]
     assert "authorization" not in sent["headers"] and "x-api-key" not in sent["headers"]

@@ -204,8 +204,8 @@ def assess_control_statement(statement: Statement) -> Assessment:
         purpose, note = 1.0, "linked risk statement"
     else:
         purpose, note = 0.0, "no purpose or linked risk"
-        improvements.add("purpose", "Say why: the risk it treats ('to deter brute-force attacks'), or add the "
-                                    "risk it treats.")
+        improvements.add("purpose", f"Say why this control exists — add the purpose ('{_purpose_example(text)}'), "
+                                    "or record the risk it treats.")
     criteria.append(CriterionResult("purpose", purpose, WEIGHTS["purpose"], note))
 
     # single: one requirement, or a few clearly joined, so each can be tested and reported.
@@ -281,6 +281,20 @@ _SCOPE_END = re.compile(r"\s+(at least|within|every|each|daily|nightly|weekly|mo
 
 
 _PURPOSE_VERBS = VERBS | {"shorten", "catch", "find", "spot", "cut", "lower", "speed", "show", "prove", "know"}
+
+
+def _purpose_example(text: str) -> str:
+    """A purpose phrase that matches the statement, so the hint is not a password example on access control."""
+    t = (text or "").lower()
+    if any(w in t for w in ("access", "account", "privileg", "user")):
+        return "to remove access that is no longer needed"
+    if any(w in t for w in ("password", "authenticat", "login", "rate-limit", "rate limit", "brute")):
+        return "to deter brute-force attacks"
+    if any(w in t for w in ("backup", "back up", "restore")):
+        return "to recover if systems fail"
+    if any(w in t for w in ("encrypt", "personal data", "confidential")):
+        return "to protect it if storage is compromised"
+    return "to reduce the risk this control treats"
 
 
 def _purpose_after_limit(text: str) -> str | None:

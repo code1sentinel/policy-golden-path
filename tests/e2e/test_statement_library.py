@@ -4,6 +4,8 @@ import json
 
 from playwright.sync_api import expect
 
+from conftest import finish_open
+
 
 CLAUSE = (
     "Access to systems shall be granted on a need-to-know basis to limit what "
@@ -20,7 +22,8 @@ def library_store(page):
 def open_pasted(page, text):
     page.fill("#paste-form textarea", text)
     page.click("#paste-submit")
-    page.wait_for_selector("#work:not([hidden]) textarea.statement", timeout=120_000)
+    finish_open(page)
+    page.wait_for_selector("#work:not([hidden]) textarea.statement", timeout=30_000)
 
 
 def wait_for_library_entries(page, n=1):

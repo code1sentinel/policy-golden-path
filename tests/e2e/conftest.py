@@ -104,9 +104,18 @@ def page(browser, base_url, provider):
     assert errors == [], errors
 
 
+def finish_open(page, timeout=120_000):
+    """After Codify or Try an example, pass the result step into the workspace."""
+    page.wait_for_selector("#result:not([hidden]) #result-continue, #work:not([hidden]) .ctl", timeout=timeout)
+    cont = page.locator("#result:not([hidden]) #result-continue")
+    if cont.count():
+        cont.click()
+    page.wait_for_selector("#work:not([hidden]) .ctl", timeout=timeout)
+
+
 @pytest.fixture
 def demo(page):
     """The Acme demo policy, open in the workspace."""
     page.click("#demo")
-    page.wait_for_selector("#work:not([hidden]) .ctl", timeout=120_000)  # Pyodide's first load can be slow
+    finish_open(page)  # Pyodide's first load can be slow
     return page

@@ -4,6 +4,8 @@ import re
 
 from playwright.sync_api import expect
 
+from conftest import finish_open
+
 
 def test_start_has_one_primary_and_a_quiet_example(page):
     expect(page.locator("#start .btn--primary:visible")).to_have_count(1)
@@ -26,8 +28,8 @@ def test_start_has_no_club_or_version_chrome(page):
 
 def test_example_chip_still_opens_the_acme_demo(page):
     page.click("#demo")
-    page.wait_for_selector("#work:not([hidden]) .ctl", timeout=120_000)
-    expect(page.locator("#work-summary")).to_contain_text("38 controls")
+    finish_open(page)
+    expect(page.locator("#work-summary")).to_contain_text("38 control drafts")
 
 
 def test_filter_empty_state_can_show_all(demo):

@@ -49,8 +49,9 @@ The first open shows a short **Welcome to Codify** splash. **Get started**
 remembers that choice on this device (`codify:splash-seen`) and opens the
 paste start. A saved project skips the splash so resume stays instant.
 
-To see it work, paste a clause and press **Codify**, or choose **Try an
-example** to open the **Acme demo policy**
+To see it work, edit or replace the example clause and press **Codify**,
+or choose **Try an example** to open the **Acme demo policy**. Codify
+then shows a short **here's what we drafted** step before the workspace.
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
 a fictional 2016 agency policy written with typical legacy problems.
 [`examples/acme-policy-key.md`](examples/acme-policy-key.md) explains what
@@ -119,7 +120,7 @@ possible") around 30%.
 | scope | 20% | Does it say what it applies to? A statement with nothing concrete is limited to 40%. |
 | action_first | 15% | Does it start with the action, not a subject ("The IT team…", "Okta…")? |
 | tool_neutral | 10% | Does it avoid naming products? |
-| purpose | 10% | Does it say why ("to deter brute-force attacks"), or is the risk it treats given? |
+| purpose | 10% | Does it say why (the risk it treats), or is a linked risk given? |
 | single | 5% | One requirement, or two closely joined. |
 | labeled_parts | 5% | Is a bundle of three or more requirements split into lettered parts (a., b., c.), the way an OSCAL catalog control gives each its own referenceable part? |
 | determinable | 5% | Can an assessor decide pass or fail? Subjective words ("robust", "adequate", "appropriate") cannot be tested, in the sense of a NIST SP 800-53A assessment objective. |
