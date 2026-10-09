@@ -569,7 +569,6 @@ function navFor(view) {
 
 function showView(view) {
   if (view === "risks") view = state.project ? "work" : "workspace";
-  if (view === "workspace" && state.project) view = "work";
   if (view === "work" && !state.project) view = "workspace";
   if (view === "work" && state.resultStep) view = "result";
   if (view !== "result") state.resultStep = false;
@@ -590,12 +589,34 @@ function showView(view) {
   const closeBtn = $("#close-project");
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
-  if (view === "workspace" && !state.project) renderResume();
+  if (view === "workspace") {
+    renderResume();
+    renderCurrentProject();
+  }
   if (view === "result" && state.project) renderResult();
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
   if (view === "library") renderLibrary();
   renderCrumb();
+}
+
+function confirmReplace() {
+  if (!state.project) return true;
+  return confirm("Replace the open policy? Export the catalog first if you want to keep this version.");
+}
+
+function renderCurrentProject() {
+  const box = $("#current-project");
+  if (!box) return;
+  const open = Boolean(state.project);
+  box.hidden = !open;
+  if (open) {
+    const resume = $("#resume");
+    if (resume) resume.hidden = true;
+    $("#current-project-title").textContent = state.project.title || "Untitled policy";
+    const n = clauseCounts(state.project);
+    $("#current-project-meta").textContent = `${plural(n.controls, "control")} from ${plural(n.requirements, "requirement")}. Open clauses to keep reviewing.`;
+  }
 }
 
 function renderCrumb() {
@@ -688,13 +709,21 @@ function clauseCounts(project) {
   const controls = project.controls || [];
   const reqs = clauses.filter((c) => c.type === "requirement" && !c.duplicate_of);
   const split = reqs.filter((c) => controls.filter((x) => x.clause === c.id).length > 1).length;
+  const n = (t) => clauses.filter((c) => c.type === t).length;
   return {
     clauses: clauses.length,
     requirements: reqs.length,
     other: clauses.length - reqs.length,
     controls: controls.length,
     split,
+    duplicates: clauses.filter((c) => c.duplicate_of).length,
+    context: n("scope") + n("definition") + n("role") + n("exception"),
+    notControls: n("not-a-control"),
   };
+}
+
+function countsBreakdown(n) {
+  return `${n.requirements} requirements drafted into ${n.controls} controls · ${n.duplicates} duplicate · ${n.context} context · ${n.notControls} not controls`;
 }
 
 function renderResult() {
@@ -705,17 +734,19 @@ function renderResult() {
   const list = $("#result-drafts");
   if (lede) {
     const bits = [`${plural(n.controls, "control draft")} from ${plural(n.requirements, "requirement")}.`];
-    if (n.other) {
-      bits.push(`${plural(n.other, "other clause")} ${n.other === 1 ? "was" : "were"} not converted (definitions, scope, roles, or duplicates).`);
-    }
+    bits.push(countsBreakdown(n) + ".");
     if (n.split) bits.push(`${plural(n.split, "requirement")} split into more than one control.`);
     lede.textContent = bits.join(" ");
   }
   if (list) {
-    const drafts = (p.controls || []).slice(0, 3);
-    put(list, ...drafts.map((c, i) => el("li", {},
+    const all = p.controls || [];
+    const drafts = all.slice(0, 3);
+    const extra = all.length - drafts.length;
+    const items = drafts.map((c, i) => el("li", {},
       el("strong", { text: `Draft ${i + 1}` }),
-      c.text || "(empty)")));
+      c.text || "(empty)"));
+    if (extra > 0) items.push(el("li", { class: "result-step__more", text: `and ${extra} more` }));
+    put(list, ...items);
   }
 }
 
@@ -800,10 +831,8 @@ function renderMoreLabel() {
 
 function renderHead() {
   const p = state.project;
-  const n = (t) => p.clauses.filter((c) => c.type === t).length;
-  const dup = p.clauses.filter((c) => c.duplicate_of).length;
-  const context = n("scope") + n("definition") + n("role") + n("exception");
-  $("#work-title").textContent = p.title || "Untitled policy";
+  const title = $("#work-title");
+  if (title && document.activeElement !== title) title.value = p.title || "";
   const summary = $("#work-summary");
   const counts = clauseCounts(p);
   put(summary,
@@ -811,7 +840,10 @@ function renderHead() {
     counts.other ? el("span", { class: "work__summary-detail", text: `. ${plural(counts.other, "other clause")} ${counts.other === 1 ? "was" : "were"} not converted (definitions, scope, roles, or duplicates).` }) : el("span", { text: "." }),
     counts.split ? el("span", { class: "work__summary-detail", text: ` ${plural(counts.split, "requirement")} split into more than one control.` }) : null,
   );
-  summary.title = `${counts.requirements} requirements drafted into ${counts.controls} controls · ${dup} duplicate · ${context} context · ${n("not-a-control")} not controls`;
+  const countsBox = $("#work-counts");
+  if (countsBox) {
+    countsBox.replaceChildren(el("p", { id: "work-counts-detail", text: countsBreakdown(counts) }));
+  }
   const statusCounts = { draft: 0, reviewed: 0, accepted: 0 };
   for (const c of p.controls) statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
   const total = p.controls.length || 1;
@@ -822,7 +854,12 @@ function renderHead() {
   r.style.width = pct(statusCounts.reviewed / total);
   bar.replaceChildren(a, r);
   bar.setAttribute("aria-label", `${statusCounts.accepted} accepted, ${statusCounts.reviewed} reviewed, ${statusCounts.draft} draft`);
-  bar.title = bar.getAttribute("aria-label");
+  const selected = state.selected?.control && controlById(state.selected.control);
+  const stage = !selected ? (state.selected?.clause ? "clause" : "draft")
+    : selected.status === "accepted" ? "accept" : "review";
+  for (const li of $$(".flow [data-stage]")) {
+    li.classList.toggle("is-current", li.dataset.stage === stage);
+  }
 }
 
 function scorePill(id) {
@@ -991,25 +1028,18 @@ function legacyBox(clause) {
   return el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Legacy clause" }), clause.text);
 }
 
-function partMissing(key) {
-  return el("span", { class: "part-help", text: PART_HELP[key] || "Add this part." });
-}
-
-function partsList(parts) {
-  const rows = [["action", "Action"], ["scope", "Scope"], ["limit", "Limit"], ["purpose", "Purpose"]];
-  const items = rows.map(([k, label]) => el("li", { class: `p-${k}${parts && parts[k] ? "" : " is-missing"}` },
-    el("b", { text: label }),
-    parts && parts[k] ? el("span", { text: parts[k] }) : partMissing(k)));
-  if (parts && parts.tools) items.push(el("li", { class: "p-tools is-warning" }, el("b", { text: "Tool named" }), el("span", { text: parts.tools })));
-  return el("ul", { class: "parts", "aria-label": "Parts of the statement" }, items);
-}
-
-function partsSubitems(parts) {
+function partsSubitems(parts, { accepted = false } = {}) {
   const rows = [["action", "Action"], ["scope", "Scope"], ["limit", "Limit"], ["purpose", "Purpose"]];
   const found = rows.filter(([k]) => parts && parts[k]).length;
-  const items = rows.map(([k, label]) => el("li", { class: parts && parts[k] ? "" : "is-missing" },
-    el("span", { class: "dot", "aria-hidden": "true" }),
-    el("span", {}, el("b", { text: label }), " ", parts && parts[k] ? parts[k] : partMissing(k))));
+  const items = rows.map(([k, label]) => {
+    const missing = !(parts && parts[k]);
+    const hint = missing
+      ? el("span", { class: "part-help", text: accepted ? `Optional: ${PART_HELP[k]}` : (PART_HELP[k] || "Add this part.") })
+      : parts[k];
+    return el("li", { class: missing ? (accepted ? "is-optional" : "is-missing") : "" },
+      el("span", { class: "dot", "aria-hidden": "true" }),
+      el("span", {}, el("b", { text: label }), " ", hint));
+  });
   if (parts && parts.tools) {
     items.push(el("li", { class: "is-warning" },
       el("span", { class: "dot", "aria-hidden": "true" }),
@@ -1017,22 +1047,68 @@ function partsSubitems(parts) {
   }
   return el("div", {},
     el("p", { class: "subitems__head", text: `Parts ${found} of ${rows.length}` }),
-    el("p", { class: "score-help", text: "A testable control usually has these parts assessors look for: an action, what it applies to, a time limit, and why." }),
+    el("p", { class: "score-help", text: accepted
+      ? "Accepted. Remaining gaps below are optional improvements."
+      : "A testable control usually has these parts assessors look for: an action, what it applies to, a time limit, and why." }),
     el("ul", { class: "subitems", "aria-label": "Parts of the statement" }, items));
 }
 
-function scoreLine(assessment) {
+function scoreLine(assessment, { accepted = false } = {}) {
   const fill = el("span", { class: "bar__fill" });
   fill.style.width = pct(assessment.confidence);
   return el("div", { class: "scoreline" },
     el("span", { class: "scoreline__pct", text: pct(assessment.confidence) }),
     el("span", { class: "bar", role: "img", "aria-label": `${pct(assessment.confidence)} score` }, fill),
-    el("p", { class: "score-help", text: SCORE_HELP }));
+    el("p", { class: "score-help", text: accepted
+      ? `Accepted at ${pct(assessment.confidence)}. Remaining gaps are optional improvements.`
+      : SCORE_HELP }));
 }
 
-function improvementsList(items) {
-  if (!items.length) return null;
-  return el("ul", { class: "improvements" }, items.map((i) => el("li", { text: i })));
+function isPartTip(tip, parts) {
+  const t = (tip || "").toLowerCase();
+  if (!(parts && parts.purpose) && /purpose|why this control/.test(t)) return true;
+  if (!(parts && parts.limit) && /time limit|how often|\[n\]|parameter/.test(t)) return true;
+  if (!(parts && parts.scope) && /scope|applies to/.test(t)) return true;
+  if (!(parts && parts.action) && /start with the verb|action-first/.test(t)) return true;
+  return false;
+}
+
+function isUnfilledParam(inner) {
+  return !/\d/.test(inner || "");
+}
+
+function paramPrompts(text, onFill) {
+  const matches = [...(text || "").matchAll(/\[([^\]]{1,40})\]/g)];
+  const seen = new Set();
+  const unfilled = [];
+  for (const m of matches) {
+    if (seen.has(m[0]) || !isUnfilledParam(m[1])) continue;
+    seen.add(m[0]);
+    unfilled.push({ token: m[0], inner: m[1] });
+  }
+  if (!unfilled.length) return null;
+  return el("div", { class: "param-prompts" }, unfilled.map((item) => {
+    const input = el("input", {
+      type: "text", inputmode: "numeric", "aria-label": `Value for ${item.token}`,
+      autocomplete: "off",
+    });
+    const set = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Set" });
+    const apply = () => {
+      const value = input.value.trim();
+      if (!value) return;
+      const replacement = `[${value.replace(/^\[|\]$/g, "")}]`;
+      onFill(item.token, replacement);
+    };
+    set.addEventListener("click", apply);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); apply(); } });
+    return el("div", { class: "param-prompt" },
+      el("div", { class: "param-prompt__row" },
+        el("strong", { text: "Set this value" }),
+        el("mark", { class: "param-token", text: item.token }),
+        input, set),
+      el("p", { class: "param-prompt__hint",
+        text: "Unfilled blanks look like [N]. Type the number your organisation will test against — for example 90." }));
+  }));
 }
 
 function editorTabs() {
@@ -1094,6 +1170,7 @@ function oscalPanel(c) {
     pre.replaceChildren(...numberedJson(raw));
   }).catch((err) => { pre.textContent = err.message; });
   return el("div", { class: "oscal-view", role: "tabpanel", "aria-label": "OSCAL JSON" },
+    el("p", { class: "oscal-view__help", text: GLOSSARY.OSCAL }),
     el("div", { class: "oscal-view__bar" },
       el("span", { class: "oscal-view__label", text: "This control" }),
       copy, status),
@@ -1129,8 +1206,8 @@ function renderControlEditor(box, c) {
       const data = await call({ action: "check", text: c.text || " ", risk: c.risk || "" });
       state.scores[c.id] = { confidence: data.assessment.confidence, improvements: data.assessment.improvements };
       state.lastCheck[c.id] = data;
-      showResult(result, data);
-      sub.replaceChildren(partsSubitems(data.parts));
+      showResult(result, data, c);
+      sub.replaceChildren(partsSubitems(data.parts, { accepted: c.status === "accepted" }));
       renderProps(c, data);
       const pill = $(`#ctl-${CSS.escape(c.id)} .score`);
       if (pill) pill.replaceWith(scorePill(c.id));
@@ -1150,19 +1227,33 @@ function renderControlEditor(box, c) {
   riskBox.addEventListener("input", () => { c.risk = riskBox.value.trim(); check(); saveSoon(); });
   who.addEventListener("input", () => { c.who = who.value.trim(); saveSoon(); });
 
-  const reviewed = el("button", {
+  const accepted = c.status === "accepted";
+  const reviewed = accepted ? null : el("button", {
     type: "button", class: "btn", "aria-pressed": String(c.status === "reviewed"),
     text: "Mark reviewed",
     title: "You have read this draft. It is not accepted yet — use Accept when the wording is good enough to keep.",
   });
-  reviewed.addEventListener("click", () => setStatus([c.id], "reviewed"));
-  const accept = el("button", {
-    type: "button", class: "btn btn--primary", "aria-pressed": String(c.status === "accepted"),
-    text: "Accept",
-    title: "Keep this statement in this project's catalog and on this device.",
+  if (reviewed) reviewed.addEventListener("click", () => setStatus([c.id], "reviewed"));
+  const accept = accepted
+    ? el("span", { class: "accepted-flag", id: "accept-control", text: "Accepted ✓" })
+    : el("button", {
+      type: "button", class: "btn btn--primary", id: "accept-control",
+      text: "Accept",
+      title: "Keep this statement in this project's catalog and on this device.",
+    });
+  if (!accepted) accept.addEventListener("click", () => setStatus([c.id], "accepted"));
+  const undo = accepted
+    ? el("button", {
+      type: "button", class: "btn btn--quiet", id: "undo-accept", text: "Undo accept",
+      title: "Return this control to draft. It stays in the library until you remove it there.",
+    })
+    : null;
+  if (undo) undo.addEventListener("click", () => setStatus([c.id], "draft"));
+  const next = el("button", {
+    type: "button", class: accepted ? "btn btn--primary" : "btn", id: "next-control",
+    text: "Next control",
+    title: accepted ? "Open the next control." : "Open the next control without accepting this one.",
   });
-  accept.addEventListener("click", () => setStatus([c.id], "accepted"));
-  const next = el("button", { type: "button", class: "btn", text: "Next control", title: "Open the next control without accepting this one." });
   next.disabled = index < 0 || index >= visible.length - 1;
   next.addEventListener("click", () => step(1));
   let aiBtn = null;
@@ -1196,8 +1287,13 @@ function renderControlEditor(box, c) {
     where,
     clause.text ? legacyBox(clause) : null,
     el("label", { class: "field field--hero" }, statement),
-    paramNote(c.text),
-    el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, fromLib, aiBtn),
+    paramPrompts(c.text, (token, replacement) => {
+      c.text = (c.text || "").split(token).join(replacement);
+      if (c.origin !== "person") c.origin = "person";
+      saveSoon();
+      renderEditor();
+    }),
+    el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, undo, next, fromLib, aiBtn),
     result,
     sub,
     extras,
@@ -1206,8 +1302,8 @@ function renderControlEditor(box, c) {
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
   call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => {
     state.lastCheck[c.id] = data;
-    showResult(result, data);
-    sub.replaceChildren(partsSubitems(data.parts));
+    showResult(result, data, c);
+    sub.replaceChildren(partsSubitems(data.parts, { accepted: c.status === "accepted" }));
     renderProps(c, data);
   }).catch((err) => {
     result.replaceChildren(el("p", { class: "placeholder", text: c.text ? err.message : "Write the control statement to check it." }));
@@ -1215,14 +1311,9 @@ function renderControlEditor(box, c) {
   });
 }
 
-function paramNote(text) {
-  if (!/\[[^\]]{1,40}\]/.test(text || "")) return null;
-  return el("p", { class: "hint param-note" },
-    "Bracketed values like [N] or [90] are blanks to fill. Replace [N] with a real number your organisation will test against.");
-}
-
-function showResult(box, data) {
-  box.replaceChildren(...[scoreLine(data.assessment), partsList(data.parts), improvementsList(data.assessment.improvements)].filter(Boolean));
+function showResult(box, data, control) {
+  const accepted = control && control.status === "accepted";
+  box.replaceChildren(...[scoreLine(data.assessment, { accepted })].filter(Boolean));
 }
 
 function renderProps(control, data) {
@@ -1249,7 +1340,9 @@ function renderProps(control, data) {
       : "Edit the statement, then Accept when it is clear and testable." }),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Score" }),
       el("span", { class: "prop-row__value", text: score === null ? "–" : pct(score) })),
-    el("p", { class: "prop-help", text: SCORE_HELP }),
+    el("p", { class: "prop-help", text: control.status === "accepted"
+      ? `Accepted at ${score === null ? "–" : pct(score)}. Remaining gaps are optional improvements.`
+      : SCORE_HELP }),
   );
   const suggestions = [];
   const draft = el("div", { class: "suggestion" },
@@ -1261,7 +1354,9 @@ function renderProps(control, data) {
   suggestions.push(draft);
 
   const hidden = new Set(state.dismissed[control.id] || []);
-  const improvements = (data && data.assessment && data.assessment.improvements) || (state.scores[control.id] && state.scores[control.id].improvements) || [];
+  const parts = data && data.parts;
+  const improvements = ((data && data.assessment && data.assessment.improvements) || (state.scores[control.id] && state.scores[control.id].improvements) || [])
+    .filter((tip) => !isPartTip(tip, parts));
   for (const tip of improvements) {
     if (hidden.has(tip)) continue;
     const row = el("div", { class: "suggestion" },
@@ -1311,7 +1406,7 @@ function renderProps(control, data) {
 
   box.replaceChildren(...[propsCard,
     el("div", { class: "props-card" },
-      el("h3", { class: "props-card__title", text: "Review suggestions" }),
+      el("h3", { class: "props-card__title", text: control.status === "accepted" ? "Optional improvements" : "Review suggestions" }),
       suggestions.length ? suggestions : el("p", { class: "placeholder", text: "No suggestions." })),
     libraryCard,
     aiCard].filter(Boolean));
@@ -1369,9 +1464,14 @@ function renderLibraryDetail(entry) {
   add.addEventListener("click", () => useLibraryEntry(entry, "add"));
   removeBtn.addEventListener("click", () => removeLibraryEntry(entry));
   const source = librarySourceLabel(entry);
+  const lead = statementLead(entry.statement);
+  const full = (entry.statement || "").trim();
+  const heading = lead && lead !== full
+    ? el("h3", { class: "library-detail__title", text: lead })
+    : null;
   return el("aside", { class: "library-detail", id: "library-detail", "aria-label": "Statement details" },
-    el("h3", { class: "library-detail__title", text: statementLead(entry.statement) }),
-    el("p", { class: "library-detail__statement", text: entry.statement }),
+    heading,
+    el("p", { class: "library-detail__statement", text: full || "(empty)" }),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "ID" }),
       el("span", { class: "prop-row__value", text: entry.id })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Source" }),
@@ -1432,22 +1532,21 @@ function renderLibrary() {
   const ids = new Set(filtered.map((e) => e.id));
   if (!state.selectedLibrary || !ids.has(state.selectedLibrary)) state.selectedLibrary = filtered[0].id;
   const selected = filtered.find((e) => e.id === state.selectedLibrary) || filtered[0];
+  if (filtered.length === 1) {
+    box.replaceChildren(head, el("div", { class: "library-layout library-layout--single" }, renderLibraryDetail(selected)));
+    return;
+  }
   const list = el("div", { class: "library-list", "aria-label": "Saved statements" },
     el("p", { class: "library-count", text: `Statement library (${filtered.length})` }),
     filtered.map((entry) => {
-      const use = el("button", { type: "button", class: "btn btn--small btn--primary library-use", text: "Use" });
-      const removeBtn = el("button", { type: "button", class: "btn btn--small library-remove", text: "Remove" });
-      use.addEventListener("click", (e) => { e.stopPropagation(); useLibraryEntry(entry, "use"); });
-      removeBtn.addEventListener("click", (e) => { e.stopPropagation(); removeLibraryEntry(entry); });
       const row = el("article", {
         class: "library-row", "data-library-id": entry.id,
         "aria-current": String(entry.id === state.selectedLibrary),
       },
-        el("p", { class: "library-statement", text: entry.statement }),
+        el("p", { class: "library-statement", text: statementLead(entry.statement) }),
         el("div", { class: "library-row__meta" },
           el("span", { class: "pill", text: librarySourceLabel(entry) }),
-          el("span", { class: "muted", text: formatWhen(entry["accepted-at"]) })),
-        el("div", { class: "library-row__actions" }, use, removeBtn));
+          el("span", { class: "muted", text: formatWhen(entry["accepted-at"]) })));
       row.addEventListener("click", (e) => {
         if (e.target.closest("button")) return;
         state.selectedLibrary = entry.id;
@@ -1556,7 +1655,6 @@ function renderLibraryPickDetail(hits) {
   use.addEventListener("click", () => useLibraryEntry(entry, "use"));
   add.addEventListener("click", () => useLibraryEntry(entry, "add"));
   box.replaceChildren(
-    el("h3", { class: "library-detail__title", text: statementLead(entry.statement) }),
     el("p", { class: "library-detail__statement", text: entry.statement }),
     el("p", { class: "muted", text: `${librarySourceLabel(entry)} · OSCAL 1.1.2` }),
     el("div", { class: "actions" }, use, add),
@@ -1786,6 +1884,7 @@ function init() {
     const form = e.currentTarget;
     const text = form.elements.namedItem("text").value;
     if (!text.trim()) return showError("Paste the policy clauses first.");
+    if (!confirmReplace()) return;
     busy($("#paste-submit"), "Codifying…", async () => openProject(await call({
       action: "open", name: "pasted text", text,
     }), { resultStep: true }));
@@ -1793,19 +1892,27 @@ function init() {
 
   const drop = $("#drop");
   const input = $("#file");
-  input.addEventListener("change", () => { if (input.files[0]) openFile(input.files[0]); input.value = ""; });
+  input.addEventListener("change", () => {
+    if (!input.files[0]) return;
+    if (!confirmReplace()) { input.value = ""; return; }
+    openFile(input.files[0]);
+    input.value = "";
+  });
   drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("is-over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
   drop.addEventListener("drop", (e) => {
     e.preventDefault();
     drop.classList.remove("is-over");
-    if (e.dataTransfer.files[0]) openFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files[0] && confirmReplace()) openFile(e.dataTransfer.files[0]);
   });
 
-  $("#demo").addEventListener("click", (e) => busy(e.currentTarget, "Opening…", async () => {
-    const text = await (await fetch("acme-policy.md")).text();
-    openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }), { resultStep: true });
-  }));
+  $("#demo").addEventListener("click", (e) => {
+    if (!confirmReplace()) return;
+    busy(e.currentTarget, "Opening…", async () => {
+      const text = await (await fetch("acme-policy.md")).text();
+      openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }), { resultStep: true });
+    });
+  });
 
   $("#resume-open").addEventListener("click", () => {
     const saved = loadLocal();
@@ -1818,13 +1925,33 @@ function init() {
     }
   });
 
-  $("#close-project").addEventListener("click", () => {
+  const closeProject = () => {
     saveLocal();
     showNotice("");
     state.project = null;
     state.selected = null;
     state.resultStep = false;
     showView("workspace");
+  };
+  $("#close-project").addEventListener("click", closeProject);
+  $("#current-project-close")?.addEventListener("click", closeProject);
+  $("#current-project-open")?.addEventListener("click", () => showView("work"));
+  $("#work-title")?.addEventListener("input", () => {
+    if (!state.project) return;
+    state.project.title = $("#work-title").value;
+    saveSoon();
+    renderCrumb();
+    const current = $("#current-project-title");
+    if (current) current.textContent = state.project.title || "Untitled policy";
+  });
+  $("#work-title")?.addEventListener("blur", () => {
+    if (!state.project) return;
+    if (!state.project.title.trim()) {
+      state.project.title = "Untitled policy";
+      $("#work-title").value = state.project.title;
+      saveSoon();
+      renderCrumb();
+    }
   });
 
   for (const b of $$("[data-filter]")) {

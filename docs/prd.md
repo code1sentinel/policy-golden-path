@@ -58,10 +58,12 @@ They are a starting point to edit, not finished controls.
   **Library** ([ADR 0009](adr/0009-device-wide-statement-library.md)).
   After paste or Try an example, a short result step summarises the drafts
   before the 3-pane workspace. Review labels and the score have plain-language
-  help; Accept is the single primary.
-- **Export:** **OSCAL catalog** is the recommended download (catalog 1.1.2,
-  also the save file); Excel, CSV (spreadsheet-safe), the Markdown report,
-  and the statement library (JSON/CSV) from the export dialog.
+  help; Accept is the single primary until the control is accepted, then
+  **Accepted ✓** and **Next control** lead. Sidebar **Workspace** returns
+  to the paste start. Pasted projects get a name from the first clause.
+- **Export:** **OSCAL catalog** is the recommended download (catalog 1.1.2);
+  Excel, CSV (spreadsheet-safe), the Markdown report, and optional
+  statement-library JSON/CSV from the export dialog.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -110,6 +112,9 @@ when a resume card would show, the paste start appears as before. See
 [docs/prds/welcome-splash.md](prds/welcome-splash.md). First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).
+A second first-time walkthrough polish (accepted state, `[N]` prompts,
+Workspace = start, pasted titles) is in
+[docs/prds/second-walkthrough-polish.md](prds/second-walkthrough-polish.md).
 
 Start is one clause box and one **Codify** button; the demo is a quiet
 example chip. Empty editor and filter panes include a next-step action.

@@ -39,6 +39,7 @@ class Policy:
     clauses: list[Clause] = field(default_factory=list)
 
 
+_GENERIC_TITLES = frozenset({"pasted text", "pasted-text", "untitled", "untitled policy"})
 _MD_HEADING = re.compile(r"^#{1,6}\s+(?:(\d+)\.?\s+)?(.+?)\s*#*$")
 _PLAIN_HEADING = re.compile(r"^(\d{1,2})\.?\s+([A-Z][^.;:]{1,80})$")  # "5. Access Control": no full stop
 _NUMBERED = re.compile(r"^(\d{1,2}(?:\.\d{1,3}){1,3})\.?\s+(\S.*)$")
@@ -228,7 +229,6 @@ def parse_csv(content: str, title: str = "") -> Policy:
 def read_policy(name: str, content: str | bytes) -> Policy:
     """A policy from a file: Word (.docx), CSV, Excel (.xlsx), or text (anything else)."""
     lower = name.lower()
-    stem = re.sub(r"\.[a-z0-9]+$", "", name.rsplit("/", 1)[-1])
     if lower.endswith((".docx", ".doc")):
         if isinstance(content, str):
             raise ValueError("a Word document must be read as bytes")
@@ -249,5 +249,29 @@ def read_policy(name: str, content: str | bytes) -> Policy:
         policy = parse_csv(content) if lower.endswith(".csv") else parse_text(content)
     if not policy.clauses:
         raise ValueError("no clauses found: paste one clause per paragraph")
-    policy.title = policy.title or stem
+    policy.title = resolved_title(policy, name)
     return policy
+
+
+def title_from_first_clause(text: str) -> str:
+    """A short policy name from the first sentence of pasted clause text."""
+    first = (text or "").strip().split("\n", 1)[0].strip()
+    if not first:
+        return "Untitled policy"
+    sentence = re.split(r"(?<=[.!?])\s+", first, maxsplit=1)[0]
+    if len(sentence) > 80:
+        cut = sentence[:80].rsplit(" ", 1)[0]
+        return f"{cut or sentence[:80]}…"
+    return sentence
+
+
+def resolved_title(policy: Policy, source_name: str = "") -> str:
+    """Keep a real heading or file stem; never name a paste 'pasted text'."""
+    title = (policy.title or "").strip()
+    stem = re.sub(r"\.[a-z0-9]+$", "", (source_name or "").rsplit("/", 1)[-1]).strip()
+    if title and title.lower() not in _GENERIC_TITLES:
+        return title
+    if stem and stem.lower() not in _GENERIC_TITLES:
+        return stem
+    first = policy.clauses[0].text if policy.clauses else ""
+    return title_from_first_clause(first)

@@ -12,6 +12,11 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- Second first-time walkthrough polish: Accepted ✓ + Next control
+  primary with Undo accept; `[N]` set-this-value prompts; visible count
+  breakdown and “and N more” on first look; visible OSCAL / Catalog vs
+  Library lines; grouped optional library export. See
+  [docs/prds/second-walkthrough-polish.md](docs/prds/second-walkthrough-polish.md).
 - First-run clarity for GRC reviewers: real editable example text on
   Start, a “here’s what we drafted” result step after paste or Try an
   example, one primary Accept, plain-language review labels and score
@@ -38,6 +43,12 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Review screen shows Action / Scope / Limit / Purpose once; remaining
+  gaps after Accept are optional improvements. The stage strip is status,
+  not links. Sidebar Workspace opens the start/paste view. Pasted
+  projects are named from the first clause (editable), not “pasted
+  text”. Library shows each statement once. Export no longer calls OSCAL
+  a “save file”.
 - Workspace header no longer appends a literal `null`. Counts now read as
   control drafts from requirements, and say why other clauses were not
   converted. Purpose hints match the statement instead of always using a

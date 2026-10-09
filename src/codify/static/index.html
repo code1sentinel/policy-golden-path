@@ -98,6 +98,15 @@
             <h2 id="start-title" class="section-title section-title--first">Turn a policy into control statements</h2>
             <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control. The box starts with an example you can edit.</p>
 
+            <div id="current-project" class="card current-project" hidden>
+              <p class="current-project__text"><strong>Current policy:</strong> <span id="current-project-title"></span></p>
+              <p id="current-project-meta" class="muted"></p>
+              <div class="actions">
+                <button type="button" class="btn btn--primary" id="current-project-open">Open clauses</button>
+                <button type="button" class="btn btn--quiet" id="current-project-close">Close</button>
+              </div>
+            </div>
+
             <div id="resume" class="card resume" hidden>
               <p class="resume__text"><strong>Continue where you left off:</strong> <span id="resume-title"></span> <span id="resume-when" class="muted"></span></p>
               <div class="actions">
@@ -156,16 +165,23 @@ User accounts shall be reviewed regularly.</textarea>
       <section id="work" class="work" aria-labelledby="work-title" hidden>
         <div class="work__head">
           <div class="work__title">
-            <h2 id="work-title" class="section-title section-title--first"></h2>
+            <label class="work-title-edit">
+              <span class="visually-hidden">Policy name</span>
+              <input id="work-title" class="work-title-input" maxlength="500" autocomplete="off" spellcheck="false" placeholder="Untitled policy">
+            </label>
             <p id="work-summary" class="work__summary"></p>
+            <div id="work-counts" class="work__counts"></div>
             <div id="work-progress" class="progress" aria-label="Review progress"></div>
           </div>
-            <ol class="flow" aria-label="Guided flow">
-            <li><abbr class="term" title="A paragraph from the policy you pasted.">Clause</abbr></li>
-            <li><abbr class="term" title="Codify's first-pass control statement. Edit it before you accept.">Draft</abbr></li>
-            <li><abbr class="term" title="Check the draft against the original clause and the score.">Review</abbr></li>
-            <li><abbr class="term" title="Keep this statement in this project's catalog and on this device.">Accept</abbr></li>
-          </ol>
+          <div class="flow-wrap">
+            <ol class="flow flow--status" aria-label="Review stages (status, not links)">
+              <li data-stage="clause"><abbr class="term" title="A paragraph from the policy you pasted.">Clause</abbr></li>
+              <li data-stage="draft"><abbr class="term" title="Codify's first-pass control statement. Edit it before you accept.">Draft</abbr></li>
+              <li data-stage="review"><abbr class="term" title="Check the draft against the original clause and the score.">Review</abbr></li>
+              <li data-stage="accept"><abbr class="term" title="Keep this statement in this project's catalog and on this device.">Accept</abbr></li>
+            </ol>
+            <p class="flow__caption">Where you are — these are not buttons. Hover a word for what it means.</p>
+          </div>
         </div>
 
         <div id="ai-progress" class="loading ai-progress" role="status" hidden>
@@ -209,7 +225,7 @@ User accounts shall be reviewed regularly.</textarea>
       <section id="catalog" class="catalog-view" aria-labelledby="catalog-title" hidden>
         <div class="view-head">
           <h2 id="catalog-title" class="section-title section-title--first">Catalog</h2>
-          <p class="view-head__lede">This project's control statements — the catalog you export. The Library is separate: reusable statements saved on this device.</p>
+          <p class="view-head__lede">This project's control statements — the catalog you export as OSCAL, a NIST format other GRC tools read. The Library is separate: reusable statements saved on this device.</p>
         </div>
         <div id="catalog-body"></div>
       </section>
@@ -248,12 +264,13 @@ User accounts shall be reviewed regularly.</textarea>
         </div>
         <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
       </div>
-      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded. OSCAL is the recommended save file.</p>
+      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded.</p>
+      <p class="export-help">The catalog is this project's OSCAL file (a NIST format other GRC tools read). Library downloads are optional copies of accepted statements on this device.</p>
       <ul class="export-list" id="export-menu">
         <li class="export-list__row export-list__row--recommended is-recommended">
           <div>
             <strong>OSCAL catalog <span class="export-rec">(recommended)</span></strong>
-            <p>Use this when you want to save your work or hand the catalog to another GRC tool. This is also the file you reopen later.</p>
+            <p>Use this when you want to hand the catalog to another GRC tool, or reopen this project later.</p>
           </div>
           <button type="button" class="btn btn--primary" data-export="oscal">Download</button>
         </li>
@@ -278,21 +295,26 @@ User accounts shall be reviewed regularly.</textarea>
           </div>
           <button type="button" class="btn" data-export="report">Download</button>
         </li>
-        <li class="export-list__row">
-          <div>
-            <strong>Statement library</strong>
-            <p>Use this when you want a JSON copy of accepted statements saved on this device.</p>
-          </div>
-          <button type="button" class="btn" data-export="library-json">Download</button>
-        </li>
-        <li class="export-list__row">
-          <div>
-            <strong>Statement library (CSV)</strong>
-            <p>Use this when you want those same saved statements as a spreadsheet-safe CSV.</p>
-          </div>
-          <button type="button" class="btn" data-export="library-csv">Download</button>
-        </li>
       </ul>
+      <details class="export-more">
+        <summary>Statement library (optional)</summary>
+        <ul class="export-list export-list--nested">
+          <li class="export-list__row">
+            <div>
+              <strong>JSON</strong>
+              <p>Use this when you want a JSON copy of accepted statements saved on this device.</p>
+            </div>
+            <button type="button" class="btn" data-export="library-json">Download</button>
+          </li>
+          <li class="export-list__row">
+            <div>
+              <strong>CSV</strong>
+              <p>Use this when you want those same saved statements as a spreadsheet-safe CSV.</p>
+            </div>
+            <button type="button" class="btn" data-export="library-csv">Download</button>
+          </li>
+        </ul>
+      </details>
     </form>
   </dialog>
 
