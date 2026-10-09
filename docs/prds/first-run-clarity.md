@@ -34,7 +34,7 @@ blocking the path.
 ## Scope
 
 - In:
-  - Fix the workspace summary `null` and the Risks breadcrumb.
+  - Fix the workspace summary `null`.
   - Honest clause / control counts.
   - Real, editable example text in the paste box; a short “here’s what
     we drafted” result step after paste or Try an example.
@@ -47,8 +47,8 @@ blocking the path.
 - Out:
   - Changing `codify:project` / `codify:statements` / `codify:splash-seen`.
   - New outbound calls, fonts, or CDNs.
-  - Reversing ADR 0010 Library vs Register *tabs* on Risks (only the
-    breadcrumb and glossary change).
+  - Changing splash behaviour. The risk register was later removed
+    ([ADR 0011](../adr/0011-no-risk-register.md)).
   - Welcome splash behaviour.
 
 ## Success criteria
@@ -56,8 +56,8 @@ blocking the path.
 - Given the Acme example, When the workspace header renders, Then it
   does not contain the text `null` and it explains drafts vs
   requirements vs other clauses.
-- Given Risks, When the breadcrumb renders, Then it includes Risks and
-  does not present Library / Register as the page name.
+- Given the sidebar, When it renders, Then there is no Risks destination
+  (the register was removed; [ADR 0011](../adr/0011-no-risk-register.md)).
 - Given the start view, When it is shown, Then the paste box contains
   real editable example text (not only a placeholder) and Codify
   converts that text.

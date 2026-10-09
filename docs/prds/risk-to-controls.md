@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Agreed |
+| Status | Superseded by [remove-risk-register.md](remove-risk-register.md) / [ADR 0011](../adr/0011-no-risk-register.md) |
 | Slice issues | Listed in the PR; this agent cannot open GitHub issues. |
 | Supercedes / extends | [docs/prd.md](../prd.md), [ui-overhaul.md](ui-overhaul.md) |
 | Author | Andre (product owner) / this slice |

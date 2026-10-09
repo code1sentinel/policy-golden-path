@@ -27,13 +27,8 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   normalized text), reusable from **Library** or **From library** in the
   editor. Search, remove, and export CSV/JSON locally. Separate
   `codify:statements` key; the OSCAL catalog stays the per-project save.
-- Risk → control statements ([ADR 0008](docs/adr/0008-risk-input-and-oscal-tracing.md)):
-  local risk register (table, heatmap, detail drawer, CSV/JSON import with
-  column mapping, CSV export), deterministic control templates, optional
-  existing AI chip, OSCAL tracing (`source-type`, `risk-id`, `rel=reference`),
-  and `codify POLICY --risks FILE`.
 - Authoring app shell ([ADR 0007](docs/adr/0007-authoring-app-shell.md)):
-  collapsible sidebar (Workspace, Clauses, Risks, Catalog, Library, Export, Guide),
+  collapsible sidebar (Workspace, Clauses, Catalog, Library, Export, Guide),
   breadcrumb, centred writing column, properties/review panel, Catalog
   table, export dialog, and `⌘`/`Ctrl`+Enter to accept.
 - Development workflow: `AGENTS.md`, product PRD, ADRs, slice issue template,
@@ -43,17 +38,14 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
-- Workspace header no longer appends a literal `null` when there are no
-  risks. Counts now read as control drafts from requirements, and say
-  why other clauses were not converted. Risks breadcrumb stays on Risks
-  (Library / Register remain tabs, not crumb parts). Purpose hints match
-  the statement instead of always using a brute-force example.
-- Risks and Library follow GRC SaaS patterns from Vanta Mobbin flows
-  ([ADR 0010](docs/adr/0010-vanta-grc-surfaces.md)): Library vs Register
-  sub-nav, category pills, Add / Added / Remove, a recommended-controls
-  modal on the existing Accept path, and a statement list + detail
-  slide-over. Draft, Catalog, and Export keep the same indigo tokens.
-  No new stores or outbound calls.
+- Workspace header no longer appends a literal `null`. Counts now read as
+  control drafts from requirements, and say why other clauses were not
+  converted. Purpose hints match the statement instead of always using a
+  brute-force example.
+- Library follows GRC SaaS patterns from Vanta Mobbin flows
+  ([ADR 0010](docs/adr/0010-vanta-grc-surfaces.md)): a statement list +
+  detail slide-over. Draft, Catalog, and Export keep the same indigo
+  tokens. No new stores or outbound calls.
 - Happy path is clause text only ([ADR 0006](docs/adr/0006-clause-only-input.md)):
   unnumbered paragraphs are clauses, a leading number stays in the pasted
   text, and OSCAL control ids/titles are minted internally.
@@ -77,6 +69,13 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Removed
 
+- Local risk register ([ADR 0011](docs/adr/0011-no-risk-register.md)):
+  Risks nav and views, scenario drafting, register import, Risk register
+  export, CLI `--risks`, and OSCAL risk tracing. GRC engineering practice
+  is to engineer risk (controls, checks, automation) rather than maintain
+  it as a static artifact. Older `codify:project` saves and catalogs still
+  open: leftover `risks` / `risk-id` fields are dropped; clauses, controls
+  (including the purpose field), and `codify:statements` stay.
 - Start-page footer that named the GRC Engineering Club Singapore and
   the app version. MIT remains in LICENSE and README.
 - Optional Title field on the start form and the `title` argument on

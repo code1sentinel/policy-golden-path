@@ -13,12 +13,9 @@ def test_demo_header_has_no_null_and_explains_counts(demo):
     expect(summary).to_contain_text("not converted")
 
 
-def test_risks_breadcrumb_says_risks_not_library_register(page):
-    page.click("[data-nav='risks']")
-    expect(page.locator("#crumb")).to_contain_text("Risks")
-    expect(page.locator("#crumb")).not_to_contain_text("Register")
-    expect(page.locator("#crumb")).not_to_contain_text("Library")
-    expect(page.locator("#risks-title")).to_contain_text("Risk")
+def test_sidebar_has_no_risks_destination(page):
+    expect(page.locator("nav.sidebar__nav")).not_to_contain_text("Risks")
+    expect(page.locator("[data-nav='risks']")).to_have_count(0)
 
 
 def test_example_text_is_editable_and_codify_opens_a_result_step(page):

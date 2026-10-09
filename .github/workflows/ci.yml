@@ -65,16 +65,13 @@ jobs:
           codify examples/acme-information-security-policy-2016.md -f oscal -o out/acme-md.json
           codify examples/acme-information-security-policy-2016.docx -f oscal -o out/acme-docx.json
           codify out/acme-md.json -f oscal -o out/acme-reopened.json
-          codify examples/acme-information-security-policy-2016.md --risks examples/acme-risk-register.csv \
-            -f oscal -o out/acme-mixed.json
       - name: Validate against the OSCAL ${{ env.OSCAL_VERSION }} catalog schema
         run: |
           curl -sSLf -o out/schema.json \
             "https://github.com/usnistgov/OSCAL/releases/download/v${OSCAL_VERSION}/oscal_catalog_schema.json"
           npm install --no-save --silent ajv@8 ajv-formats@3
           node scripts/validate_oscal.mjs out/schema.json \
-            out/acme-md.json out/acme-docx.json out/acme-reopened.json \
-            out/acme-mixed.json tests/goldens/risk-only.json tests/goldens/mixed-clause-risk.json
+            out/acme-md.json out/acme-docx.json out/acme-reopened.json
 
   lint:
     runs-on: ubuntu-latest

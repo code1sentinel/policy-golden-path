@@ -36,9 +36,10 @@ Relevant decisions already on file:
 - [`0005-remove-im8-mapping.md`](docs/adr/0005-remove-im8-mapping.md)
 - [`0006-clause-only-input.md`](docs/adr/0006-clause-only-input.md)
 - [`0007-authoring-app-shell.md`](docs/adr/0007-authoring-app-shell.md)
-- [`0008-risk-input-and-oscal-tracing.md`](docs/adr/0008-risk-input-and-oscal-tracing.md)
+- [`0008-risk-input-and-oscal-tracing.md`](docs/adr/0008-risk-input-and-oscal-tracing.md) (superseded by 0011)
 - [`0009-device-wide-statement-library.md`](docs/adr/0009-device-wide-statement-library.md)
-- [`0010-vanta-grc-surfaces.md`](docs/adr/0010-vanta-grc-surfaces.md)
+- [`0010-vanta-grc-surfaces.md`](docs/adr/0010-vanta-grc-surfaces.md) (register surfaces superseded by 0011)
+- [`0011-no-risk-register.md`](docs/adr/0011-no-risk-register.md)
 
 ## 3. Thin vertical slices, one PR each
 

@@ -19,7 +19,7 @@ def test_paste_box_has_real_editable_example_text():
 
 
 def test_export_marks_oscal_recommended_with_use_when_lines():
-    assert "Recommended" in INDEX
+    assert "(recommended)" in INDEX
     assert "data-export=\"oscal\"" in INDEX
     assert "export-list__row is-recommended" in INDEX or "export-list__row--recommended" in INDEX
     assert "Use this when" in INDEX or "use this when" in INDEX.lower()

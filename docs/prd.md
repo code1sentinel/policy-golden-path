@@ -42,9 +42,8 @@ They are a starting point to edit, not finished controls.
   CSV/Excel (`.xlsx`), or a saved OSCAL catalog. There is no Title field
   and clause numbers are optional ([ADR 0006](adr/0006-clause-only-input.md)).
   Multi-clause files may still split on the policy's own numbering and
-  Word headings. A local risk register (CSV/JSON or typed in the app) is
-  a parallel input ([ADR 0008](adr/0008-risk-input-and-oscal-tracing.md));
-  it does not replace clause-only input.
+  Word headings. There is no risk register
+  ([ADR 0011](adr/0011-no-risk-register.md)).
 - **Sort:** requirement, scope, definition, role, exception, not-a-control;
   flag duplicates; show the reason; allow the type to be changed.
 - **Draft:** rule-based split, active voice, drop the organisation as subject,
@@ -62,8 +61,7 @@ They are a starting point to edit, not finished controls.
   help; Accept is the single primary.
 - **Export:** **OSCAL catalog** is the recommended download (catalog 1.1.2,
   also the save file); Excel, CSV (spreadsheet-safe), the Markdown report,
-  the risk register, and the statement library (JSON/CSV) from the export
-  dialog.
+  and the statement library (JSON/CSV) from the export dialog.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -77,8 +75,8 @@ They are a starting point to edit, not finished controls.
 - Hosting policy text or API keys on a Codify server.
 - Server-side calls to AI providers.
 - Authentication, multi-user, or exposing `codify-web` on a public interface.
-- FAIR quantitative scoring and residual-risk workflow (the local risk
-  register is in; see [docs/prds/risk-to-controls.md](prds/risk-to-controls.md)).
+- A risk register, FAIR quantitative scoring, or residual-risk workflow
+  (removed; see [ADR 0011](adr/0011-no-risk-register.md)).
 - Implementation statements (Codify scores catalog control statements only).
 
 ## Success criteria
@@ -143,9 +141,9 @@ across projects on this machine. See
 [docs/prds/statement-library.md](prds/statement-library.md) and
 [ADR 0009](adr/0009-device-wide-statement-library.md).
 
-Risks and Library follow GRC SaaS IA (Library vs Register, recommended-control
-modal, statement detail slide-over) adapted from Vanta Mobbin flows. Same
-local stores and Accept path. See
+Library follows GRC SaaS IA (statement list + detail slide-over) adapted
+from Vanta Mobbin flows. The Risks Library vs Register surfaces were
+removed ([ADR 0011](adr/0011-no-risk-register.md)). See
 [docs/prds/vanta-grc-surfaces.md](prds/vanta-grc-surfaces.md) and
 [ADR 0010](adr/0010-vanta-grc-surfaces.md).
 
@@ -173,8 +171,6 @@ local stores and Accept path. See
 | Grok — files + document | https://mobbin.com/screens/b9b4d3ed-593b-46f1-8f25-326edc5eae68 | Workspace: compact list, large editor |
 | Mintlify — intro + stacked cards | https://mobbin.com/screens/d4ce0aef-c205-432b-8f31-b4267315dc35 | Guide: single column, one card per idea |
 | LangChain — numbered quickstart | https://mobbin.com/screens/568fff70-41fd-4660-a3b6-eb843e6e14d9 | Guide: stacked sections, short labels |
-| Vanta — add recommended controls | https://mobbin.com/flows/7bfc9f26-e71e-421d-ad46-ab10c73edf67 | Risks: focused Accept / Add modal |
-| Vanta — risk library + register | https://mobbin.com/flows/fe48d77f-a607-4141-8092-61b73d4a864c | Risks: Library vs Register, category pills |
 | Vanta — add a control | https://mobbin.com/flows/539b1513-fc0c-4085-929a-4aea4c453860 | From library: split list + preview |
 | Vanta — framework / control detail | https://mobbin.com/flows/280ae4f2-78b0-4e33-8ba3-b72c8c7685a8 | Library: list + detail slide-over |
 
@@ -189,8 +185,8 @@ local stores and Accept path. See
   no Title field; clause numbers are not required or shown.
 - Device-wide statement library is a separate `codify:statements` store, not
   the catalog ([ADR 0009](adr/0009-device-wide-statement-library.md)).
-- Risks Library vs Register and the statement detail slide-over are IA on
-  those stores, not a hosted GRC catalog ([ADR 0010](adr/0010-vanta-grc-surfaces.md)).
+- No risk register ([ADR 0011](adr/0011-no-risk-register.md)). Statement
+  library list + detail slide-over remains ([ADR 0010](adr/0010-vanta-grc-surfaces.md)).
 - Standard-library runtime for the package; optional `dev` / `e2e` only for
   tests.
 

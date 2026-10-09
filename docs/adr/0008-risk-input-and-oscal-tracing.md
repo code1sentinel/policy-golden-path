@@ -4,7 +4,7 @@ Date: 2026-10-06
 
 ## Status
 
-Accepted
+Superseded by [0011-no-risk-register.md](0011-no-risk-register.md)
 
 ## Context
 

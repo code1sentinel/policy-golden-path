@@ -4,7 +4,8 @@ Date: 2026-10-07
 
 ## Status
 
-Accepted
+Accepted for Statement library surfaces. The Risks **Library** / **Register**
+part is superseded by [0011-no-risk-register.md](0011-no-risk-register.md).
 
 ## Context
 

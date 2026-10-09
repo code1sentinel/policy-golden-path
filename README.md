@@ -64,8 +64,7 @@ each clause is there to show.
 | Pasted text | The clause text, one paragraph per clause. Numbers are optional. A single paragraph that starts with a number (`4.2.1 …`) is kept as-is. A longer policy may still split on its own numbering (`5. Access Control` is a section, `5.1` a clause, `(a)` an item that carries its lead-in). |
 | Word (`.docx`) | The same, with Word's headings as sections. Read with the Python standard library. |
 | CSV or Excel (`.xlsx`) | One clause per row: a `clause text` column, and optionally `clause id` and `section`. |
-| A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog opens as a starting point: each control becomes a clause to work on. |
-| Risk register (`.csv` / `.json`) | A parallel local register ([ADR 0008](docs/adr/0008-risk-input-and-oscal-tracing.md)). Documented CSV header: `id,title,description,asset,likelihood,impact,threat,vulnerability,owner,status`. Example: [`examples/acme-risk-register.csv`](examples/acme-risk-register.csv). Parsed on this device; never uploaded. |
+| A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog opens as a starting point: each control becomes a clause to work on. Older catalogs that still carry a leftover risk register open too: the register is ignored and the control statements stay ([ADR 0011](docs/adr/0011-no-risk-register.md)). |
 
 PDF is not read: copy the text and paste it.
 
@@ -167,7 +166,7 @@ the rule drafts never use AI.
 ## Reviewing
 
 The workspace is an authoring app: a collapsible sidebar (Workspace, Clauses,
-Risks, Catalog, Library, Export, Guide), a top bar with a breadcrumb, a centred writing
+Catalog, Library, Export, Guide), a top bar with a breadcrumb, a centred writing
 column, and a right properties/review panel. Select a control to edit the
 statement next to its legacy clause. Parts of the statement show as sub-items.
 Mark it **reviewed** or **accepted**, then go to the next clause. Add the risk
@@ -184,16 +183,12 @@ in the editor.
   accept (also from the statement field).
 - **Saving**: work is kept in your browser as you go. **Export** opens a dialog
   with a Download button for the OSCAL catalog (the file to keep, share or put
-  in git), Excel, CSV, the conversion report, the risk register CSV, and the
+  in git), Excel, CSV, the conversion report, and the
   device-wide statement library (JSON/CSV). The editor's **OSCAL JSON**
   tab shows this control so you can read or copy it without downloading the file.
-- **Catalog** lists every control with a source column (clause, or a risk id
-  such as `R-001`). **Risks** is a local register with **Library** and
-  **Register** views: add or import CSV/JSON, add recommended control
-  templates from a focused modal (or the optional AI chip), accept them
-  like clause drafts. Clause-only input is unchanged
-  ([ADR 0006](docs/adr/0006-clause-only-input.md),
-  [ADR 0010](docs/adr/0010-vanta-grc-surfaces.md)).
+- **Catalog** lists every control with a source column (the clause it came
+  from). There is no risk register
+  ([ADR 0011](docs/adr/0011-no-risk-register.md)).
 - **Library** keeps accepted control statements on this device
   (`codify:statements`, separate from the project autosave). The view is a
   list plus a detail slide-over (source, OSCAL 1.1.2 refs). Accept a
@@ -214,10 +209,9 @@ schema). One group per policy section and one control per statement:
 | `parts[name=guidance]` | tools and how-to moved out of the statement |
 | `parts[name=legacy-text]` | the legacy clause it came from |
 | `parts[name=drafting-notes]` | what the rules changed, and what to decide |
-| `props`: `legacy-clause`, `status`, `origin`, `source-type`, `risk-id`, `risk-statement`, `responsible-role` | traceability and review state |
+| `props`: `legacy-clause`, `status`, `origin`, `source-type`, `risk-statement`, `responsible-role` | traceability and review state |
 | `links[rel=derived-from]` | the legacy clause, kept in `back-matter` |
-| `links[rel=reference]` | the risk a control was drafted from |
-| `back-matter.resources` | every legacy clause (with its type) and every risk (likelihood, impact, score, …) |
+| `back-matter.resources` | every legacy clause (with its type) |
 
 Codify's own names are in the namespace `https://grcengineering.club/ns/codify`.
 
@@ -234,7 +228,6 @@ controls, with the reason.
 ```
 codify policy.docx                       # summary and every draft, as text
 codify policy.docx -f oscal -o out.json  # the OSCAL catalog
-codify policy.docx --risks risks.csv -f oscal -o out.json
 codify policy.docx -f report             # Markdown conversion report
 codify policy.csv -f xlsx -o out.xlsx    # one row per control
 codify out.json -f report                # reopen a saved catalog
