@@ -43,7 +43,7 @@ def test_filter_empty_state_can_show_all(demo):
 
 
 def test_editor_empty_state_opens_the_first_draft(demo):
-    demo.click("#work-title")
+    demo.click("#work-summary")
     demo.keyboard.press("Escape")
     expect(demo.locator("#editor .empty")).to_be_visible()
     expect(demo.locator("#editor")).to_contain_text("Select a clause to draft its control.")

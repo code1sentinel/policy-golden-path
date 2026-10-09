@@ -12,7 +12,7 @@ and Codify:
    tools, testable.
 3. **Checks** each draft as you edit it, and shows its parts (action, scope,
    limit, purpose), so a missing one is easy to see.
-4. **Exports** an OSCAL catalog, which is also your save file, plus Excel, CSV
+4. **Exports** an OSCAL catalog (the usual download; reopen it later), plus Excel, CSV
    and a conversion report.
 
 ```
@@ -167,11 +167,13 @@ the rule drafts never use AI.
 
 The workspace is an authoring app: a collapsible sidebar (Workspace, Clauses,
 Catalog, Library, Export, Guide), a top bar with a breadcrumb, a centred writing
-column, and a right properties/review panel. Select a control to edit the
-statement next to its legacy clause. Parts of the statement show as sub-items.
-Mark it **reviewed** or **accepted**, then go to the next clause. Add the risk
-it treats (its purpose); guidance and who implements it sit under disclosure
-in the editor.
+column, and a right properties/review panel. **Workspace** is the paste start;
+**Clauses** is the open project. Select a control to edit the statement next to
+its legacy clause. Parts of the statement show as sub-items. **Accept** keeps
+it; the button becomes **Accepted ✓** with **Next control** as the primary
+(and **Undo accept**). Add the risk it treats (its purpose); guidance and who
+implements it sit under disclosure in the editor. Unfilled `[N]` blanks are
+set-this-value prompts.
 
 - **Filters and bulk** sit under **More** in the clause list: drafts, reviewed,
   accepted, below 80%, or the clauses that did not become controls. "Select ready
@@ -182,20 +184,20 @@ in the editor.
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>
   accept (also from the statement field).
 - **Saving**: work is kept in your browser as you go. **Export** opens a dialog
-  with a Download button for the OSCAL catalog (the file to keep, share or put
-  in git), Excel, CSV, the conversion report, and the
-  device-wide statement library (JSON/CSV). The editor's **OSCAL JSON**
+  with **OSCAL catalog** as the recommended download (keep, share, or put in
+  git; reopen later), then Excel, CSV, and the conversion report. Statement
+  library JSON/CSV sit under an optional group. The editor's **OSCAL JSON**
   tab shows this control so you can read or copy it without downloading the file.
 - **Catalog** lists every control with a source column (the clause it came
   from). There is no risk register
   ([ADR 0011](docs/adr/0011-no-risk-register.md)).
 - **Library** keeps accepted control statements on this device
-  (`codify:statements`, separate from the project autosave). The view is a
-  list plus a detail slide-over (source, OSCAL 1.1.2 refs). Accept a
-  control and it is upserted there (deduped by normalized text). **Use**
-  or **Add** from the editor or the Library view fills a draft; Accept
-  still goes through the usual score-and-catalog path. Remove leaves the
-  catalog alone. Nothing is uploaded
+  (`codify:statements`, separate from the project autosave). One statement
+  is shown once (a detail card, or a compact list plus detail when there
+  are several). Accept a control and it is upserted there (deduped by
+  normalized text). **Use** or **Add** fills a draft; Accept still goes
+  through the usual score-and-catalog path. Remove leaves the catalog
+  alone. Nothing is uploaded
   ([ADR 0009](docs/adr/0009-device-wide-statement-library.md)).
 
 ## What comes out

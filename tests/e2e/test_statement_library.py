@@ -41,7 +41,7 @@ def wait_for_library_entries(page, n=1):
 
 
 def accept_current(page):
-    page.locator(".editor__primary >> text=Accept").click()
+    page.locator("#accept-control").click()
     expect(page.locator(".state--accepted").first).to_be_visible()
     wait_for_library_entries(page)
 
@@ -61,8 +61,8 @@ def test_accept_lands_in_library_and_survives_another_project(page):
     statement = page.locator("textarea.statement").input_value()
     accept_current(page)
     page.click("[data-nav='library']")
-    expect(page.locator("#library .library-row")).to_have_count(1)
-    expect(page.locator("#library .library-row")).to_contain_text(statement[:40])
+    expect(page.locator("#library-detail .library-detail__statement")).to_have_count(1)
+    expect(page.locator("#library-detail")).to_contain_text(statement[:40])
     store = library_store(page)
     assert store and len(store["entries"]) == 1
     assert store["entries"][0]["statement"] == statement
@@ -71,8 +71,8 @@ def test_accept_lands_in_library_and_survives_another_project(page):
     page.click("#close-project")
     open_pasted(page, OTHER)
     page.click("[data-nav='library']")
-    expect(page.locator("#library .library-row")).to_have_count(1)
-    expect(page.locator("#library .library-row")).to_contain_text(statement[:40])
+    expect(page.locator("#library-detail")).to_contain_text(statement[:40])
+    assert page.locator("#library").inner_text().count(statement[:40]) == 1
 
 
 def test_use_from_library_then_accept_goes_into_the_current_catalog(page):
@@ -84,7 +84,7 @@ def test_use_from_library_then_accept_goes_into_the_current_catalog(page):
     other = page.locator("textarea.statement").input_value()
     assert other != first
     page.click("[data-nav='library']")
-    page.locator(".library-row .library-use").click()
+    page.locator("#library-detail .library-use").click()
     expect(page.locator("#work:not([hidden]) textarea.statement")).to_have_value(first)
     accept_current(page)
     saved = json.loads(page.evaluate("localStorage.getItem('codify:project')"))["project"]
@@ -100,7 +100,7 @@ def test_remove_leaves_the_catalog_alone(page):
     accept_current(page)
     before = json.loads(page.evaluate("localStorage.getItem('codify:project')"))["project"]
     page.click("[data-nav='library']")
-    page.locator(".library-row .library-remove").click()
+    page.locator("#library-detail .library-remove").click()
     expect(page.locator("#library")).to_contain_text("No statements saved yet")
     after = json.loads(page.evaluate("localStorage.getItem('codify:project')"))["project"]
     assert [c["text"] for c in after["controls"]] == [c["text"] for c in before["controls"]]
@@ -131,9 +131,9 @@ def test_export_library_downloads_locally(page, tmp_path):
 def test_duplicate_accept_does_not_add_a_second_row(page):
     open_pasted(page, CLAUSE)
     accept_current(page)
-    page.locator(".editor__primary >> text=Accept").click()
+    expect(page.locator("#accept-control")).to_contain_text("Accepted")
     page.click("[data-nav='library']")
-    expect(page.locator("#library .library-row")).to_have_count(1)
+    expect(page.locator("#library-detail .library-detail__statement")).to_have_count(1)
 
 
 def test_from_library_picks_show_in_the_editor(page):

@@ -14,5 +14,6 @@ before implementation.
 - [vanta-grc-surfaces.md](vanta-grc-surfaces.md) — Library detail IA (register part superseded)
 - [welcome-splash.md](welcome-splash.md) — first-visit welcome, then paste start
 - [first-run-clarity.md](first-run-clarity.md) — first-time GRC walkthrough fixes
+- [second-walkthrough-polish.md](second-walkthrough-polish.md) — second first-time walkthrough
 - [remove-risk-register.md](remove-risk-register.md) — drop the local risk register
 

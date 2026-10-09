@@ -59,6 +59,32 @@ def test_bad_input_says_what_is_wrong(name, content, message):
         read_policy(name, content)
 
 
+def test_pasted_text_title_comes_from_the_first_clause():
+    p = read_policy(
+        "pasted text",
+        "Access to systems shall be granted on a need-to-know basis.\n\nUsers shall lock screens.",
+    )
+    assert p.title != "pasted text"
+    assert p.title.startswith("Access to systems")
+
+
+def test_generic_paste_name_does_not_beat_a_markdown_heading():
+    p = read_policy("pasted text", "# Staff Policy\n\nUsers shall lock screens.")
+    assert p.title == "Staff Policy"
+
+
+def test_file_stem_is_used_when_there_is_no_heading():
+    p = read_policy("office-policy.txt", "Users shall lock screens.")
+    assert p.title == "office-policy"
+
+
+def test_empty_first_clause_falls_back_to_untitled_policy():
+    from codify.clauses import title_from_first_clause
+
+    assert title_from_first_clause("") == "Untitled policy"
+    assert title_from_first_clause("   \n") == "Untitled policy"
+
+
 def test_demo_files_match_the_examples(examples):
     static = examples.parent / "src" / "codify" / "static"
     for ext in ("md", "docx"):
