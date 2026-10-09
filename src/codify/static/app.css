@@ -655,8 +655,18 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   flex: 1; min-height: 0; border: 1px solid var(--border-soft); border-radius: 16px;
   overflow: hidden; background: var(--surface);
 }
-.library-layout--single { grid-template-columns: minmax(0, 1fr); }
-.library-layout--single .library-detail { max-width: 40rem; }
+.library-layout--single {
+  grid-template-columns: minmax(0, 1fr);
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+.library-layout--single .library-detail {
+  max-width: 40rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--surface);
+}
 .library-list { min-width: 0; overflow: auto; border-right: 1px solid var(--border-soft); padding: 12px 0; }
 .library-row {
   display: grid; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-soft); cursor: pointer;
