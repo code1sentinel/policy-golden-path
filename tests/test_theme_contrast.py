@@ -112,7 +112,8 @@ def test_ai_control_is_a_status_chip_not_a_view_tab():
     ai = INDEX.split('id="ai-open"', 1)[0][-80:]
     assert "view-btn" not in ai
     assert "status-chip" in INDEX
-    assert INDEX.count('data-view="') == 6
+    assert INDEX.count('data-view="') == 5
+    assert 'data-nav="risks"' not in INDEX
     assert 'data-nav="workspace"' in INDEX
     assert 'data-nav="clauses"' in INDEX
     assert 'data-nav="catalog"' in INDEX

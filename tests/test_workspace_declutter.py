@@ -18,8 +18,9 @@ def test_editor_hero_is_the_statement_not_risk_or_score_meta():
     assert "Risk it treats" in JS[extras:]
     assert "Risk it treats" not in JS[:extras]
     assert "practices adopted" not in JS
-    assert '"aria-label": "Control statement"' in JS
-    assert 'text: "Control statement"' not in JS
+    editor = JS.split("function renderControlEditor")[1].split("function renderProps")[0]
+    assert '"aria-label": "Control statement"' in editor
+    assert 'text: "Control statement"' not in editor
 
 
 def test_guide_is_single_column_without_lecture_chrome():
