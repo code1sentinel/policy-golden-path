@@ -427,7 +427,7 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 .flow--status li { padding: 2px 0; border: 0; background: transparent; cursor: default; }
 .flow--status li + li::before { content: "›"; margin: 0 8px; font-weight: 400; color: var(--muted); }
 .flow--status li.is-current { color: var(--text); }
-.flow__caption { margin: 0; font-size: 11px; color: var(--muted); text-align: right; max-width: 16rem; line-height: 1.35; }
+.flow__caption { margin: 0; font-size: 11px; color: var(--muted); text-align: right; max-width: 22rem; line-height: 1.35; }
 .menu { position: relative; }
 .split { display: inline-flex; align-items: stretch; }
 .split > [data-export="oscal"] { border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -584,7 +584,7 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 .subitems li.is-missing { border-style: dashed; color: var(--muted); }
 .subitems li.is-optional { border-style: dashed; color: var(--muted); }
 .subitems .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--border); margin-top: 6px; }
-.subitems li:not(.is-missing) .dot { background: var(--orange); border-color: var(--orange); }
+.subitems li:not(.is-missing):not(.is-optional) .dot { background: var(--orange); border-color: var(--orange); }
 .scoreline { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
 .scoreline__pct { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; color: var(--muted); }
 .scoreline__meta { color: var(--muted); font-size: 12px; }

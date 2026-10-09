@@ -1,5 +1,7 @@
 """Second first-time GRC walkthrough: accepted state, [N], first look, nav, export."""
 
+import re
+
 from playwright.sync_api import expect
 
 from conftest import finish_open
@@ -32,10 +34,10 @@ def test_accept_becomes_accepted_with_next_primary_and_undo(page):
     open_example(page)
     finish_open(page)
     expect(page.locator("#accept-control")).to_have_text("Accept")
-    expect(page.locator("#next-control")).not_to_have_class("btn--primary")
+    expect(page.locator("#next-control")).not_to_have_class(re.compile(r"btn--primary"))
     page.click("#accept-control")
     expect(page.locator("#accept-control")).to_contain_text("Accepted")
-    expect(page.locator("#next-control")).to_have_class("btn--primary")
+    expect(page.locator("#next-control")).to_have_class(re.compile(r"btn--primary"))
     expect(page.locator("#undo-accept")).to_be_visible()
     expect(page.locator("#props")).to_contain_text("Optional")
     page.click("#undo-accept")

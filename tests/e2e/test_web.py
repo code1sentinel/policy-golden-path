@@ -91,7 +91,7 @@ def test_pasted_text_is_shown_as_text_never_as_html(page):
 def test_editing_rescoring_and_status(demo):
     demo.click(ctl("5.1a") + " .ctl__open")
     demo.fill("textarea.statement", "Grant access to Agency systems on a need-to-know basis to limit what a compromised account can reach.")
-    expect(demo.locator(".parts .p-purpose")).not_to_have_class("p-purpose is-missing")
+    expect(demo.locator(".subitems li", has_text="Purpose")).not_to_have_class(re.compile(r"is-missing"))
     demo.click(".editor__where")
     demo.keyboard.press("r")
     expect(demo.locator(ctl("5.1a") + " .state")).to_have_text("Reviewed")
