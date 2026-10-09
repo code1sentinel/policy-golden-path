@@ -22,8 +22,9 @@ would reverse [ADR 0006](0006-clause-only-input.md) and
 [ADR 0008](0008-risk-input-and-oscal-tracing.md).
 
 [ADR 0007](0007-authoring-app-shell.md) names sidebar destinations
-(Workspace, Clauses, Risks, Catalog, Export, Guide). A library needs a
-home in that shell without becoming a second save format.
+(Workspace, Clauses, Catalog, Export, Guide). A library needs a
+home in that shell without becoming a second save format. Risks was
+later removed ([ADR 0011](0011-no-risk-register.md)).
 
 ## Decision
 

@@ -34,10 +34,6 @@
         <span class="nav-btn__icon" aria-hidden="true">≡</span>
         <span class="nav-btn__label">Clauses</span>
       </button>
-      <button type="button" class="nav-btn" data-view="risks" data-nav="risks" aria-pressed="false">
-        <span class="nav-btn__icon" aria-hidden="true">◎</span>
-        <span class="nav-btn__label">Risks</span>
-      </button>
       <button type="button" class="nav-btn" data-view="catalog" data-nav="catalog" aria-pressed="false">
         <span class="nav-btn__icon" aria-hidden="true">▣</span>
         <span class="nav-btn__label"><abbr class="term" title="This project's control statements — the set you export.">Catalog</abbr></span>
@@ -218,10 +214,6 @@ User accounts shall be reviewed regularly.</textarea>
         <div id="catalog-body"></div>
       </section>
 
-      <section id="risks" class="risks-view" aria-labelledby="risks-title" hidden>
-        <div id="risks-body"></div>
-      </section>
-
       <section id="library" class="library-view" aria-labelledby="library-title" hidden>
         <div id="library-body"></div>
       </section>
@@ -288,13 +280,6 @@ User accounts shall be reviewed regularly.</textarea>
         </li>
         <li class="export-list__row">
           <div>
-            <strong>Risk register</strong>
-            <p>Use this when you want a CSV of the risks you identified on this device.</p>
-          </div>
-          <button type="button" class="btn" data-export="risks">Download</button>
-        </li>
-        <li class="export-list__row">
-          <div>
             <strong>Statement library</strong>
             <p>Use this when you want a JSON copy of accepted statements saved on this device.</p>
           </div>
@@ -352,86 +337,6 @@ User accounts shall be reviewed regularly.</textarea>
     </form>
   </dialog>
 
-  <dialog id="risk-dialog" class="dialog" aria-labelledby="risk-dialog-title">
-    <form id="risk-form" method="dialog" novalidate>
-      <div class="dialog__head">
-        <div class="dialog__title">
-          <h2 id="risk-dialog-title">Add a risk</h2>
-        </div>
-        <button type="submit" class="icon-btn" value="cancel" formnovalidate aria-label="Close">×</button>
-      </div>
-      <p class="dialog__lede">Stays on this device. Likelihood × impact becomes the inherent score.</p>
-      <ol class="stepper" aria-label="Add a risk">
-        <li class="is-current">Details</li>
-        <li>Score</li>
-      </ol>
-      <input type="hidden" id="risk-editing" value="">
-      <label class="field"><span>Scenario</span>
-        <input id="risk-title" name="risk-title" maxlength="500" required autocomplete="off">
-      </label>
-      <label class="field"><span>Description <em>optional</em></span>
-        <textarea id="risk-description" name="risk-description" rows="3"></textarea>
-      </label>
-      <div class="grid2">
-        <label class="field"><span>Asset or process <em>optional</em></span>
-          <input id="risk-asset" name="risk-asset" maxlength="500" autocomplete="off">
-        </label>
-        <label class="field"><span>Owner <em>optional</em></span>
-          <input id="risk-owner" name="risk-owner" maxlength="500" autocomplete="off">
-        </label>
-      </div>
-      <div class="grid2">
-        <label class="field"><span>Threat <em>optional</em></span>
-          <input id="risk-threat" name="risk-threat" maxlength="500" autocomplete="off">
-        </label>
-        <label class="field"><span>Vulnerability <em>optional</em></span>
-          <input id="risk-vulnerability" name="risk-vulnerability" maxlength="500" autocomplete="off">
-        </label>
-      </div>
-      <div class="grid2">
-        <label class="field"><span>Likelihood (1–5)</span>
-          <input id="risk-likelihood" name="risk-likelihood" type="number" min="1" max="5" value="3">
-        </label>
-        <label class="field"><span>Impact (1–5)</span>
-          <input id="risk-impact" name="risk-impact" type="number" min="1" max="5" value="3">
-        </label>
-      </div>
-      <label class="field"><span>Status</span>
-        <select id="risk-status" name="risk-status">
-          <option value="identified">Identified</option>
-          <option value="treating">Treating</option>
-          <option value="accepted">Accepted</option>
-          <option value="closed">Closed</option>
-        </select>
-      </label>
-      <p id="risk-form-error" class="error" role="alert" hidden></p>
-      <div class="dialog__actions actions">
-        <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
-        <button type="submit" class="btn btn--primary" value="save" id="risk-save">Save</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="risk-import-dialog" class="dialog" aria-labelledby="risk-import-title">
-    <form id="risk-import-form" method="dialog" novalidate>
-      <div class="dialog__head">
-        <div class="dialog__title">
-          <h2 id="risk-import-title">Import risks</h2>
-        </div>
-        <button type="submit" class="icon-btn" value="cancel" formnovalidate aria-label="Close">×</button>
-      </div>
-      <p class="dialog__lede">CSV or JSON is read on this device. Map each column to a risk field, then import. Nothing is uploaded.</p>
-      <p id="risk-import-summary" class="hint"></p>
-      <div id="risk-mapping" class="mapping"></div>
-      <p id="risk-import-errors" class="error" role="alert" hidden></p>
-      <div class="dialog__actions actions">
-        <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
-        <button type="submit" class="btn btn--primary" value="import" id="risk-import-apply">Import</button>
-      </div>
-    </form>
-  </dialog>
-  <input type="file" id="risk-file" hidden accept=".csv,.json,text/csv,application/json">
-
   <dialog id="library-pick" class="dialog" aria-labelledby="library-pick-title">
     <form method="dialog">
       <div class="dialog__head">
@@ -448,24 +353,6 @@ User accounts shall be reviewed regularly.</textarea>
       <div class="picker">
         <div id="library-pick-list"></div>
         <aside id="library-pick-detail" class="picker__detail" aria-label="Statement preview"></aside>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="recommend-dialog" class="dialog recommend-dialog" aria-labelledby="recommend-title">
-    <form method="dialog">
-      <div class="dialog__head">
-        <div class="dialog__title">
-          <h2 id="recommend-title">Add recommended controls?</h2>
-        </div>
-        <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
-      </div>
-      <p id="recommend-scenario" class="recommend-scenario"></p>
-      <p class="recommend-label">Recommended controls</p>
-      <div id="recommend-list"></div>
-      <div class="dialog__actions actions">
-        <button type="submit" class="btn btn--quiet" value="cancel" id="recommend-dismiss">Not now</button>
-        <button type="button" class="btn btn--primary" id="recommend-add">Add controls</button>
       </div>
     </form>
   </dialog>

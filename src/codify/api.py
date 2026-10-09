@@ -8,14 +8,11 @@ the project lives in the page: each call is given what it needs.
     check         one control statement -> score, best practices, improvements and its parts
     score         a whole project -> scores for every control
     redraft       one clause -> rule-based control drafts
-    import_risks  a local CSV/JSON risk register -> parsed risks (never uploaded)
-    suggest_risk_controls  one risk -> deterministic template suggestions
-    draft_risk_controls    one risk -> project controls from selected templates
-    export        a project -> OSCAL catalog, Excel, CSV, Markdown report, or risk CSV
+    export        a project -> OSCAL catalog, Excel, CSV, or Markdown report
     library_upsert / library_remove / library_search / library_export
                   a device-wide statement library (entries in, entries out; never stored here)
     control_oscal one control in a project -> that control's OSCAL 1.1.2 object
-    ai_prompt     one clause or risk -> the prompt the page sends to the person's AI provider
+    ai_prompt     one clause -> the prompt the page sends to the person's AI provider
     ai_reply      the provider's reply -> control drafts marked as drafted by AI, with scores
 """
 
@@ -39,18 +36,13 @@ from .library import to_json as library_to_json
 from .library import upsert as upsert_library
 from .models import Statement
 from .project import (
-    ORIGINS, STATUSES, control_oscal, draft_controls, empty_project, from_oscal, merge_risks,
+    ORIGINS, STATUSES, control_oscal, draft_controls, drop_legacy_register, from_oscal,
     new_project, summary, to_csv, to_oscal, to_report, to_xlsx,
-)
-from .risks import (
-    CSV_HEADER, STATUSES as RISK_STATUSES, draft_from_templates, normalize_risk, parse_csv,
-    parse_register, suggest_templates, to_csv_register,
 )
 
 MAX_TEXT = 20000  # characters per field
 MAX_CLAUSES = 5000
 MAX_CONTROLS = 10000
-MAX_RISKS = 2000
 
 
 class BadRequest(Exception):
@@ -97,15 +89,6 @@ def _scores(project: dict) -> dict[str, dict]:
 
 # --- Projects -----------------------------------------------------------------------------------------
 
-def _clean_risk(value, index: int) -> dict:
-    if not isinstance(value, dict):
-        raise BadRequest("each risk must be an object")
-    try:
-        return normalize_risk(value, index=index)
-    except ValueError as exc:
-        raise BadRequest(str(exc)) from None
-
-
 def _clean_project(value) -> dict:
     """A project sent back by the page, checked field by field."""
     if not isinstance(value, dict):
@@ -113,14 +96,11 @@ def _clean_project(value) -> dict:
     clauses, controls = value.get("clauses"), value.get("controls")
     if not isinstance(clauses, list) or not isinstance(controls, list):
         raise BadRequest("'project' needs 'clauses' and 'controls' lists")
-    risks = value.get("risks") or []
-    if not isinstance(risks, list):
-        raise BadRequest("'risks' must be a list")
-    if len(clauses) > MAX_CLAUSES or len(controls) > MAX_CONTROLS or len(risks) > MAX_RISKS:
+    if len(clauses) > MAX_CLAUSES or len(controls) > MAX_CONTROLS:
         raise BadRequest("project is too large")
     out = {"uuid": _text(value.get("uuid"), "uuid", 64), "title": _text(value.get("title"), "title", 500),
            "source": _text(value.get("source"), "source", 500), "version": __version__,
-           "clauses": [], "controls": [], "risks": []}
+           "clauses": [], "controls": []}
     for c in clauses:
         if not isinstance(c, dict):
             raise BadRequest("each clause must be an object")
@@ -138,8 +118,6 @@ def _clean_project(value) -> dict:
         notes = c.get("notes") or []
         if not isinstance(notes, list):
             raise BadRequest("'notes' must be a list")
-        source_type = c.get("source_type") if c.get("source_type") in ("clause", "risk") else (
-            "risk" if c.get("risk_id") else "clause")
         out["controls"].append({
             "id": _text(c.get("id"), "control id", 64) or "?", "clause": _text(c.get("clause"), "clause", 64),
             "text": _text(c.get("text"), "text"), "guidance": _text(c.get("guidance"), "guidance"),
@@ -147,12 +125,10 @@ def _clean_project(value) -> dict:
             "notes": [_text(n, "note", 2000) for n in notes[:50]],
             "status": c.get("status") if c.get("status") in STATUSES else "draft",
             "origin": c.get("origin") if c.get("origin") in ORIGINS else "person",
-            "source_type": source_type,
-            "risk_id": _text(c.get("risk_id"), "risk_id", 64),
+            "source_type": "clause",
+            "risk_id": "",
         })
-    for i, r in enumerate(risks):
-        out["risks"].append(_clean_risk(r, i))
-    return out
+    return drop_legacy_register(out)
 
 
 def _upload(body: dict) -> tuple[str, str | bytes]:
@@ -182,6 +158,7 @@ def open_policy(body: dict) -> dict:
         raise BadRequest(f"{name}: not valid JSON ({exc.msg})") from None
     except (ValueError, KeyError, TypeError) as exc:
         raise BadRequest(f"{name}: {exc}") from None
+    project = drop_legacy_register(project)
     return {"project": project, "summary": summary(project), "scores": _scores(project)}
 
 
@@ -199,58 +176,7 @@ def redraft(body: dict) -> dict:
     return {"controls": controls, "scores": _scores({"controls": controls})}
 
 
-def _risk_from_body(body: dict) -> dict:
-    raw = body.get("risk")
-    if not isinstance(raw, dict):
-        raise BadRequest("'risk' must be an object")
-    return _clean_risk(raw, 0)
-
-
-def import_risks(body: dict) -> dict:
-    """Parse a local CSV/JSON register. Nothing is stored or uploaded."""
-    name, content = _upload(body)
-    text = content.decode("utf-8-sig") if isinstance(content, bytes) else content
-    mapping = body.get("mapping") if isinstance(body.get("mapping"), dict) else None
-    try:
-        if mapping is not None:
-            parsed = parse_csv(text, mapping=mapping)
-        else:
-            parsed = parse_register(name, text)
-    except ValueError as exc:
-        raise BadRequest(str(exc)) from None
-    out = {"risks": parsed["risks"], "errors": parsed.get("errors") or [],
-           "columns": parsed.get("columns") or [], "recognised": parsed.get("recognised") or [],
-           "unknown": parsed.get("unknown") or [], "header": list(CSV_HEADER)}
-    if body.get("apply"):
-        project = _clean_project(body["project"]) if body.get("project") else empty_project()
-        project = merge_risks(project, parsed["risks"], draft=False)
-        out["project"] = project
-        out["summary"] = summary(project)
-        out["scores"] = _scores(project)
-    return out
-
-
-def suggest_risk_controls(body: dict) -> dict:
-    risk = _risk_from_body(body)
-    return {"risk": risk, "suggestions": suggest_templates(risk)}
-
-
-def draft_risk_controls(body: dict) -> dict:
-    risk = _risk_from_body(body)
-    ids = body.get("template_ids")
-    if ids is not None and not isinstance(ids, list):
-        raise BadRequest("'template_ids' must be a list")
-    template_ids = [str(x) for x in ids] if ids else None
-    controls = draft_from_templates(risk, template_ids)
-    if not controls:
-        raise BadRequest("no templates matched that risk")
-    return {"controls": controls, "scores": _scores({"controls": controls})}
-
-
 def ai_prompt(body: dict) -> dict:
-    if isinstance(body.get("risk"), dict):
-        risk = _risk_from_body(body)
-        return ai.risk_prompt(risk)
     text = _text(body.get("text"), "text")
     if not text:
         raise BadRequest("the clause has no text")
@@ -258,13 +184,9 @@ def ai_prompt(body: dict) -> dict:
 
 
 def ai_reply(body: dict) -> dict:
-    source_type = body.get("source_type") if body.get("source_type") in ("clause", "risk") else (
-        "risk" if body.get("risk_id") else "clause")
-    risk_id = _text(body.get("risk_id"), "risk_id", 64)
     try:
         controls = ai.from_reply(_text(body.get("clause_id"), "clause_id", 64),
-                                 _text(body.get("reply"), "reply", ai.MAX_REPLY), _text(body.get("model"), "model", 100),
-                                 source_type=source_type, risk_id=risk_id)
+                                 _text(body.get("reply"), "reply", ai.MAX_REPLY), _text(body.get("model"), "model", 100))
     except ValueError as exc:
         raise BadRequest(str(exc)) from None
     return {"controls": controls, "scores": _scores({"controls": controls})}
@@ -351,15 +273,11 @@ def export(body: dict) -> dict:
         improvements = {k: v["improvements"] for k, v in _scores(project).items()}
         return {"name": _filename(project, "report.md"), "mime": "text/markdown",
                 "content": to_report(project, scores, improvements)}
-    if fmt == "risks":
-        return {"name": _filename(project, "risks.csv"), "mime": "text/csv",
-                "content": to_csv_register(project.get("risks") or [])}
-    raise BadRequest("'format' must be oscal, csv, xlsx, report or risks")
+    raise BadRequest("'format' must be oscal, csv, xlsx or report")
 
 
 def config() -> dict:
     return {"version": __version__, "types": TYPE_LABELS, "statuses": list(STATUSES),
-            "risk_statuses": list(RISK_STATUSES), "header": list(CSV_HEADER),
             "adopted": ADOPTED, "partly": PARTLY, "status_labels": STATUS_LABELS}
 
 
@@ -369,8 +287,6 @@ def guide() -> dict:
 
 ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export,
            "control_oscal": control_oscal_action, "ai_prompt": ai_prompt, "ai_reply": ai_reply,
-           "import_risks": import_risks, "suggest_risk_controls": suggest_risk_controls,
-           "draft_risk_controls": draft_risk_controls,
            "library_upsert": library_upsert, "library_remove": library_remove,
            "library_search": library_search, "library_export": library_export}
 

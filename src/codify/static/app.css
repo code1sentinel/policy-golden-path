@@ -372,23 +372,19 @@ html[data-splash="open"] #start { display: none !important; }
 
 body:has(#work:not([hidden])),
 body:has(#catalog:not([hidden])),
-body:has(#risks:not([hidden])),
 body:has(#library:not([hidden])) { overflow: hidden; height: 100vh; }
 body:has(#work:not([hidden])) .app__frame,
 body:has(#catalog:not([hidden])) .app__frame,
-body:has(#risks:not([hidden])) .app__frame,
 body:has(#library:not([hidden])) .app__frame {
   height: 100vh; overflow: hidden;
 }
 body:has(#work:not([hidden])) main,
 body:has(#catalog:not([hidden])) main,
-body:has(#risks:not([hidden])) main,
 body:has(#library:not([hidden])) main {
   flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: 12px; padding-bottom: 12px;
 }
 body:has(#work:not([hidden])) #work,
 body:has(#catalog:not([hidden])) #catalog,
-body:has(#risks:not([hidden])) #risks,
 body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .work__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 12px; }
@@ -573,21 +569,11 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .editor .fold > summary { padding-left: 0; }
 
-/* Catalog + risks --------------------------------------------------------- */
+/* Catalog ----------------------------------------------------------------- */
 
 .view-head { margin-bottom: 16px; }
 .view-head__lede { margin: 0; color: var(--muted); font-size: 14px; }
-.catalog-view, .risks-view { min-height: 0; }
-.subnav {
-  display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 16px; padding: 3px;
-  width: fit-content; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 999px;
-}
-.subnav__btn {
-  appearance: none; border: 1px solid transparent; background: transparent; cursor: pointer;
-  color: var(--muted); font: 600 12px var(--font); padding: 5px 12px; border-radius: 999px;
-}
-.subnav__btn:hover { color: var(--text); }
-.subnav__btn[aria-pressed="true"] { background: var(--orange-dim); color: var(--text); border-color: var(--orange-line); }
+.catalog-view { min-height: 0; }
 .pill {
   display: inline-flex; align-items: center; max-width: 100%;
   font: 600 11px var(--font); color: var(--muted); background: var(--bg);
@@ -601,55 +587,12 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 .data-table tr[aria-current="true"] td { background: var(--orange-dim); }
 .data-table tr:last-child td { border-bottom: 0; }
 .data-table button:not(.btn) { appearance: none; background: none; border: 0; color: var(--text); font: 13px/1.4 var(--font); text-align: left; cursor: pointer; padding: 0; }
-.grc-card {
-  background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px;
-  padding: 14px 16px; margin-bottom: 16px;
-}
 .catalog-body { overflow: auto; flex: 1; min-height: 0; }
-.risks-view { display: flex; flex-direction: column; min-height: 0; }
-.risks-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-.risks-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 0; min-height: 0; flex: 1; }
-.risks-main { min-width: 0; overflow: auto; padding-right: 16px; }
-.risk-drawer {
-  border-left: 1px solid var(--border-soft); padding: 4px 0 24px 20px; overflow: auto; min-width: 0;
-}
-.grc-card .heatmap-wrap { margin: 0; }
-.heatmap-wrap { margin: 0 0 16px; }
-.heatmap-wrap h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.heatmap { display: grid; grid-template-columns: 28px repeat(5, 32px); grid-template-rows: repeat(5, 32px) 18px; gap: 3px; align-items: stretch; }
-.heat-cell {
-  border: 1px solid var(--border-soft); border-radius: 4px; background: var(--surface);
-  font-size: 10px; display: grid; place-items: center; color: var(--muted);
-}
-.heat-cell.is-hit { background: color-mix(in srgb, var(--orange) 35%, var(--surface)); color: var(--text); border-color: var(--orange); }
-.heat-label { font-size: 10px; color: var(--muted); display: grid; place-items: center; }
-.score-badge {
-  display: inline-flex; min-width: 1.6em; justify-content: center; font: 700 12px var(--font);
-  padding: 2px 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border);
-}
-.score-badge.is-high { background: var(--danger-dim); border-color: var(--danger-line); color: var(--danger); }
-.score-badge.is-med { background: color-mix(in srgb, var(--orange) 18%, var(--surface)); }
-.template-row, .mapping-row {
+.template-row {
   display: grid; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-soft);
 }
-.template-row:last-child, .mapping-row:last-child { border-bottom: 0; }
+.template-row:last-child { border-bottom: 0; }
 .template-row p { margin: 0; font-size: 13px; }
-.mapping-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; }
-.mapping-tick { color: var(--ready); font-weight: 700; }
-.stepper { display: flex; gap: 16px; list-style: none; margin: 0 0 14px; padding: 0; font-size: 12px; color: var(--muted); }
-.stepper li { display: flex; align-items: center; gap: 6px; }
-.stepper li::before {
-  content: counter(step); counter-increment: step; width: 18px; height: 18px; border-radius: 50%;
-  display: grid; place-items: center; border: 1px solid var(--border); font-size: 10px; font-weight: 700;
-}
-.stepper { counter-reset: step; }
-.stepper li.is-current { color: var(--text); }
-.stepper li.is-current::before { background: var(--orange); border-color: var(--orange); color: var(--on-accent); }
-.linked-ctl { margin: 0 0 6px; font-size: 13px; }
-@media (max-width: 980px) {
-  .risks-layout { grid-template-columns: 1fr; }
-  .risk-drawer { border-left: 0; border-top: 1px solid var(--border-soft); padding: 16px 0 0; }
-}
 
 /* Statement library ------------------------------------------------------- */
 
@@ -690,20 +633,10 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 }
 #library-pick-list { display: grid; gap: 0; max-height: min(50vh, 420px); overflow: auto; }
 .picker__detail { padding: 16px; background: var(--bg); border-left: 1px solid var(--border-soft); }
-.risk-library-desc { margin: 4px 0 0; font-size: 12px; }
-.risk-library-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; }
-.recommend-dialog { width: min(520px, calc(100vw - 32px)); }
-.recommend-scenario {
-  margin: 0 0 14px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border-soft);
-  border-radius: 10px; font-size: 14px;
-}
-.recommend-label { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-#recommend-list { max-height: min(40vh, 360px); overflow: auto; }
 #notice.toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20;
   margin: 0; border-radius: 999px; box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow) 35%, transparent);
 }
-#risk-search { width: 180px; }
 @media (max-width: 980px) {
   .library-layout { grid-template-columns: 1fr; }
   .library-list { border-right: 0; border-bottom: 1px solid var(--border-soft); }
@@ -752,11 +685,9 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   body.sidebar-collapsed { grid-template-columns: 1fr; }
   body:has(#work:not([hidden])),
   body:has(#catalog:not([hidden])),
-  body:has(#risks:not([hidden])),
   body:has(#library:not([hidden])) { overflow: auto; height: auto; }
   body:has(#work:not([hidden])) .app__frame,
   body:has(#catalog:not([hidden])) .app__frame,
-  body:has(#risks:not([hidden])) .app__frame,
   body:has(#library:not([hidden])) .app__frame { height: auto; overflow: visible; }
   body:has(#work:not([hidden])) main, body:has(#work:not([hidden])) #work { display: block; min-height: 0; }
   .workspace { grid-template-columns: 1fr; height: auto; min-height: 0; overflow: visible; display: flex; flex-direction: column; }

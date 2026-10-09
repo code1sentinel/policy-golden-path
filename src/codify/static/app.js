@@ -32,15 +32,14 @@ const PART_HELP = {
   purpose: "Say why this control exists — the risk it treats.",
 };
 const SCORE_HELP = "How complete this statement is: testable, scoped, action-first, and has a purpose. 80% or more is usually ready to accept.";
-const RISK_STATUS_LABELS = { identified: "Identified", treating: "Treating", accepted: "Accepted", closed: "Closed" };
-const RISK_FIELDS = ["id", "title", "description", "asset", "likelihood", "impact", "threat", "vulnerability", "owner", "status"];
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
 const SAVE_KEY = "codify:project";
 const LIBRARY_KEY = "codify:statements";
 const SPLASH_KEY = "codify:splash-seen";
+const LEGACY_RISKS_KEY = "codify:risks";  // leftover store from older builds; never rewrite statements
 
 const state = {
-  project: null,       // {uuid, title, source, clauses: [...], controls: [...], risks: [...]}
+  project: null,       // {uuid, title, source, clauses: [...], controls: [...]}
   scores: {},          // control id -> {confidence, improvements}
   selected: null,      // {control: id} or {clause: id}
   filter: "all",
@@ -51,14 +50,8 @@ const state = {
   view: "workspace",
   dismissed: {},       // control id -> dismissed review suggestion texts
   lastCheck: {},       // control id -> {assessment, parts}
-  selectedRisk: null,  // risk id
-  riskPane: "register", // library | register
-  riskQuery: "",
   selectedLibrary: null, // library entry id
   libraryPickId: null,
-  recommendRiskId: null,
-  dismissedTemplates: {},  // risk id -> template ids
-  importPreview: null,
   resultStep: false,   // short "here's what we drafted" before the 3-pane workspace
 };
 
@@ -196,9 +189,28 @@ async function busy(button, label, work) {
 
 // ---------------------------------------------------------------- saving in this browser
 
+function dropLegacyRiskStore() {
+  try { localStorage.removeItem(LEGACY_RISKS_KEY); } catch { /* ignore */ }
+}
+
+function dropLegacyRegister(project) {
+  dropLegacyRiskStore();
+  if (!project || typeof project !== "object") return project;
+  const next = { ...project };
+  delete next.risks;
+  if (Array.isArray(next.controls)) {
+    next.controls = next.controls.map((c) => {
+      if (!c || typeof c !== "object") return c;
+      return { ...c, source_type: "clause", risk_id: "" };
+    });
+  }
+  return next;
+}
+
 function saveLocal() {
   if (!state.project) return;
   try {
+    state.project = dropLegacyRegister(state.project);
     localStorage.setItem(SAVE_KEY, JSON.stringify({ project: state.project, scores: state.scores, saved: new Date().toISOString() }));
   } catch { /* storage full or unavailable: the OSCAL file is the real save */ }
 }
@@ -207,12 +219,15 @@ const saveSoon = debounce(saveLocal, 600);
 function loadLocal() {
   try {
     const data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
-    return data && data.project && Array.isArray(data.project.controls) ? data : null;
+    if (!(data && data.project && Array.isArray(data.project.controls))) return null;
+    data.project = dropLegacyRegister(data.project);
+    return data;
   } catch { return null; }
 }
 
 function clearLocal() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+  dropLegacyRiskStore();
 }
 
 function loadLibrary() {
@@ -230,9 +245,6 @@ function saveLibrary(entries) {
 }
 
 function librarySourceLabel(entry) {
-  if ((entry["source-type"] || entry.source_type) === "risk" || entry["risk-id"] || entry.risk_id) {
-    return entry["risk-id"] || entry.risk_id || "Risk";
-  }
   return "Clause";
 }
 
@@ -250,8 +262,8 @@ async function rememberStatement(control, { used = false } = {}) {
     library: loadLibrary(),
     statement: text,
     parts: (state.lastCheck[control.id] && state.lastCheck[control.id].parts) || control.parts || null,
-    source_type: control.source_type || (control.risk_id ? "risk" : "clause"),
-    risk_id: control.risk_id || "",
+    source_type: "clause",
+    risk_id: "",
     used,
   });
   saveLibrary(data.library);
@@ -556,6 +568,7 @@ function navFor(view) {
 }
 
 function showView(view) {
+  if (view === "risks") view = state.project ? "work" : "workspace";
   if (view === "workspace" && state.project) view = "work";
   if (view === "work" && !state.project) view = "workspace";
   if (view === "work" && state.resultStep) view = "result";
@@ -572,18 +585,15 @@ function showView(view) {
   if ($("#result")) $("#result").hidden = view !== "result";
   $("#work").hidden = view !== "work";
   $("#catalog").hidden = view !== "catalog";
-  $("#risks").hidden = view !== "risks";
   $("#library").hidden = view !== "library";
   const exportTop = $("#export-open-top");
   const closeBtn = $("#close-project");
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
-  if (view !== "risks") closeRecommendDialog();
   if (view === "workspace" && !state.project) renderResume();
   if (view === "result" && state.project) renderResult();
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
-  if (view === "risks") renderRisks();
   if (view === "library") renderLibrary();
   renderCrumb();
 }
@@ -601,11 +611,6 @@ function renderCrumb() {
     if (state.selected?.control) parts.push("Control");
     else if (state.selected?.clause) parts.push("Clause");
   } else if (state.view === "catalog") parts.push("Catalog");
-  else if (state.view === "risks") {
-    parts.push("Risks");
-    const risk = state.selectedRisk && riskById(state.selectedRisk);
-    if (risk) parts.push(risk.title);
-  }
   else if (state.view === "library") parts.push("Library");
   else if (state.view === "guide") parts.push("Guide");
   const nodes = [];
@@ -659,7 +664,7 @@ function dismissSplash() {
 
 function openProject(data, { resultStep = false } = {}) {
   showNotice("");
-  state.project = data.project;
+  state.project = dropLegacyRegister(data.project);
   state.scores = data.scores || {};
   state.checked.clear();
   state.filter = "all";
@@ -672,7 +677,6 @@ function openProject(data, { resultStep = false } = {}) {
   showView(state.resultStep ? "result" : "work");
   if (!state.resultStep) render();
   renderCatalog();
-  renderRisks();
   if (!state.resultStep && state.selected) {
     const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
     document.getElementById(id)?.scrollIntoView({ block: "nearest" });
@@ -750,17 +754,15 @@ async function openFile(file) {
 const clauseById = (id) => state.project.clauses.find((c) => c.id === id);
 const controlById = (id) => state.project.controls.find((c) => c.id === id);
 const controlsOf = (clauseId) => state.project.controls.filter((c) => c.clause === clauseId);
-const riskById = (id) => (state.project.risks || []).find((r) => r.id === id);
-const controlsOfRisk = (riskId) => state.project.controls.filter((c) => c.risk_id === riskId);
 const scoreOf = (id) => (state.scores[id] ? state.scores[id].confidence : null);
 
 function ensureProject() {
   if (!state.project) {
     const uuid = (crypto.randomUUID && crypto.randomUUID()) || `00000000-0000-4000-8000-${String(Date.now()).slice(-12)}`;
-    state.project = { uuid, title: "", source: "", version: "", clauses: [], controls: [], risks: [] };
+    state.project = { uuid, title: "", source: "", version: "", clauses: [], controls: [] };
     state.scores = {};
   }
-  if (!Array.isArray(state.project.risks)) state.project.risks = [];
+  state.project = dropLegacyRegister(state.project);
 }
 
 function matches(control) {
@@ -785,7 +787,6 @@ function render() {
   renderMoreLabel();
   renderCrumb();
   if (state.view === "catalog") renderCatalog();
-  if (state.view === "risks") renderRisks();
   if (state.view === "library") renderLibrary();
 }
 
@@ -809,7 +810,6 @@ function renderHead() {
     el("strong", { text: `${plural(counts.controls, "control draft")} from ${plural(counts.requirements, "requirement")}` }),
     counts.other ? el("span", { class: "work__summary-detail", text: `. ${plural(counts.other, "other clause")} ${counts.other === 1 ? "was" : "were"} not converted (definitions, scope, roles, or duplicates).` }) : el("span", { text: "." }),
     counts.split ? el("span", { class: "work__summary-detail", text: ` ${plural(counts.split, "requirement")} split into more than one control.` }) : null,
-    (p.risks || []).length ? el("span", { text: ` · ${plural(p.risks.length, "risk")}` }) : null,
   );
   summary.title = `${counts.requirements} requirements drafted into ${counts.controls} controls · ${dup} duplicate · ${context} context · ${n("not-a-control")} not controls`;
   const statusCounts = { draft: 0, reviewed: 0, accepted: 0 };
@@ -937,15 +937,11 @@ function renderList() {
     nodes.push(clauseCard(clause, controls));
   }
   if (state.filter !== "other") {
-    const byRisk = {};
-    for (const c of state.project.controls) {
-      if (!(c.source_type === "risk" || c.risk_id) || !matches(c)) continue;
-      (byRisk[c.risk_id || "risk"] ||= []).push(c);
-    }
-    for (const [rid, controls] of Object.entries(byRisk)) {
-      const risk = riskById(rid);
-      nodes.push(el("p", { class: "section-head", text: risk ? `Risk · ${risk.title}` : "From risks" }));
-      for (const c of controls) nodes.push(controlRow(c));
+    const known = new Set(state.project.clauses.map((c) => c.id));
+    const orphans = state.project.controls.filter((c) => (!c.clause || !known.has(c.clause)) && matches(c));
+    if (orphans.length) {
+      nodes.push(el("p", { class: "section-head", text: "Controls" }));
+      for (const c of orphans) nodes.push(controlRow(c));
     }
   }
   if (!nodes.length) {
@@ -1105,9 +1101,7 @@ function oscalPanel(c) {
 }
 
 function renderControlEditor(box, c) {
-  const isRisk = c.source_type === "risk" || !!c.risk_id;
   const clause = clauseById(c.clause) || { id: c.clause, text: "" };
-  const risk = isRisk ? riskById(c.risk_id) : null;
   const visible = visibleControls();
   const index = visible.findIndex((x) => x.id === c.id);
   const tabs = editorTabs();
@@ -1172,9 +1166,9 @@ function renderControlEditor(box, c) {
   next.disabled = index < 0 || index >= visible.length - 1;
   next.addEventListener("click", () => step(1));
   let aiBtn = null;
-  if (aiReady() && (clause.text || risk)) {
+  if (aiReady() && clause.text) {
     aiBtn = el("button", { type: "button", class: "btn", text: "Draft with AI" });
-    aiBtn.addEventListener("click", () => (risk ? aiRedraftRisk(risk, aiBtn) : aiRedraft(clause, aiBtn)));
+    aiBtn.addEventListener("click", () => aiRedraft(clause, aiBtn));
   }
 
   const fromLib = el("button", { type: "button", class: "btn", id: "library-from", text: "From library" });
@@ -1185,15 +1179,8 @@ function renderControlEditor(box, c) {
   redraft.addEventListener("click", () => redraftClause(clause, redraft));
   const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Delete this control" });
   remove.addEventListener("click", () => deleteControl(c));
-  const openClause = el("button", { type: "button", class: "btn btn--small btn--quiet", text: isRisk ? "Open risk" : "Open clause" });
-  openClause.addEventListener("click", () => {
-    if (isRisk && c.risk_id) {
-      state.selectedRisk = c.risk_id;
-      showView("risks");
-    } else {
-      select({ clause: clause.id });
-    }
-  });
+  const openClause = clause.id ? el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Open clause" }) : null;
+  if (openClause) openClause.addEventListener("click", () => select({ clause: clause.id }));
 
   const extras = el("details", { class: "fold fold--block" },
     el("summary", { text: "Guidance, risk, who" }),
@@ -1207,15 +1194,14 @@ function renderControlEditor(box, c) {
   const sub = el("div", { class: "editor__parts" });
   put(box,
     where,
-    isRisk && risk ? el("div", { class: "legacy" }, el("span", { class: "legacy__label", text: "Risk" }),
-      `${risk.id} · ${risk.title}`) : (clause.text ? legacyBox(clause) : null),
+    clause.text ? legacyBox(clause) : null,
     el("label", { class: "field field--hero" }, statement),
     paramNote(c.text),
     el("div", { class: "editor__primary", role: "group", "aria-label": "Review" }, reviewed, accept, next, fromLib, aiBtn),
     result,
     sub,
     extras,
-    el("div", { class: "editor__foot" }, openClause, isRisk ? null : redraft, isRisk ? null : add, remove),
+    el("div", { class: "editor__foot" }, openClause, clause.id ? redraft : null, clause.id ? add : null, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
   call({ action: "check", text: c.text || " ", risk: c.risk || "" }).then((data) => {
@@ -1312,10 +1298,8 @@ function renderProps(control, data) {
   if (control.origin === "ai") {
     const tryAgain = el("button", { type: "button", class: "btn btn--small", text: "Try again" });
     const useThis = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Use this" });
-    const risk = riskById(control.risk_id);
     tryAgain.addEventListener("click", () => {
-      if (risk) aiRedraftRisk(risk, tryAgain);
-      else if (clause) aiRedraft(clause, tryAgain);
+      if (clause) aiRedraft(clause, tryAgain);
     });
     useThis.addEventListener("click", () => setStatus([control.id], "reviewed"));
     aiCard = el("div", { class: "props-card" },
@@ -1334,7 +1318,6 @@ function renderProps(control, data) {
 }
 
 function controlSourceLabel(control) {
-  if (control.source_type === "risk" || control.risk_id) return control.risk_id || "Risk";
   return control.clause ? "Clause" : "—";
 }
 
@@ -1386,7 +1369,6 @@ function renderLibraryDetail(entry) {
   add.addEventListener("click", () => useLibraryEntry(entry, "add"));
   removeBtn.addEventListener("click", () => removeLibraryEntry(entry));
   const source = librarySourceLabel(entry);
-  const domain = (entry["source-type"] || entry.source_type) === "risk" ? "Risk" : "Control statement";
   return el("aside", { class: "library-detail", id: "library-detail", "aria-label": "Statement details" },
     el("h3", { class: "library-detail__title", text: statementLead(entry.statement) }),
     el("p", { class: "library-detail__statement", text: entry.statement }),
@@ -1395,11 +1377,11 @@ function renderLibraryDetail(entry) {
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Source" }),
       el("span", { class: "prop-row__value" }, el("span", { class: "pill", text: source }))),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Domain" }),
-      el("span", { class: "prop-row__value", text: domain })),
+      el("span", { class: "prop-row__value", text: "Control statement" })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Framework" }),
       el("span", { class: "prop-row__value", text: "OSCAL 1.1.2" })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Related" }),
-      el("span", { class: "prop-row__value", text: entry["risk-id"] || entry.risk_id || "Clause" })),
+      el("span", { class: "prop-row__value", text: "Clause" })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Accepted" }),
       el("span", { class: "prop-row__value", text: formatWhen(entry["accepted-at"]) })),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Last used" }),
@@ -1488,18 +1470,18 @@ async function removeLibraryEntry(entry) {
   } catch (err) { showError(err.message); }
 }
 
-function addControlFromLibrary(entry, { clauseId = "", riskId = "" } = {}) {
+function addControlFromLibrary(entry, { clauseId = "" } = {}) {
   ensureProject();
   const used = new Set(state.project.controls.map((c) => c.id));
-  const base = riskId ? `${riskId}-L` : `${(clauseId || "L").replace(/[^A-Za-z0-9.]+/g, "")}-L`;
+  const base = `${(clauseId || "L").replace(/[^A-Za-z0-9.]+/g, "")}-L`;
   let n = 1;
   let id = `${base}${n}`;
   while (used.has(id)) id = `${base}${++n}`;
   const control = {
     id, clause: clauseId, text: entry.statement, guidance: "", risk: "", who: "", notes: [],
     status: "draft", origin: "person",
-    source_type: riskId ? "risk" : "clause",
-    risk_id: riskId || "",
+    source_type: "clause",
+    risk_id: "",
   };
   state.project.controls.push(control);
   state.selected = { control: id };
@@ -1513,19 +1495,18 @@ function addControlFromLibrary(entry, { clauseId = "", riskId = "" } = {}) {
 
 async function useLibraryEntry(entry, mode = "use") {
   try {
-    await rememberStatement({ text: entry.statement, id: entry.id, source_type: entry["source-type"],
-      risk_id: entry["risk-id"], parts: entry.parts }, { used: true });
+    await rememberStatement({ text: entry.statement, id: entry.id, source_type: "clause",
+      risk_id: "", parts: entry.parts }, { used: true });
   } catch (err) { showError(err.message); return; }
   const dialog = $("#library-pick");
   if (dialog && dialog.open) dialog.close();
   const current = state.selected?.control && controlById(state.selected.control);
   if (mode === "add" || !current) {
-    if (!state.project && !state.selectedRisk) {
+    if (!state.project) {
       return showError("Load a policy before using a library statement.");
     }
     const clauseId = current?.clause || state.selected?.clause || "";
-    const riskId = current?.risk_id || state.selectedRisk || "";
-    addControlFromLibrary(entry, { clauseId, riskId });
+    addControlFromLibrary(entry, { clauseId });
     return;
   }
   current.text = entry.statement;
@@ -1600,455 +1581,6 @@ function openLibraryPick() {
   if (search) search.value = "";
   renderLibraryPicks(list, "");
   if (dialog.showModal) dialog.showModal();
-}
-
-function nextRiskId() {
-  const used = new Set((state.project?.risks || []).map((r) => r.id));
-  let n = 1;
-  while (used.has(`R-${String(n).padStart(3, "0")}`)) n += 1;
-  return `R-${String(n).padStart(3, "0")}`;
-}
-
-function uniqueControlId(base) {
-  const used = new Set(state.project.controls.map((c) => c.id));
-  if (!used.has(base)) return base;
-  let n = 1;
-  while (used.has(`${base}-${n}`)) n += 1;
-  return `${base}-${n}`;
-}
-
-function scoreBadge(n) {
-  const cls = n >= 15 ? "is-high" : n >= 8 ? "is-med" : "";
-  return el("span", { class: `score-badge ${cls}`.trim(), text: String(n) });
-}
-
-function renderHeatmap(risks) {
-  const counts = {};
-  for (const r of risks) counts[`${r.likelihood},${r.impact}`] = (counts[`${r.likelihood},${r.impact}`] || 0) + 1;
-  const cells = [];
-  for (let impact = 5; impact >= 1; impact--) {
-    cells.push(el("span", { class: "heat-label", text: String(impact) }));
-    for (let likelihood = 1; likelihood <= 5; likelihood++) {
-      const n = counts[`${likelihood},${impact}`] || 0;
-      cells.push(el("div", { class: n ? "heat-cell is-hit" : "heat-cell", title: `Likelihood ${likelihood}, impact ${impact}`, text: n ? String(n) : "" }));
-    }
-  }
-  cells.push(el("span", { class: "heat-label", text: "" }));
-  for (let likelihood = 1; likelihood <= 5; likelihood++) cells.push(el("span", { class: "heat-label", text: String(likelihood) }));
-  return el("div", { class: "heatmap-wrap" },
-    el("h3", { text: "Inherent risk" }),
-    el("div", { class: "heatmap", "aria-label": "Likelihood by impact" }, cells));
-}
-
-function openRiskForm(risk) {
-  ensureProject();
-  $("#risk-dialog-title").textContent = risk ? "Edit risk" : "Add a risk";
-  $("#risk-editing").value = risk ? risk.id : "";
-  $("#risk-title").value = risk ? risk.title : "";
-  $("#risk-description").value = risk ? risk.description : "";
-  $("#risk-asset").value = risk ? risk.asset : "";
-  $("#risk-owner").value = risk ? risk.owner : "";
-  $("#risk-threat").value = risk ? risk.threat : "";
-  $("#risk-vulnerability").value = risk ? risk.vulnerability : "";
-  $("#risk-likelihood").value = risk ? risk.likelihood : 3;
-  $("#risk-impact").value = risk ? risk.impact : 3;
-  $("#risk-status").value = risk ? risk.status : "identified";
-  $("#risk-form-error").hidden = true;
-  $("#risk-dialog").showModal();
-}
-
-function saveRiskFromForm() {
-  const title = $("#risk-title").value.trim();
-  if (!title) throw new Error("Enter a scenario title.");
-  const likelihood = Number($("#risk-likelihood").value);
-  const impact = Number($("#risk-impact").value);
-  if (!(likelihood >= 1 && likelihood <= 5) || !(impact >= 1 && impact <= 5)) {
-    throw new Error("Likelihood and impact must be numbers from 1 to 5.");
-  }
-  ensureProject();
-  const editing = $("#risk-editing").value;
-  const risk = {
-    id: editing || nextRiskId(),
-    title,
-    description: $("#risk-description").value.trim(),
-    asset: $("#risk-asset").value.trim(),
-    likelihood, impact, score: likelihood * impact,
-    threat: $("#risk-threat").value.trim(),
-    vulnerability: $("#risk-vulnerability").value.trim(),
-    owner: $("#risk-owner").value.trim(),
-    status: $("#risk-status").value || "identified",
-  };
-  const at = state.project.risks.findIndex((r) => r.id === risk.id);
-  if (at >= 0) state.project.risks[at] = risk;
-  else state.project.risks.push(risk);
-  state.selectedRisk = risk.id;
-  saveLocal();
-  showView("risks");
-  renderRisks();
-}
-
-function openRiskImport() {
-  $("#risk-file").click();
-}
-
-async function previewRiskFile(file) {
-  const payload = await readFile(file);
-  const parsed = await call({ action: "import_risks", ...payload });
-  state.importPreview = parsed;
-  $("#risk-import-summary").textContent =
-    `${parsed.risks.length} ${parsed.risks.length === 1 ? "risk" : "risks"} recognised`
-    + (parsed.errors?.length ? ` · ${parsed.errors.length} row${parsed.errors.length === 1 ? "" : "s"} skipped` : "")
-    + ". Nothing left this device.";
-  const fields = ["", ...RISK_FIELDS];
-  const rows = (parsed.columns || []).map((col, i) => {
-    const match = (parsed.recognised || []).find((r) => r.column === col || r.index === i);
-    const select = el("select", { "data-col": String(i), "aria-label": `Map ${col}` },
-      fields.map((f) => el("option", { value: f, text: f || "(ignore)" })));
-    if (match) select.value = match.field;
-    const tick = el("span", { class: match ? "mapping-tick" : "muted", text: match ? "Recognised" : "Map this column" });
-    return el("div", { class: "mapping-row" }, el("strong", { text: col }), tick, select);
-  });
-  $("#risk-mapping").replaceChildren(...(rows.length ? rows : [el("p", { class: "placeholder", text: "No columns found." })]));
-  const err = $("#risk-import-errors");
-  if (parsed.errors?.length) {
-    err.hidden = false;
-    err.textContent = parsed.errors.map((e) => `Row ${e.row}: ${e.error}`).join(" · ");
-  } else {
-    err.hidden = true;
-    err.textContent = "";
-  }
-  $("#risk-import-dialog").showModal();
-}
-
-function mappingFromDialog() {
-  const mapping = {};
-  for (const sel of $$("#risk-mapping select")) {
-    if (sel.value) mapping[sel.dataset.col] = sel.value;
-  }
-  return mapping;
-}
-
-async function applyRiskImport() {
-  const preview = state.importPreview;
-  if (!preview) throw new Error("Choose a CSV or JSON file first.");
-  const file = $("#risk-file");
-  let parsed = preview;
-  const mapping = mappingFromDialog();
-  if (preview.columns?.length && file.files[0]) {
-    const payload = await readFile(file.files[0]);
-    parsed = await call({ action: "import_risks", ...payload, mapping });
-  }
-  ensureProject();
-  const byId = Object.fromEntries(state.project.risks.map((r, i) => [r.id, i]));
-  for (const r of parsed.risks) {
-    if (r.id in byId) state.project.risks[byId[r.id]] = r;
-    else {
-      byId[r.id] = state.project.risks.length;
-      state.project.risks.push(r);
-    }
-  }
-  state.importPreview = null;
-  if (parsed.risks[0]) state.selectedRisk = parsed.risks[0].id;
-  saveLocal();
-  showView("risks");
-  renderRisks();
-}
-
-function appendRiskControls(data) {
-  const incoming = (data.controls || []).map((c) => ({ ...c, id: uniqueControlId(c.id) }));
-  state.project.controls.push(...incoming);
-  Object.assign(state.scores, data.scores || {});
-  if (incoming[0]) state.selected = { control: incoming[0].id };
-  saveLocal();
-  closeRecommendDialog();
-  showView("work");
-  render();
-}
-
-async function addRiskTemplate(risk, templateId, status, button) {
-  await busy(button, "Adding…", async () => {
-    const data = await call({ action: "draft_risk_controls", risk, template_ids: [templateId] });
-    if (status && data.controls[0]) data.controls[0].status = status;
-    appendRiskControls(data);
-    if (status === "accepted" && data.controls[0]) {
-      try { await rememberStatement(data.controls[0]); } catch (err) { showError(err.message); }
-      if (state.view === "work" && state.selected?.control) {
-        renderProps(controlById(state.selected.control), state.lastCheck[state.selected.control]);
-      }
-    }
-  });
-}
-
-function dismissTemplate(riskId, templateId) {
-  state.dismissedTemplates[riskId] = [...(state.dismissedTemplates[riskId] || []), templateId];
-  const risk = riskById(riskId);
-  if (state.view === "risks") renderRisks();
-  if ($("#recommend-dialog")?.open && risk) fillRecommendList($("#recommend-list"), risk, { heading: false });
-}
-
-async function aiDraftRisk(risk) {
-  const prompt = await call({ action: "ai_prompt", risk });
-  const reply = await PROVIDERS[ai.provider].send(ai.key, ai.model, prompt);
-  return call({ action: "ai_reply", risk_id: risk.id, source_type: "risk", reply, model: ai.model });
-}
-
-async function aiRedraftRisk(risk, button) {
-  if (!aiReady()) return openAiDialog();
-  const existing = controlsOfRisk(risk.id);
-  if (existing.some((c) => c.status !== "draft" || (c.origin !== "rules" && c.origin !== "ai"))
-      && !confirm(`Replace the ${plural(existing.length, "control")} from this risk, including your edits, with AI drafts?`)) return;
-  await busy(button, "Drafting with AI…", async () => {
-    const data = await aiDraftRisk(risk);
-    for (const c of controlsOfRisk(risk.id)) { delete state.scores[c.id]; state.checked.delete(c.id); }
-    state.project.controls = state.project.controls.filter((c) => c.risk_id !== risk.id);
-    state.project.controls.push(...data.controls);
-    Object.assign(state.scores, data.scores);
-    state.selected = data.controls[0] ? { control: data.controls[0].id } : null;
-    saveLocal();
-    showView("work");
-    render();
-  });
-}
-
-function riskCategory(risk) {
-  return ((risk.asset || risk.threat || "Uncategorised").trim()) || "Uncategorised";
-}
-
-function riskHasControls(risk) {
-  return controlsOfRisk(risk.id).length > 0;
-}
-
-function closeRecommendDialog() {
-  const dialog = $("#recommend-dialog");
-  if (dialog && dialog.open) dialog.close();
-  state.recommendRiskId = null;
-}
-
-function fillRecommendList(container, risk, { heading = true } = {}) {
-  if (!container || !risk) return;
-  container.replaceChildren(el("p", { class: "placeholder", text: "Loading templates…" }));
-  call({ action: "suggest_risk_controls", risk }).then((data) => {
-    const hidden = new Set(state.dismissedTemplates[risk.id] || []);
-    const visible = data.suggestions.filter((s) => !hidden.has(s.id));
-    const rows = visible.map((s) => {
-      const add = el("button", { type: "button", class: "btn btn--small", text: "Add", "data-template": s.id });
-      const accept = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Accept" });
-      const dismiss = el("button", { type: "button", class: "btn btn--small", text: "Dismiss" });
-      add.addEventListener("click", () => addRiskTemplate(risk, s.id, "draft", add));
-      accept.addEventListener("click", () => addRiskTemplate(risk, s.id, "accepted", accept));
-      dismiss.addEventListener("click", () => dismissTemplate(risk.id, s.id));
-      return el("div", { class: "template-row", "data-template": s.id },
-        el("p", {}, el("strong", { text: s.label }), " — ", s.statement),
-        el("div", { class: "suggestion__actions" }, add, accept, dismiss));
-    });
-    const aiBtn = aiReady() ? el("button", { type: "button", class: "btn btn--small", text: "Draft with AI" }) : null;
-    if (aiBtn) aiBtn.addEventListener("click", () => aiRedraftRisk(risk, aiBtn));
-    const lib = loadLibrary().slice(0, 4);
-    const title = $("#recommend-title");
-    if (title && container.id === "recommend-list") {
-      title.textContent = `Add ${visible.length} recommended control${visible.length === 1 ? "" : "s"}?`;
-    }
-    put(container,
-      heading ? el("h3", { class: "props-card__title", text: "Recommended controls" }) : null,
-      rows.length ? rows : el("p", { class: "placeholder", text: "No matching templates. Add a control from the editor." }),
-      lib.length ? el("h3", { class: "props-card__title", text: "From library" }) : null,
-      lib.length ? libraryPickRows(lib, { add: true }) : null,
-      aiBtn,
-      el("p", { class: "disclaimer", text: "Templates are deterministic. Optional AI may produce inaccurate wording." }),
-    );
-  }).catch((err) => { container.replaceChildren(el("p", { class: "placeholder", text: err.message })); });
-}
-
-function openRecommendDialog(risk) {
-  const dialog = $("#recommend-dialog");
-  if (!dialog || !risk) return;
-  state.recommendRiskId = risk.id;
-  state.selectedRisk = risk.id;
-  const scenario = $("#recommend-scenario");
-  if (scenario) scenario.textContent = risk.description || risk.title;
-  fillRecommendList($("#recommend-list"), risk, { heading: false });
-  if (dialog.showModal && !dialog.open) dialog.showModal();
-}
-
-async function addAllRecommended(button) {
-  const risk = riskById(state.recommendRiskId || state.selectedRisk);
-  if (!risk) return;
-  await busy(button, "Adding…", async () => {
-    const data = await call({ action: "suggest_risk_controls", risk });
-    const hidden = new Set(state.dismissedTemplates[risk.id] || []);
-    const ids = data.suggestions.filter((s) => !hidden.has(s.id)).map((s) => s.id);
-    if (!ids.length) return;
-    const drafted = await call({ action: "draft_risk_controls", risk, template_ids: ids });
-    appendRiskControls(drafted);
-    showNotice("Successfully added recommended controls");
-  });
-}
-
-function removeRisk(risk) {
-  if (!state.project) return;
-  if (!confirm("Remove this risk from the register? Catalog controls stay.")) return;
-  state.project.risks = state.project.risks.filter((r) => r.id !== risk.id);
-  if (state.selectedRisk === risk.id) state.selectedRisk = null;
-  saveLocal();
-  renderRisks();
-}
-
-function renderRiskSubnav() {
-  return el("nav", { class: "subnav", id: "risks-subnav", "aria-label": "Risk views" },
-    [["library", "Library"], ["register", "Register"]].map(([id, label]) => {
-      const b = el("button", {
-        type: "button", class: "subnav__btn", "data-risk-pane": id,
-        "aria-pressed": String(state.riskPane === id), text: label,
-      });
-      b.addEventListener("click", () => { state.riskPane = id; renderRisks(); });
-      return b;
-    }));
-}
-
-function riskSearchInput() {
-  const search = el("input", {
-    id: "risk-search", type: "search", placeholder: "Search",
-    "aria-label": "Search risks", autocomplete: "off",
-  });
-  search.value = state.riskQuery || "";
-  search.addEventListener("input", () => {
-    state.riskQuery = search.value;
-    renderRisks();
-    const again = $("#risk-search");
-    if (again) { again.focus(); again.setSelectionRange(search.value.length, search.value.length); }
-  });
-  return search;
-}
-
-function filteredRisks(risks) {
-  const query = (state.riskQuery || "").trim().toLowerCase();
-  if (!query) return risks;
-  return risks.filter((r) => `${r.title} ${r.asset || ""} ${r.threat || ""} ${r.id} ${r.owner || ""}`.toLowerCase().includes(query));
-}
-
-function renderRiskLibrary(risks) {
-  const rows = filteredRisks(risks).map((r) => {
-    const added = riskHasControls(r);
-    const add = el("button", {
-      type: "button", class: "btn btn--small btn--primary risk-add-controls",
-      text: added ? "Add more" : "Add",
-    });
-    add.addEventListener("click", (e) => { e.stopPropagation(); openRecommendDialog(r); });
-    const remove = el("button", { type: "button", class: "btn btn--small risk-remove", text: "Remove" });
-    remove.addEventListener("click", (e) => { e.stopPropagation(); removeRisk(r); });
-    const open = el("button", { type: "button", class: "risk-scenario", text: r.title });
-    open.addEventListener("click", () => { state.selectedRisk = r.id; state.riskPane = "register"; renderRisks(); });
-    return el("tr", { class: "risk-library-row", "data-risk-id": r.id, "aria-current": String(state.selectedRisk === r.id) },
-      el("td", {}, open, r.description ? el("p", { class: "muted risk-library-desc", text: r.description }) : null),
-      el("td", {}, el("span", { class: "pill", text: riskCategory(r) })),
-      el("td", { class: "risk-library-actions" },
-        added ? el("span", { class: "ready-chip is-ready", text: "Added" }) : null,
-        add, remove));
-  });
-  return el("div", { class: "catalog-body" },
-    el("table", { class: "data-table risk-library-table" },
-      el("thead", {}, el("tr", {},
-        el("th", { text: "Scenario" }), el("th", { text: "Category" }), el("th", { text: "Add recommended" }))),
-      el("tbody", {}, rows.length ? rows : el("tr", {},
-        el("td", { colspan: "3" }, el("p", { class: "placeholder", text: "No scenarios match that search." }))))));
-}
-
-function renderRiskDrawer(risk) {
-  const linked = controlsOfRisk(risk.id);
-  const open = (c) => { showView("work"); select({ control: c.id }); };
-  const suggestionsBox = el("div", { id: "risk-templates", class: "recommend-panel props-card" },
-    el("h3", { class: "props-card__title", text: "Recommended controls" }),
-    el("p", { class: "placeholder", text: "Loading templates…" }));
-  fillRecommendList(suggestionsBox, risk);
-  const edit = el("button", { type: "button", class: "btn btn--small", text: "Edit" });
-  edit.addEventListener("click", () => openRiskForm(risk));
-  const openModal = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Add recommended controls" });
-  openModal.addEventListener("click", () => openRecommendDialog(risk));
-  return el("aside", { class: "risk-drawer", id: "risk-drawer", "aria-label": "Risk details" },
-    el("h3", { class: "section-title", text: risk.title }),
-    el("p", { class: "muted", text: `${risk.id} · score ${risk.score} · ${RISK_STATUS_LABELS[risk.status] || risk.status}` }),
-    risk.description ? el("p", { text: risk.description }) : null,
-    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Category" }),
-      el("span", { class: "prop-row__value" }, el("span", { class: "pill", text: riskCategory(risk) }))),
-    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Asset" }), el("span", { class: "prop-row__value", text: risk.asset || "—" })),
-    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Owner" }), el("span", { class: "prop-row__value", text: risk.owner || "—" })),
-    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Threat" }), el("span", { class: "prop-row__value", text: risk.threat || "—" })),
-    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Vulnerability" }), el("span", { class: "prop-row__value", text: risk.vulnerability || "—" })),
-    el("p", { class: "subitems__head", text: `Linked controls (${linked.length})` }),
-    linked.length ? linked.map((c) => {
-      const b = el("button", { type: "button", class: "linked-ctl", text: c.text || "(empty)" });
-      b.addEventListener("click", () => open(c));
-      return b;
-    }) : el("p", { class: "placeholder", text: "None yet. Add a template below." }),
-    suggestionsBox,
-    el("div", { class: "actions" }, edit, openModal),
-  );
-}
-
-function renderRisks() {
-  const box = $("#risks-body");
-  if (!box) return;
-  const risks = state.project?.risks || [];
-  const add = () => openRiskForm(null);
-  const library = state.riskPane === "library";
-  const title = library ? "Risk library" : "Risk register";
-  const lede = library
-    ? "Select the risks that apply, then add recommended control statements. Nothing is uploaded."
-    : "Review each identified risk, then draft and accept control statements.";
-  if (!risks.length) {
-    box.replaceChildren(
-      renderRiskSubnav(),
-      el("div", { class: "view-head" },
-        el("h2", { id: "risks-title", class: "section-title section-title--first", text: title }),
-        el("p", { class: "view-head__lede", text: "Identify risks on this device and draft control statements from them." })),
-      emptyState("No risks yet.", "Create", add, "empty--list",
-        [{ label: "Import", onClick: openRiskImport }]),
-    );
-    const createBtn = box.querySelector(".empty__actions .btn--primary");
-    if (createBtn) createBtn.id = "risk-add";
-    const importBtn = box.querySelector(".empty__actions .btn:not(.btn--primary)");
-    if (importBtn) importBtn.id = "risk-import";
-    return;
-  }
-  const addBtn = el("button", { type: "button", class: "btn btn--primary", id: "risk-add", text: "Add scenario" });
-  const importBtn = el("button", { type: "button", class: "btn", id: "risk-import", text: "Import" });
-  addBtn.addEventListener("click", add);
-  importBtn.addEventListener("click", openRiskImport);
-  const shown = filteredRisks(risks);
-  const body = shown.map((r) => {
-    const open = el("button", { type: "button", text: r.title });
-    open.addEventListener("click", () => { state.selectedRisk = r.id; renderRisks(); });
-    return el("tr", { "aria-current": String(state.selectedRisk === r.id) },
-      el("td", { text: r.id }),
-      el("td", {}, open),
-      el("td", {}, el("span", { class: "pill", text: riskCategory(r) })),
-      el("td", { text: r.owner || "—" }),
-      el("td", {}, scoreBadge(r.score)),
-      el("td", {}, el("span", { class: `state ${r.status === "accepted" ? "state--accepted" : "state--draft"}`, text: RISK_STATUS_LABELS[r.status] || r.status })));
-  });
-  const table = el("table", { class: "data-table risk-table" },
-    el("thead", {}, el("tr", {},
-      el("th", { text: "ID" }), el("th", { text: "Scenario" }), el("th", { text: "Category" }),
-      el("th", { text: "Owner" }), el("th", { text: "Inherent" }), el("th", { text: "Status" }))),
-    el("tbody", {}, body.length ? body : el("tr", {},
-      el("td", { colspan: "6" }, el("p", { class: "placeholder", text: "No risks match that search." })))));
-  const selected = riskById(state.selectedRisk) || shown[0] || risks[0];
-  if (selected && !state.selectedRisk) state.selectedRisk = selected.id;
-  const main = el("div", { class: "risks-main" },
-    el("div", { class: "grc-card" }, renderHeatmap(risks)),
-    table);
-  box.replaceChildren(
-    renderRiskSubnav(),
-    el("div", { class: "risks-toolbar" },
-      el("div", { class: "view-head" },
-        el("h2", { id: "risks-title", class: "section-title section-title--first", text: title }),
-        el("p", { class: "view-head__lede", text: lede })),
-      el("div", { class: "actions" }, riskSearchInput(), importBtn, addBtn)),
-    library
-      ? renderRiskLibrary(risks)
-      : el("div", { class: "risks-layout" }, main, selected ? renderRiskDrawer(selected) : null),
-  );
-  renderCrumb();
 }
 
 function renderClauseEditor(box, clause) {
@@ -2236,6 +1768,7 @@ function renderGuide() {
 // ---------------------------------------------------------------- wiring
 
 function init() {
+  dropLegacyRiskStore();
   if (BROWSER) for (const n of $$("[data-browser-only]")) n.hidden = false;
 
   for (const b of $$("[data-nav]")) {
@@ -2349,38 +1882,10 @@ function init() {
   $("#export-open-top")?.addEventListener("click", openExport);
   for (const b of $$("[data-export]")) b.addEventListener("click", () => exportAs(b.dataset.export, b));
 
-  $("#risk-form")?.addEventListener("submit", (e) => {
-    const action = e.submitter ? e.submitter.value : "cancel";
-    if (action !== "save") return;
-    e.preventDefault();
-    try {
-      saveRiskFromForm();
-      $("#risk-dialog").close();
-    } catch (err) {
-      const box = $("#risk-form-error");
-      box.textContent = err.message;
-      box.hidden = false;
-    }
-  });
-  $("#risk-import-form")?.addEventListener("submit", (e) => {
-    if ((e.submitter ? e.submitter.value : "") !== "import") return;
-    e.preventDefault();
-    busy($("#risk-import-apply"), "Importing…", async () => {
-      await applyRiskImport();
-      $("#risk-import-dialog").close();
-    });
-  });
-  $("#risk-file")?.addEventListener("change", () => {
-    const file = $("#risk-file").files[0];
-    if (!file) return;
-    busy(null, "", async () => previewRiskFile(file));
-  });
   $("#library-pick-search")?.addEventListener("input", () => {
     const list = $("#library-pick-list");
     if (list) renderLibraryPicks(list, $("#library-pick-search").value);
   });
-  $("#recommend-add")?.addEventListener("click", (e) => addAllRecommended(e.currentTarget));
-  $("#recommend-dialog")?.addEventListener("close", () => { state.recommendRiskId = null; });
 
   $("#sidebar-toggle")?.addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("sidebar-collapsed");
@@ -2404,11 +1909,6 @@ function init() {
     }
     if (e.key === "Escape" && $("#library-pick")?.open) {
       $("#library-pick").close();
-      e.preventDefault();
-      return;
-    }
-    if (e.key === "Escape" && $("#recommend-dialog")?.open) {
-      closeRecommendDialog();
       e.preventDefault();
       return;
     }

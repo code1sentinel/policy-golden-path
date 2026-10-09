@@ -7,11 +7,11 @@ def test_sidebar_lists_the_authoring_destinations(page):
     nav = page.locator("nav.sidebar__nav")
     expect(nav.get_by_role("button", name="Workspace")).to_be_visible()
     expect(nav.get_by_role("button", name="Clauses")).to_be_visible()
-    expect(nav.get_by_role("button", name="Risks")).to_be_visible()
     expect(nav.get_by_role("button", name="Catalog")).to_be_visible()
     expect(nav.get_by_role("button", name="Library")).to_be_visible()
     expect(nav.get_by_role("button", name="Export")).to_be_visible()
     expect(nav.get_by_role("button", name="Guide")).to_be_visible()
+    expect(nav.get_by_role("button", name="Risks")).to_have_count(0)
 
 
 def test_start_has_a_setup_checklist(page):
@@ -19,7 +19,7 @@ def test_start_has_a_setup_checklist(page):
     expect(page.locator(".checklist")).to_contain_text("Paste a clause")
 
 
-def test_clauses_catalog_and_risks_views(demo):
+def test_clauses_catalog_and_library_views(demo):
     expect(demo.locator("#sidebar")).to_be_visible()
     expect(demo.locator("#props")).to_be_visible()
     expect(demo.locator("#props")).to_contain_text("Properties")
@@ -32,10 +32,6 @@ def test_clauses_catalog_and_risks_views(demo):
     expect(demo.locator("#catalog:not([hidden])")).to_be_visible()
     expect(demo.locator(".data-table")).to_contain_text("Source")
     expect(demo.locator(".data-table")).to_contain_text("Clause")
-
-    demo.click("[data-nav='risks']")
-    expect(demo.locator("#risks:not([hidden])")).to_be_visible()
-    expect(demo.locator("#risks")).to_contain_text("No risks yet.")
 
     demo.click("[data-nav='library']")
     expect(demo.locator("#library:not([hidden])")).to_be_visible()

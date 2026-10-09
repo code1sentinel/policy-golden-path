@@ -2,7 +2,6 @@
 
     codify policy.docx                       summary and every draft, as text
     codify policy.docx -f oscal -o out.json  the OSCAL catalog
-    codify policy.docx --risks risks.csv -f oscal -o out.json
     codify policy.docx -f report             Markdown conversion report
     codify policy.csv -f xlsx -o out.xlsx    one row per control
     codify catalog.json -f report            reopen a saved catalog
@@ -46,7 +45,6 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("policy", help="a policy (.docx, .csv, .xlsx or text) or a saved OSCAL catalog (.json)")
     p.add_argument("-f", "--format", choices=("text", "oscal", "report", "csv", "xlsx"), default="text")
     p.add_argument("-o", "--output", help="write to this file instead of standard output")
-    p.add_argument("--risks", help="a local risk register (.csv or .json) to include in the catalog")
     p.add_argument("--version", action="version", version=f"codify {__version__}")
     args = p.parse_args(argv)
 
@@ -66,19 +64,6 @@ def main(argv: list[str] | None = None) -> int:
         body["content"] = data.decode("utf-8-sig", errors="replace")
     try:
         opened = api.call(body)
-        if args.risks:
-            rpath = Path(args.risks)
-            try:
-                rtext = rpath.read_text(encoding="utf-8-sig")
-            except OSError as exc:
-                print(f"codify: {exc}", file=sys.stderr)
-                return 2
-            imported = api.call({"action": "import_risks", "name": rpath.name, "content": rtext})
-            for err in imported.get("errors") or []:
-                print(f"codify: {rpath.name} row {err.get('row')}: {err.get('error')}", file=sys.stderr)
-            from .project import merge_risks
-            opened["project"] = merge_risks(opened["project"], imported["risks"], draft=True)
-            opened["scores"] = api.call({"action": "score", "project": opened["project"]})["scores"]
         if args.format == "text":
             out: str | bytes = _text(opened["project"], opened["scores"])
         else:

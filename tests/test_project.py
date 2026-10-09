@@ -49,7 +49,7 @@ def test_saved_catalog_resumes_exactly(acme):
     keys = ("id", "clause", "text", "guidance", "risk", "who", "notes", "status", "origin", "source_type", "risk_id")
     assert [{k: c[k] for k in keys} for c in back["controls"]] == [{k: c[k] for k in keys} for c in acme["controls"]]
     assert back["clauses"] == acme["clauses"] and back["title"] == acme["title"] and back["uuid"] == acme["uuid"]
-    assert back["risks"] == acme.get("risks", [])
+    assert "risks" not in back
 
 
 def test_any_catalog_opens_as_a_starting_point():

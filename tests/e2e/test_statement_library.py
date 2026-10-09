@@ -145,22 +145,3 @@ def test_from_library_picks_show_in_the_editor(page):
     expect(page.locator("#library-pick")).to_contain_text("Use")
 
 
-def test_risk_accept_also_lands_in_the_library(page, tmp_path):
-    csv = tmp_path / "risks.csv"
-    csv.write_text(
-        "id,title,description,asset,likelihood,impact,threat,vulnerability,owner,status\n"
-        "R-001,Unauthorised access to agency systems,A compromised account could reach systems "
-        "beyond need-to-know.,Agency systems,4,5,Stolen credentials,Excessive access rights,"
-        "Jane Smith,identified\n"
-    )
-    page.click("[data-nav='risks']")
-    page.set_input_files("#risk-file", str(csv))
-    expect(page.locator("#risk-import-dialog")).to_contain_text("recognised", timeout=120_000)
-    page.click("#risk-import-apply")
-    expect(page.locator("#risk-templates")).to_contain_text("Restrict access", timeout=30_000)
-    page.locator('#risk-templates [data-template="restrict-access"] button', has_text="Accept").click()
-    expect(page.locator("textarea.statement")).to_be_visible()
-    wait_for_library_entries(page)
-    page.click("[data-nav='library']")
-    expect(page.locator("#library .library-row")).to_have_count(1)
-    expect(page.locator("#library .library-row")).to_contain_text("R-001")
