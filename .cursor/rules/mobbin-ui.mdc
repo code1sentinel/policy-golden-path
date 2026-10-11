@@ -1,0 +1,18 @@
+---
+description: Mobbin-first UI — cite screens before implementing; do not invent a layout
+globs: src/codify/static/**,scripts/build_site.py,tests/e2e/**,docs/prds/**,docs/templates/prd-template.md
+alwaysApply: false
+---
+
+# Mobbin-first UI
+
+Any frontend or UI change (HTML, CSS, workspace layout, dialogs, empty
+states, Pages chrome) must cite Mobbin (`mobbin.com`) screen links in the
+PRD or slice issue **before** implementation.
+
+- If the PRD or slice has no links, search Mobbin (Mobbin MCP tools when
+  available), write the citations into the PRD or slice, then implement.
+- If Mobbin is unavailable and no links exist, stop. Do not invent a layout.
+- Cite the links in the PR. Attach before/after screenshots.
+- Adapt patterns to Codify's existing dark workspace. Do not copy branding.
+- Privacy chrome stays as `.cursor/rules/privacy-web.mdc` specifies.

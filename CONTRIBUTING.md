@@ -1,7 +1,8 @@
 # Contributing to Codify
 
-The full contract for agents and humans is [`AGENTS.md`](AGENTS.md). This
-page is the short version.
+[`AGENTS.md`](AGENTS.md) is the short index. Detailed rules live in
+[`.cursor/rules/`](.cursor/rules/); procedures live in
+[`.cursor/skills/`](.cursor/skills/). This page is the human short version.
 
 ## Before you write code
 
@@ -19,11 +20,13 @@ page is the short version.
 ## While you write code
 
 - One slice, one PR, linked to the issue.
-- TDD: failing test from the acceptance criteria, then implement, then
-  refactor.
+- TDD ([`.cursor/skills/tdd/`](.cursor/skills/tdd/SKILL.md)): failing test
+  from the acceptance criteria, then implement. Refactoring is a review
+  pass ([`.cursor/skills/code-review/`](.cursor/skills/code-review/SKILL.md)).
 - OSCAL output: golden file under `tests/goldens/` **and** NIST 1.1.2
   schema validation.
-- No new outbound network calls unless an ADR says so.
+- No new outbound network calls unless an ADR says so. Never write an AI
+  key into the project, autosave, catalog, library, or exports.
 
 ## Commands
 
@@ -55,4 +58,5 @@ UI PRs cite the Mobbin references and attach before/after screenshots.
 - Touch `README.md` and `CHANGELOG.md` in the PR, not after.
 - Close the issue.
 - When the **feature** (all its slices) is done, write
-  `docs/retros/YYYY-MM-DD-<feature>.md` and fold lessons into the templates.
+  `docs/retros/YYYY-MM-DD-<feature>.md` and fold lessons into the templates,
+  `.cursor/rules/`, or `.cursor/skills/`.

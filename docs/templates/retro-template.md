@@ -14,9 +14,9 @@
 
 ## Lessons to fold into the templates
 
-Change AGENTS.md, the PRD template, the slice issue template, or the PR
-template when a lesson should apply to the next feature. Link the commit
-that updated the template.
+Change AGENTS.md, `.cursor/rules/`, `.cursor/skills/`, the PRD template,
+the slice issue template, or the PR template when a lesson should apply
+to the next feature. Link the commit that updated the template.
 
 | Lesson | Template to change |
 | --- | --- |

@@ -8,7 +8,8 @@ body:
       value: |
         One slice = the smallest change that delivers a complete path (input → behaviour → test → docs).
         Start from [docs/prd.md](../docs/prd.md) or a feature PRD under `docs/prds/`.
-        Follow [AGENTS.md](../AGENTS.md). UI slices need Mobbin links before anyone implements.
+        Follow [AGENTS.md](../AGENTS.md) and [`.cursor/skills/tdd/`](../.cursor/skills/tdd/SKILL.md).
+        UI slices need Mobbin links before anyone implements.
 
   - type: input
     id: prd
@@ -63,8 +64,9 @@ body:
     attributes:
       label: Test plan
       description: >
-        TDD. Name the failing test you will write first. OSCAL output needs a
-        golden-file test and schema validation.
+        TDD (red → green; refactoring is a review pass). Name the failing
+        test you will write first. OSCAL output needs a golden-file test
+        and schema validation.
       placeholder: |
         - [ ] Failing test from the first Given/When/Then
         - [ ] Golden file under tests/goldens/ if OSCAL is written
