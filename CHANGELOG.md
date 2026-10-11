@@ -92,6 +92,14 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   Accent and canvas tokens are indigo on cool gray in both themes.
   Contrast tokens meet WCAG 2.2 AA.
 
+### Fixed
+
+- GitBook pages no longer use relative paths that leave `docs/book/`.
+  Those targets now use GitHub URLs (`blob`/`tree` on `main`), matching
+  the Enact book, so they still resolve after Git Sync publishes only
+  that folder. A pytest check fails if a book page grows another
+  escaping relative link.
+
 ### Removed
 
 - Local risk register ([ADR 0011](docs/adr/0011-no-risk-register.md)):

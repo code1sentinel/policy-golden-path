@@ -71,21 +71,44 @@ def test_summary_lists_existing_pages_and_no_orphans():
     assert orphans == [], f"book pages not listed in SUMMARY.md: {orphans}"
 
 
+def _relative_link_targets(path: Path) -> list[tuple[str, Path]]:
+    found: list[tuple[str, Path]] = []
+    text = path.read_text(encoding="utf-8")
+    for raw in LINK_RE.findall(text):
+        target = _strip_title(raw)
+        if not target or target.startswith(SKIP_PREFIXES):
+            continue
+        target = target.split("#", 1)[0]
+        if not target:
+            continue
+        found.append((target, (path.parent / target).resolve()))
+    return found
+
+
 def test_book_relative_links_and_images_resolve():
     missing: list[str] = []
     for path in markdown_files():
-        text = path.read_text(encoding="utf-8")
-        for raw in LINK_RE.findall(text):
-            target = _strip_title(raw)
-            if not target or target.startswith(SKIP_PREFIXES):
-                continue
-            target = target.split("#", 1)[0]
-            if not target:
-                continue
-            resolved = (path.parent / target).resolve()
+        for target, resolved in _relative_link_targets(path):
             if not resolved.exists():
                 missing.append(f"{path.relative_to(ROOT).as_posix()} -> {target}")
     assert missing == [], "broken relative links in the GitBook folder:\n" + "\n".join(missing)
+
+
+def test_book_relative_links_do_not_escape_book():
+    # Git Sync publishes only docs/book/. A ../ path that leaves that folder
+    # works in the repo checkout and 404s on the published site.
+    escaped: list[str] = []
+    book_root = BOOK.resolve()
+    for path in markdown_files():
+        for target, resolved in _relative_link_targets(path):
+            try:
+                resolved.relative_to(book_root)
+            except ValueError:
+                escaped.append(f"{path.relative_to(ROOT).as_posix()} -> {target}")
+    assert escaped == [], (
+        "relative links escaping docs/book/ (use GitHub blob/tree URLs):\n"
+        + "\n".join(escaped)
+    )
 
 
 def test_required_screenshots_are_present_and_nonempty():
