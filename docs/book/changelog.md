@@ -1,6 +1,6 @@
 # Changelog
 
-Release notes live in the repository root: [`CHANGELOG.md`](../../CHANGELOG.md).
+Release notes live in the repository root: [`CHANGELOG.md`](https://github.com/code1sentinel/policy-golden-path/blob/main/CHANGELOG.md).
 
 That file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version numbers match `src/codify/__init__.py`. There are no release tags yet.
 
