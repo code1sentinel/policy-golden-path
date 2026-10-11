@@ -1,0 +1,20 @@
+---
+description: Local-only privacy — no new outbound calls without an ADR; never write AI keys
+alwaysApply: true
+---
+
+# Privacy (every change)
+
+Default path: the policy never leaves the device. Rule drafts use no AI.
+The CLI never calls AI.
+
+- No new outbound network call, origin, or leave-device path without an
+  ADR and a PR privacy check ([ADR 0003](../../docs/adr/0003-local-only-privacy-model.md)).
+- AI keys stay in the browser (tab, or optional device remember). Never
+  write a key into the project, autosave, catalog, library, exports,
+  fixtures (beyond the existing `sk-test` placeholder), or this repo.
+- Ollama is localhost only: `http://localhost:11434` /
+  `http://127.0.0.1:11434`. Do not point it at a remote host
+  ([ADR 0004](../../docs/adr/0004-ollama-localhost-only.md)).
+
+Web, CSP, fonts, and `codify-web` bind rules: `.cursor/rules/privacy-web.mdc`.
