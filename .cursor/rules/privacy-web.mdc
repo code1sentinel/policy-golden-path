@@ -1,0 +1,23 @@
+---
+description: CSP, system fonts, loopback bind, and no third-party hosts on the local app and Pages site
+globs: src/codify/static/**,src/codify/webapp.py,src/codify/api.py,src/codify/ai.py,scripts/build_site.py,tests/test_webapp.py,tests/test_site.py,tests/test_local_assets.py,tests/e2e/**
+alwaysApply: false
+---
+
+# Privacy on the web surfaces
+
+`codify-web` binds to `127.0.0.1`, has no authentication, refuses
+cross-origin POSTs, and keeps nothing on disk.
+
+The Pages site runs Python in the browser via Pyodide served from the
+site. Add no third-party script, font, or analytics hosts to the site
+build or to `codify-web`. Both use the system font stack.
+
+CSP `connect-src` may include only `'self'`, the three opt-in cloud AI
+origins (`https://api.anthropic.com`, `https://api.openai.com`,
+`https://generativelanguage.googleapis.com`), and
+`http://localhost:11434` / `http://127.0.0.1:11434`.
+
+Privacy chrome (no new third-party requests, no policy upload) is not
+negotiable for a prettier layout. Tests that lock this:
+`tests/test_webapp.py`, `tests/test_site.py`, `tests/test_local_assets.py`.

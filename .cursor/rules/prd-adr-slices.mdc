@@ -1,0 +1,42 @@
+---
+description: Start from a PRD, record ADRs, ship thin slices (one issue → one PR)
+alwaysApply: true
+---
+
+# PRD, ADR, and slices
+
+Product behaviour is defined by [`docs/prd.md`](../../docs/prd.md) and
+[`docs/adr/`](../../docs/adr/), not improvisation.
+
+## PRD
+
+Every feature starts from `docs/prd.md` (the product as it is today) or a
+feature PRD at `docs/prds/<feature>.md`.
+
+- Copy [`docs/templates/prd-template.md`](../../docs/templates/prd-template.md).
+- Scope, users, success criteria, and out of scope must be explicit.
+- UI features list **Design references**: Mobbin screen links. Follow
+  `.cursor/rules/mobbin-ui.mdc` before any HTML, CSS, or workspace chrome.
+
+## ADR
+
+Architecture and product decisions go in `docs/adr/NNNN-title.md`, numbered
+from the next free integer. Follow
+[`docs/adr/0001-record-architecture-decisions.md`](../../docs/adr/0001-record-architecture-decisions.md).
+An accepted ADR is binding until a later ADR supersedes it.
+
+## Slices
+
+Split work into the smallest path that is complete (input → behaviour →
+test → docs). Track each slice as a GitHub issue using
+[`.github/ISSUE_TEMPLATE/slice.yml`](../../.github/ISSUE_TEMPLATE/slice.yml).
+
+Every slice issue includes:
+
+- a user story
+- Given / When / Then acceptance criteria (these are the TDD seams)
+- a test plan
+- out of scope
+- **Design references** (Mobbin links) when the slice touches UI
+
+One issue → one PR. Link the issue from the PR.

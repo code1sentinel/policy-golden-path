@@ -1,0 +1,18 @@
+---
+description: Red-green TDD at the slice Given/When/Then seams; Acme key; no weakened tests
+alwaysApply: true
+---
+
+# TDD
+
+When building a feature or fixing a bug, follow [`.cursor/skills/tdd/`](../skills/tdd/SKILL.md).
+
+Seams are the slice Given / When / Then (and the PRD success criteria),
+not a question to a human. Red → green only; refactoring is the
+`code-review` skill.
+
+- Hold classification and drafting to the Acme key
+  (`examples/acme-policy-key.md`, `tests/test_acme.py`).
+- A change that writes OSCAL follows `.cursor/rules/oscal-goldens.mdc`.
+- Unit tests make no network calls. E2E fakes AI providers.
+- Do not weaken existing tests to make a slice pass.

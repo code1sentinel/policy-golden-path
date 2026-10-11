@@ -1,0 +1,41 @@
+---
+description: CI must be green; PR checklist; definition of done
+alwaysApply: true
+---
+
+# CI, review, and done
+
+Nothing merges on red. A PR is not done while `CI` is failing.
+
+Required gates in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
+
+| Job | What it proves |
+| --- | --- |
+| `test` | `pytest` on Python 3.10, 3.12, and 3.13, plus CLI smoke on the Acme policy |
+| `e2e` | Playwright against `codify-web` and the Pyodide site |
+| `oscal-schema` | exported catalogs validate against NIST OSCAL 1.1.2 |
+| `lint` | `ruff check` |
+| `types` | `mypy` (lenient today; tighten as annotations grow) |
+| `security` | `pip-audit` and `gitleaks` |
+
+Pages deploy (`.github/workflows/pages.yml`) runs on `main` only.
+
+Review against [`.github/pull_request_template.md`](../../.github/pull_request_template.md)
+and the `code-review` skill: linked issue, what/why, tests, acceptance
+criteria, no new outbound calls, docs and CHANGELOG, Mobbin citations and
+before/after screenshots if UI changed.
+
+A slice is done only when all of these are true:
+
+- the PR is merged to `main`
+- CI was green on the merge commit
+- if the UI or Pages site changed, a demo is recorded or Pages will pick
+  up the change on deploy
+- `README.md` and `CHANGELOG.md` are updated
+- the GitHub issue is closed
+- a short retro note is written at `docs/retros/YYYY-MM-DD-<feature>.md`
+  (copy [`docs/templates/retro-template.md`](../../docs/templates/retro-template.md))
+  when the **feature** (not just this slice) is done
+- lessons from the retro that change how we work are folded into
+  `AGENTS.md`, `.cursor/rules/`, `.cursor/skills/`, the PRD template,
+  the slice template, or the PR template

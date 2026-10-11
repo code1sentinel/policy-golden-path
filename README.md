@@ -254,9 +254,10 @@ cross-site requests and keeps nothing on disk.
 
 ## Development
 
-Workflow for agents and humans: [`AGENTS.md`](AGENTS.md). Short version:
-[`CONTRIBUTING.md`](CONTRIBUTING.md). Product baseline: [`docs/prd.md`](docs/prd.md).
-Changelog: [`CHANGELOG.md`](CHANGELOG.md).
+Workflow for agents and humans: [`AGENTS.md`](AGENTS.md) (short index),
+[`.cursor/rules/`](.cursor/rules/), and [`.cursor/skills/`](.cursor/skills/).
+Short human version: [`CONTRIBUTING.md`](CONTRIBUTING.md). Product baseline:
+[`docs/prd.md`](docs/prd.md). Changelog: [`CHANGELOG.md`](CHANGELOG.md).
 
 ```
 pip install -e ".[dev]"

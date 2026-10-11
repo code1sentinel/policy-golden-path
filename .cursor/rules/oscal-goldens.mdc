@@ -1,0 +1,18 @@
+---
+description: OSCAL writes need a committed golden and NIST 1.1.2 schema validity
+globs: src/codify/project.py,src/codify/control.py,src/codify/classify.py,src/codify/draft.py,tests/goldens/**,tests/test_acme.py,tests/test_project.py,tests/test_control_oscal.py,scripts/validate_oscal.mjs
+alwaysApply: false
+---
+
+# OSCAL goldens
+
+Any change that writes OSCAL must add or update a golden-file test
+(expected catalog or control JSON under `tests/goldens/`) **and** stay
+valid against NIST's OSCAL 1.1.2 catalog schema
+(`scripts/validate_oscal.mjs`, CI job `oscal-schema`).
+
+The golden is an independent expected value (see `.cursor/skills/tdd/`).
+Do not generate it from the function under test in the same run and then
+assert equality.
+
+Hold classification and drafting changes to `tests/test_acme.py`.

@@ -2,9 +2,33 @@
 
 Fixes #
 
+## Summary
+
+<!-- Smallest sketch that makes the change obvious: a few lines of
+     before/after, a call tree, a file tree, or a short diff. -->
+
+```text
+
+```
+
 ## What / why
 
 <!-- What changed, and which PRD or ADR it follows. One slice only. -->
+
+## Evidence
+
+<!-- Concrete before/after. Failing then passing test, golden diff, or screenshots. -->
+
+- **Before:**
+- **After:**
+
+## Merge danger
+
+<!-- One-way doors are hard to walk back (destructive data, binding ADRs,
+     leave-device paths). Two-way doors are cheap to revert. -->
+
+- **Door:** one-way / two-way
+- **Blast radius:** <!-- one or two words, then a line on who/what can break -->
 
 ## Tests added
 

@@ -16,6 +16,10 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   selected by `.gitbook.yaml` so Git Sync publishes the curated book
   rather than every PRD. Screenshots of the live app (built-in example
   only) sit under `docs/book/assets/`.
+- Agent skills adapted from [mattpocock/skills](https://github.com/mattpocock/skills)
+  (MIT, commit `49dd158d1076134a641b33efb035946536778336`):
+  `.cursor/skills/diagnosing-bugs/`, `.cursor/skills/tdd/`, and
+  `.cursor/skills/code-review/`. Attribution in `THIRD_PARTY.md`.
 - Second first-time walkthrough polish: Accepted ✓ + Next control
   primary with Undo accept; `[N]` set-this-value prompts; visible count
   breakdown and “and N more” on first look; visible OSCAL / Catalog vs
@@ -47,6 +51,12 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- `AGENTS.md` trimmed to a one-line description, unusual commands, and
+  pointers. Detailed rules live in `.cursor/rules/` (glob-scoped where
+  they apply to one surface). TDD refactor-while-green moved into the
+  code-review skill. The PR template now asks for a summary sketch,
+  before/after evidence, and merge danger (one-way vs two-way door and
+  blast radius).
 - Review screen shows Action / Scope / Limit / Purpose once; remaining
   gaps after Accept are optional improvements. The stage strip is status,
   not links. Sidebar Workspace opens the start/paste view. Pasted
