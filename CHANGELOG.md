@@ -12,6 +12,10 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- GitBook-ready user and contributor documentation in `docs/book/`,
+  selected by `.gitbook.yaml` so Git Sync publishes the curated book
+  rather than every PRD. Screenshots of the live app (built-in example
+  only) sit under `docs/book/assets/`.
 - Agent skills adapted from [mattpocock/skills](https://github.com/mattpocock/skills)
   (MIT, commit `49dd158d1076134a641b33efb035946536778336`):
   `.cursor/skills/diagnosing-bugs/`, `.cursor/skills/tdd/`, and

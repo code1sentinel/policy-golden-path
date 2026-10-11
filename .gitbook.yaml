@@ -1,0 +1,8 @@
+# GitBook Git Sync: publish only the curated user/contributor book.
+# Paths in `structure` are relative to `root`.
+# See https://gitbook.com/docs/docs-as-code/git-sync/content-configuration
+root: ./docs/book/
+
+structure:
+  readme: README.md
+  summary: SUMMARY.md

@@ -29,6 +29,11 @@ point to edit, not finished controls. If you want, you can also
 [draft with AI](#ai-drafting-optional) using your own API key, one clause at a
 time.
 
+User and contributor documentation for GitBook lives in
+[`docs/book/`](docs/book/README.md) (`SUMMARY.md` is the table of contents).
+Only that folder is published — not every PRD. After Git Sync, the owner
+connects this repo to a GitBook space.
+
 ## Use it
 
 | Way | For | How |

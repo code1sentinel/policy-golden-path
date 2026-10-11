@@ -3,6 +3,8 @@
 [`AGENTS.md`](AGENTS.md) is the short index. Detailed rules live in
 [`.cursor/rules/`](.cursor/rules/); procedures live in
 [`.cursor/skills/`](.cursor/skills/). This page is the human short version.
+Published user and contributor docs live in
+[`docs/book/`](docs/book/README.md).
 
 ## Before you write code
 
