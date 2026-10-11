@@ -12,6 +12,10 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- GitBook-ready user and contributor documentation in `docs/book/`,
+  selected by `.gitbook.yaml` so Git Sync publishes the curated book
+  rather than every PRD. Screenshots of the live app (built-in example
+  only) sit under `docs/book/assets/`.
 - Second first-time walkthrough polish: Accepted ✓ + Next control
   primary with Undo accept; `[N]` set-this-value prompts; visible count
   breakdown and “and N more” on first look; visible OSCAL / Catalog vs

@@ -1,7 +1,8 @@
 # Contributing to Codify
 
 The full contract for agents and humans is [`AGENTS.md`](AGENTS.md). This
-page is the short version.
+page is the short version. Published user and contributor docs live in
+[`docs/book/`](docs/book/README.md).
 
 ## Before you write code
 
