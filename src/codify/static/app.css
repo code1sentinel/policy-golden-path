@@ -225,7 +225,7 @@ abbr.term {
 .card { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-lg); padding: 22px; }
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; min-width: 0; }
 .field > span { font-size: 13px; font-weight: 600; }
-.field em { font-style: normal; font-weight: 400; color: var(--muted); }
+.field em { margin-left: 0.35em; font-style: normal; font-weight: 400; color: var(--muted); }
 .field__help { font-size: 12px; font-weight: 400; color: var(--muted); line-height: 1.4; }
 input, select, textarea {
   font: 14px/1.5 var(--font); color: var(--text); background: var(--bg);
@@ -861,6 +861,7 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center;
   padding: 12px 16px; border-bottom: 1px solid var(--border-soft);
 }
+.risk-row__open .pill { flex: none; }
 .risk-row:last-child { border-bottom: 0; }
 .risk-row[aria-current="true"] { background: var(--orange-dim); box-shadow: inset 3px 0 0 var(--orange); }
 .risk-row__open {

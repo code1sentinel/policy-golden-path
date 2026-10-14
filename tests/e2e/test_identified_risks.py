@@ -32,6 +32,7 @@ def test_suggest_dialog_adds_library_statement_and_clears_coverage(page):
     page.click("#risk-add")
     page.click("[data-suggest='R-001']")
     expect(page.locator("#risk-suggest-dialog")).to_be_visible()
+    expect(page.locator("#risk-suggest-dialog")).not_to_contain_text("null")
     expect(page.locator("#risk-suggest-scenario")).to_contain_text("Access that is no longer needed")
     expect(page.locator(".risk-suggest__row")).to_contain_text("need-to-know")
     page.locator(".risk-suggest__row button", has_text="Add").first.click()
@@ -42,10 +43,12 @@ def test_suggest_dialog_adds_library_statement_and_clears_coverage(page):
     assert linked
     page.click("[data-nav='clauses']")
     page.locator("textarea.statement").wait_for()
-    expect(page.locator(".mapped-risk")).to_be_visible()
+    expect(page.locator("#editor .mapped-risk").first).to_be_visible()
+    expect(page.locator("#editor .mapped-risk").first).to_contain_text("R-001")
 
 
 def test_unlinked_control_is_flagged_in_related_table(page):
     open_pasted(page, CLAUSE)
     page.click("[data-nav='risks']")
-    expect(page.locator("#risks-related, .coverage-flag")).to_contain_text("Unlinked")
+    expect(page.locator("#risks-coverage")).to_contain_text("not linked")
+    expect(page.locator("#risks-related")).to_contain_text("Unlinked control")

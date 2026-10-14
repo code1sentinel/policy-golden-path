@@ -1681,7 +1681,7 @@ function renderRisks() {
   const form = el("div", { class: "risks-form card" },
     el("p", { class: "risks-form__label", text: "Add an identified risk" }),
     el("label", { class: "field" }, el("span", { text: "Statement" }), statement),
-    el("label", { class: "field" }, el("span", { text: "Note" }, el("em", { text: "optional" })), note),
+    el("label", { class: "field" }, el("span", {}, "Note ", el("em", { text: "optional" })), note),
     el("div", { class: "actions" }, add));
 
   const uncoveredN = flags.uncovered.length;
@@ -1698,12 +1698,18 @@ function renderRisks() {
     }));
 
   const risks = state.project.risks;
-  let list;
+  const related = renderRelatedTable(flags);
   if (!risks.length) {
-    list = emptyState("No identified risks yet. Add the risks you already identified.", null, null, "empty--list");
-  } else {
-    if (!state.selectedRisk || !riskById(state.selectedRisk)) state.selectedRisk = risks[0].id;
-    list = el("div", { class: "risk-list" }, risks.map((risk) => {
+    box.replaceChildren(
+      form,
+      summary,
+      emptyState("No identified risks yet. Add the risks you already identified.", null, null, "empty--list"),
+      related,
+    );
+    return;
+  }
+  if (!state.selectedRisk || !riskById(state.selectedRisk)) state.selectedRisk = risks[0].id;
+  const list = el("div", { class: "risk-list" }, risks.map((risk) => {
       const uncovered = flags.uncovered.includes(risk.id);
       const open = el("button", { type: "button", class: "risk-row__open" },
         el("span", { class: "pill", text: risk.id }),
@@ -1724,11 +1730,9 @@ function renderRisks() {
         uncovered ? el("span", { class: "coverage-flag", text: "No control" }) : el("span", { class: "pill", text: plural(controlsForRisk(risk.id).length, "control") }),
         el("div", { class: "risk-row__actions" }, suggest, remove));
     }));
-  }
 
   const selected = riskById(state.selectedRisk);
   const detail = selected ? renderRiskDetail(selected, flags) : el("p", { class: "placeholder", text: "Add a risk to see matching statements." });
-  const related = renderRelatedTable(flags);
 
   box.replaceChildren(
     form,
@@ -1761,7 +1765,7 @@ function renderRiskDetail(risk, flags) {
     el("h3", { class: "risk-detail__title", text: risk.id }),
     flags.uncovered.includes(risk.id) ? el("p", { class: "coverage-flag", text: "No control linked." }) : null,
     el("label", { class: "field" }, el("span", { text: "Statement" }), statement),
-    el("label", { class: "field" }, el("span", { text: "Note" }, el("em", { text: "optional" })), note),
+    el("label", { class: "field" }, el("span", {}, "Note ", el("em", { text: "optional" })), note),
     el("h3", { class: "props-card__title", text: "Mapped controls" }),
     ...mappedRows,
     el("div", { class: "actions" }, suggest));
@@ -1857,7 +1861,7 @@ function renderRiskSuggest() {
     aiBtn = el("button", { type: "button", class: "btn", id: "risk-suggest-ai", text: "Also draft with AI" });
     aiBtn.addEventListener("click", () => aiSuggestForRisk(risk, aiBtn));
   }
-  body.replaceChildren(...rows, aiBtn);
+  body.replaceChildren(...[...rows, aiBtn].filter(Boolean));
   const addAll = $("#risk-suggest-add");
   if (addAll) {
     addAll.disabled = n === 0;
