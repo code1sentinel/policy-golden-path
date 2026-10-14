@@ -22,7 +22,7 @@ dev = [
     "pyyaml>=6",  # tests/test_gitbook.py parses gitbook-docs.yaml
     "ruff>=0.6",
     "mypy>=1.11",
-    "pip-audit>=2.7",
+    "pip-audit>=2.10.1",
 ]
 e2e = ["pytest>=8", "playwright==1.56.0"]  # browser tests in tests/e2e; then: python -m playwright install chromium
 
