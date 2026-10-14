@@ -1255,11 +1255,9 @@ function renderDevelopStep(box) {
     });
     const suggest = el("button", { type: "button", class: "btn", "data-suggest": risk.id, text: "Suggest from library" });
     suggest.addEventListener("click", () => openRiskSuggestDialog(risk));
-    const mapped = linked.length
-      ? linked.map((c) => el("p", { class: "mapped-risk__statement" },
-          el("span", { class: "pill", text: c.status === "accepted" ? "Accepted" : "Draft" }),
-          " ", c.text))
-      : [el("p", { class: "field-error", text: "This risk needs a control statement." })];
+    const mapped = linked.map((c) => el("p", { class: "mapped-risk__statement" },
+      el("span", { class: "pill", text: c.status === "accepted" ? "Accepted" : "Draft" }),
+      " ", c.text));
     return el("article", { class: "card risk-control-card", "data-risk-id": risk.id },
       el("h3", {}, el("span", { class: "pill", text: risk.id }), " ", risk.statement),
       missing ? el("p", { class: "field-error", text: "Required: add a control statement." }) : null,
