@@ -1684,20 +1684,21 @@ function renderRisks() {
     el("label", { class: "field" }, el("span", {}, "Note ", el("em", { text: "optional" })), note),
     el("div", { class: "actions" }, add));
 
+  const risks = state.project.risks || [];
   const uncoveredN = flags.uncovered.length;
   const unlinkedN = flags.unlinked.length;
   const summary = el("p", { class: "risks-coverage", id: "risks-coverage" },
     el("span", {
       class: uncoveredN ? "coverage-flag" : "muted",
-      text: uncoveredN ? `${plural(uncoveredN, "risk")} with no control` : "Every identified risk has a linked control.",
+      text: !risks.length
+        ? "Add identified risks to track coverage."
+        : uncoveredN ? `${plural(uncoveredN, "risk")} with no control` : "Every identified risk has a linked control.",
     }),
     " · ",
     el("span", {
       class: unlinkedN ? "coverage-flag" : "muted",
       text: unlinkedN ? `${plural(unlinkedN, "control")} not linked to a risk` : "Every control is linked to a risk.",
     }));
-
-  const risks = state.project.risks;
   const related = renderRelatedTable(flags);
   if (!risks.length) {
     box.replaceChildren(
