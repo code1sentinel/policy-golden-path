@@ -1,19 +1,18 @@
 # Codify
 
-**Turn legacy policy clauses into OSCAL control statements.**
+**Turn identified risks (or legacy policy clauses) into OSCAL control statements.**
 
-A tool for GRC professionals modernising a legacy policy. Give it the policy,
-and Codify:
+A tool for GRC professionals modernising a legacy policy. Codify:
 
-1. **Sorts** every clause: requirement, scope, definition, role, exception, or
-   not a control (aspirations, consequences, permissions). Duplicates are
-   flagged.
-2. **Drafts** control statements from the requirements: the action first, no
-   tools, testable.
+1. **Starts from risks** (recommended) or from a pasted clause. Identified risks
+   are input, not a register.
+2. **Drafts** control statements that treat those risks (from the library, by
+   hand, or from a clause as today): the action first, no tools, testable.
 3. **Checks** each draft as you edit it, and shows its parts (action, scope,
    limit, purpose), so a missing one is easy to see.
-4. **Exports** an OSCAL catalog (the usual download; reopen it later), plus Excel, CSV
-   and a conversion report.
+4. **Exports** an OSCAL catalog to **send to Enact** (download only), plus Excel, CSV
+   and a conversion report. The web wizard waits until every risk has an
+   accepted control statement.
 
 ```
 4.1 User accounts shall be reviewed regularly and access that is no longer
@@ -54,11 +53,13 @@ code.
 
 The first open shows a short **Welcome to Codify** splash. **Get started**
 remembers that choice on this device (`codify:splash-seen`) and opens the
-paste start. A saved project skips the splash so resume stays instant.
+start: **Start from risks** (recommended) or **Start from a policy clause**.
+A saved project skips the splash so resume stays instant.
 
-To see it work, edit or replace the example clause and press **Codify**,
-or choose **Try an example** to open the **Acme demo policy**. Codify
-then shows a short **here's what we drafted** step before the workspace.
+To see the clause path, choose it, edit or replace the example, and press
+**Codify**, or choose **Try an example** to open the **Acme demo policy**.
+Codify then shows a short **here's what we drafted** step, then **Link to
+risks** before Review.
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
 a fictional 2016 agency policy written with typical legacy problems.
 [`examples/acme-policy-key.md`](examples/acme-policy-key.md) explains what

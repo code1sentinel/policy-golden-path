@@ -12,6 +12,14 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- Risk-first authoring flow ([ADR 0013](docs/adr/0013-risk-first-authoring-flow.md)):
+  two start paths after the splash — **Start from risks** (recommended) or
+  **Start from a policy clause**. Both share Review and **Send to Enact**.
+  A stepper and a dismissible per-step guide sit on every step. Web export
+  is blocked until every identified risk has an accepted control statement
+  and every control is linked. Old clause-first projects open on the clause
+  path and prompt for risks. CLI export is unchanged. No new outbound calls.
+
 - Identified risks as input to control authoring
   ([ADR 0012](docs/adr/0012-identified-risks-as-input.md)): a project holds
   a simple list (`id`, short statement, optional note). Controls may link

@@ -4,7 +4,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import finish_open
+from conftest import choose_clause_path, finish_open, goto_review
 
 
 EXAMPLE = (
@@ -14,12 +14,14 @@ EXAMPLE = (
 
 
 def open_example(page):
+    choose_clause_path(page)
     page.fill("#paste-form textarea", EXAMPLE)
     page.click("#paste-submit")
     page.wait_for_selector("#result:not([hidden])", timeout=120_000)
 
 
 def test_first_look_card_shows_and_more_for_acme(page):
+    choose_clause_path(page)
     page.click("#demo")
     page.wait_for_selector("#result:not([hidden])", timeout=120_000)
     expect(page.locator("#result-drafts")).to_contain_text("Draft 1")
@@ -33,6 +35,7 @@ def test_first_look_card_shows_and_more_for_acme(page):
 def test_accept_becomes_accepted_with_next_primary_and_undo(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     expect(page.locator("#accept-control")).to_have_text("Accept")
     expect(page.locator("#next-control")).not_to_have_class(re.compile(r"btn--primary"))
     page.click("#accept-control")
@@ -48,6 +51,7 @@ def test_accept_becomes_accepted_with_next_primary_and_undo(page):
 def test_review_does_not_repeat_parts_or_say_why(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     work = page.locator("#work").inner_text().lower()
     assert work.count("say why this control exists") <= 1
     expect(page.locator("#editor .subitems")).to_have_count(1)
@@ -59,6 +63,7 @@ def test_review_does_not_repeat_parts_or_say_why(page):
 def test_n_placeholder_is_a_set_this_value_prompt(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     page.locator("#list .ctl__open", has_text="[N]").click()
     prompt = page.locator(".param-prompt")
     expect(prompt).to_be_visible()
@@ -74,6 +79,7 @@ def test_n_placeholder_is_a_set_this_value_prompt(page):
 def test_export_hides_library_behind_optional_and_drops_save_file(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     page.click("#export-open-top")
     dialog = page.locator("#export-dialog")
     expect(dialog).to_contain_text("recommended")
@@ -87,6 +93,7 @@ def test_export_hides_library_behind_optional_and_drops_save_file(page):
 def test_workspace_opens_start_and_pasted_title_is_not_pasted_text(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     expect(page.locator("#work-title")).not_to_have_value("pasted text")
     title = page.locator("#work-title").input_value()
     assert "Access" in title or title == "Untitled policy"
@@ -105,6 +112,7 @@ def test_workspace_opens_start_and_pasted_title_is_not_pasted_text(page):
 def test_library_lists_a_statement_once(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     page.click("#accept-control")
     page.click("[data-nav='library']")
     statement = "Grant access to systems on a need-to-know basis."
@@ -118,6 +126,7 @@ def test_library_lists_a_statement_once(page):
 def test_oscal_tab_has_a_visible_explanation(page):
     open_example(page)
     finish_open(page)
+    goto_review(page)
     page.get_by_role("tab", name="OSCAL JSON").click()
     expect(page.locator(".oscal-view__help")).to_contain_text("NIST")
     page.click("[data-nav='catalog']")

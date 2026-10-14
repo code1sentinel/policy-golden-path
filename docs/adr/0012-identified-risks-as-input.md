@@ -4,7 +4,10 @@ Date: 2026-10-14
 
 ## Status
 
-Accepted
+Accepted. Refined by
+[0013-risk-first-authoring-flow.md](0013-risk-first-authoring-flow.md): identified
+risks stay input, not a register; on the web they are required for Review and
+export, with two start paths.
 
 Refines [0011-no-risk-register.md](0011-no-risk-register.md): Codify still has
 no risk **register**. This ADR restores a narrow path that 0011 closed —

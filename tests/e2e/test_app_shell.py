@@ -16,7 +16,7 @@ def test_sidebar_lists_the_authoring_destinations(page):
 
 def test_start_has_a_setup_checklist(page):
     expect(page.locator(".checklist")).to_contain_text("Set up this workspace")
-    expect(page.locator(".checklist")).to_contain_text("Paste a clause")
+    expect(page.locator(".checklist")).to_contain_text("Start from risks")
 
 
 def test_clauses_catalog_and_library_views(demo):

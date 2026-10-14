@@ -60,11 +60,18 @@ def new_project(policy: Policy, source: str = "") -> dict:
 
 
 def empty_project(title: str = "", source: str = "", clauses: list | None = None,
-                  controls: list | None = None, risks: list | None = None, **_legacy) -> dict:
+                  controls: list | None = None, risks: list | None = None,
+                  authoring_path: str = "", **_legacy) -> dict:
     # Leftover register kwargs are ignored (ADR 0011). Identified risks are input (ADR 0012).
-    return {"uuid": str(uuid.uuid4()), "title": title, "source": source, "version": __version__,
-            "clauses": list(clauses or []), "controls": list(controls or []),
-            "risks": clean_risks(risks)}
+    # authoring_path is web-wizard only (ADR 0013); omit or "clauses" for older projects.
+    out = {"uuid": str(uuid.uuid4()), "title": title, "source": source, "version": __version__,
+           "clauses": list(clauses or []), "controls": list(controls or []),
+           "risks": clean_risks(risks)}
+    if authoring_path == "risks":
+        out["authoring_path"] = "risks"
+    elif authoring_path == "clauses":
+        out["authoring_path"] = "clauses"
+    return out
 
 
 def drop_legacy_register(project: dict) -> dict:

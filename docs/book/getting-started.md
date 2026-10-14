@@ -1,6 +1,6 @@
 # Getting started
 
-Open the app, paste a clause (or try the built-in example), and look at the first drafts before you review them.
+Open the app, choose a starting path, and follow the steps to a catalog you can send to Enact.
 
 ## Open the app
 
@@ -18,13 +18,18 @@ The first open shows a short welcome: the Codify mark, **Welcome to Codify**, on
 
 That choice is remembered on this device (`codify:splash-seen`). A saved project skips the splash so you can continue where you left off.
 
-## Paste a clause
+## Choose how to start
 
-After **Get started** you land on the paste start.
+After **Get started** you choose a path:
+
+- **Start from risks** (recommended) — enter identified risks, then write control statements that treat them. Policy clauses are optional context.
+- **Start from a policy clause** — paste a clause (or try the example). Codify drafts as before; then you link each draft to a risk.
+
+Both paths share **Review** and **Send to Enact**. Every risk needs a control statement; every control must be linked to a risk.
 
 ![Paste start: example clause in the box, Codify button, and Try an example.](assets/paste-box.png)
 
-The box already contains a real example you can edit or replace:
+On the clause path, the box already contains a real example you can edit or replace:
 
 ```
 Access to systems shall be granted on a need-to-know basis.
@@ -76,4 +81,4 @@ You can change a clause's type later. Making it a requirement drafts controls fo
 
 ## Next
 
-[Review the drafts](reviewing-controls.md) in the workspace. You can also enter [identified risks](identified-risks.md) you already have — input for authoring, not a register.
+[Review the drafts](reviewing-controls.md) in the workspace. Coverage and [identified risks](identified-risks.md) are required before you [send the catalog to Enact](enact.md).

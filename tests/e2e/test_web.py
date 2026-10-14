@@ -5,7 +5,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import finish_open
+from conftest import choose_clause_path, finish_open
 
 
 def ctl(cid):
@@ -65,9 +65,12 @@ def test_demo_opens_with_drafts_scored(demo):
 
 
 def test_start_is_a_short_cta_not_a_wall(page):
-    expect(page.locator("#start-title")).to_have_text("Turn a policy into control statements")
-    expect(page.locator("#demo")).to_be_visible()
+    expect(page.locator("#start-title")).to_have_text("How do you want to start?")
+    expect(page.locator("#start-from-risks")).to_be_visible()
+    expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator(".steps")).to_have_count(0)
+    choose_clause_path(page)
+    expect(page.locator("#demo")).to_be_visible()
     expect(page.locator("#paste-form")).to_be_visible()
     expect(page.locator("#file")).to_be_attached()
 
@@ -81,9 +84,11 @@ def test_happy_path_edit_accept_next(demo):
 
 
 def test_pasted_text_is_shown_as_text_never_as_html(page):
+    choose_clause_path(page)
     page.fill("#paste-form textarea", '1.1 Users shall not run <img src=x onerror="window.pwned=1"> scripts.')
     page.click("#paste-submit")
     finish_open(page)
+    page.click("[data-nav='clauses']")
     expect(page.locator(clause("1.1") + " .clause__text")).to_contain_text("<img src=x")
     assert page.evaluate("window.pwned") is None
 
@@ -108,6 +113,7 @@ def test_close_and_resume(demo):
 # --- Exports ---------------------------------------------------------------------------------------------
 
 def test_oscal_export_opens_again(demo, tmp_path):
+    demo.locator(".editor__primary >> text=Accept").click()
     with export_oscal(demo) as dl:
         demo.click("#export-dialog [data-export='oscal']")
     path = tmp_path / "catalog.json"
@@ -116,7 +122,9 @@ def test_oscal_export_opens_again(demo, tmp_path):
     assert sum(len(g["controls"]) for g in catalog["groups"]) == 38
     expect(demo.locator("#export-dialog")).to_be_hidden()
     demo.click("#close-project")
+    choose_clause_path(demo)
     demo.set_input_files("#file", str(path))
+    demo.click("[data-nav='clauses']")
     expect(demo.locator("#work-summary")).to_contain_text("38 control drafts")
 
 
@@ -142,6 +150,7 @@ def test_ai_drafts_one_clause_and_keeps_the_key_out_of_the_project(demo, provide
     user = sent["body"]["messages"][0]["content"]
     assert "Legacy clause 5.1" in user and "5.2" not in user  # one clause only
     assert control(demo, "5.1")["origin"] == "ai"
+    demo.locator(".editor__primary >> text=Accept").click()
     with export_oscal(demo) as dl:
         demo.click("#export-dialog [data-export='oscal']")
     dl.value.save_as(tmp_path / "c.json")

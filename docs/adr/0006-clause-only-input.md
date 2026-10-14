@@ -4,7 +4,11 @@ Date: 2026-10-04
 
 ## Status
 
-Accepted
+Accepted. Refined by
+[0013-risk-first-authoring-flow.md](0013-risk-first-authoring-flow.md): on the
+**web start**, clause paste is one of two paths (the other is start-from-risks).
+This ADR still holds for path B, CLI, and file ingest: no Title field; clause
+numbers are optional.
 
 ## Context
 

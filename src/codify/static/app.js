@@ -38,7 +38,10 @@ const READY = 0.8;  // drafts at or above this score can be selected for review 
 const SAVE_KEY = "codify:project";
 const LIBRARY_KEY = "codify:statements";
 const SPLASH_KEY = "codify:splash-seen";
+const GUIDE_KEY = "codify:step-guides";
 const LEGACY_RISKS_KEY = "codify:risks";  // leftover store from older builds; never rewrite statements
+const ENACT_APP = "https://code1sentinel.github.io/enact/";
+const ENACT_DOC = "https://github.com/code1sentinel/policy-golden-path/blob/main/docs/book/enact.md";
 
 const state = {
   project: null,       // {uuid, title, source, clauses: [...], controls: [...], risks: [...]}
@@ -59,6 +62,63 @@ const state = {
   suggestRiskId: null,
   suggestPicked: new Set(),
   suggestAi: [],
+  flowStep: null,      // risks | controls | clause | link | review | enact
+  startPath: null,     // "clause" when the paste form is showing
+  guideDismissed: {},
+};
+
+const STEP_LABELS = {
+  risks: "Identify risks",
+  controls: "Develop controls",
+  clause: "Paste a clause",
+  link: "Link to risks",
+  review: "Review",
+  enact: "Send to Enact",
+};
+
+const STEP_GUIDES = {
+  risks: {
+    title: "Identify risks",
+    what: "Enter each risk you already identified: a short statement, and an optional note.",
+    why: "Control statements exist to treat a risk. Start there so coverage is visible.",
+    example: "Screens left unlocked at unattended desks.",
+    mistakes: "Do not score likelihood or impact. Do not assign owners. This is not a register.",
+  },
+  controls: {
+    title: "Develop control statements",
+    what: "For each risk, write one or more statements that treat it. Suggest matching wording from the library on this device.",
+    why: "A risk with no control is uncovered. Every risk needs at least one non-empty statement.",
+    example: "Require users to lock screens when they leave their desk.",
+    mistakes: "Empty wording does not count. Do not skip a risk. Product names belong in guidance.",
+  },
+  clause: {
+    title: "Paste a clause",
+    what: "Paste a policy clause. Codify drafts control statements from requirements.",
+    why: "Use this when you have policy wording and still need those drafts to treat identified risks.",
+    example: "Access to systems shall be granted on a need-to-know basis.",
+    mistakes: "A clause is context. You still link every draft to a risk on the next step.",
+  },
+  link: {
+    title: "Link to risks",
+    what: "Link every control to an identified risk. Add a risk here if you do not have one yet.",
+    why: "Unlinked controls have no purpose in the catalog trace.",
+    example: "Lock-screens draft → R-001 Screens left unlocked.",
+    mistakes: "Leaving a control unlinked, or a risk with no control, blocks review.",
+  },
+  review: {
+    title: "Review",
+    what: "Check coverage, edit statements, and accept the wording you will keep.",
+    why: "Accept is what puts a statement in the catalog you send to Enact.",
+    example: "Every risk shows at least one accepted control. Unlinked rows are flagged.",
+    mistakes: "Export is blocked until every risk has an accepted control statement.",
+  },
+  enact: {
+    title: "Send to Enact",
+    what: "Download the OSCAL catalog on this device, then open it in Enact.",
+    why: "Codify writes the catalog. Enact runs the checks. They share a file, not a server.",
+    example: "Save catalog.json, open Enact, load that file.",
+    mistakes: "Codify does not upload the catalog. If download is blocked, accept coverage first.",
+  },
 };
 
 // ---------------------------------------------------------------- helpers
@@ -242,6 +302,7 @@ function dropLegacyRegister(project) {
   dropLegacyRiskStore();
   if (!project || typeof project !== "object") return project;
   const next = { ...project };
+  if (next.authoring_path !== "risks") delete next.authoring_path;
   next.risks = cleanRisks(next.risks);
   const known = new Set(next.risks.map((r) => r.id));
   if (Array.isArray(next.controls)) {
@@ -298,11 +359,113 @@ function controlsForRisk(id) {
   return (state.project.controls || []).filter((c) => (c.risk_ids || []).includes(id));
 }
 
+function authoringPath(project) {
+  return project && project.authoring_path === "risks" ? "risks" : "clauses";
+}
+
+function flowSteps(project) {
+  return authoringPath(project) === "risks"
+    ? ["risks", "controls", "review", "enact"]
+    : ["clause", "link", "review", "enact"];
+}
+
+function nonemptyControls(project) {
+  return (project.controls || []).filter((c) => String(c.text || "").trim());
+}
+
+function identifiedRisks(project) {
+  return (project.risks || []).filter((r) => String(r.statement || "").trim());
+}
+
+function linkedControlsFor(project, riskId) {
+  return nonemptyControls(project).filter((c) => (c.risk_ids || []).includes(riskId));
+}
+
+function uncoveredRiskIds(project) {
+  return identifiedRisks(project).filter((r) => !linkedControlsFor(project, r.id).length).map((r) => r.id);
+}
+
+function unlinkedControlIds(project) {
+  return nonemptyControls(project).filter((c) => !(c.risk_ids || []).length).map((c) => c.id);
+}
+
+function unacceptedRiskIds(project) {
+  return identifiedRisks(project)
+    .filter((r) => !linkedControlsFor(project, r.id).some((c) => c.status === "accepted"))
+    .map((r) => r.id);
+}
+
+function stepComplete(project, step) {
+  if (!project) return false;
+  if (step === "risks") return identifiedRisks(project).length > 0;
+  if (step === "controls") return identifiedRisks(project).length > 0 && uncoveredRiskIds(project).length === 0;
+  if (step === "clause") return nonemptyControls(project).length > 0 || (project.clauses || []).length > 0;
+  if (step === "link") {
+    return identifiedRisks(project).length > 0 && uncoveredRiskIds(project).length === 0 && unlinkedControlIds(project).length === 0;
+  }
+  if (step === "review" || step === "enact") return canExport(project)[0];
+  return false;
+}
+
+function canAdvance(project, step) {
+  if (step === "risks") {
+    return identifiedRisks(project).length
+      ? [true, ""]
+      : [false, "Add at least one identified risk to continue."];
+  }
+  if (step === "controls") {
+    if (!identifiedRisks(project).length || uncoveredRiskIds(project).length) {
+      return [false, "Every risk needs at least one control statement."];
+    }
+    return [true, ""];
+  }
+  if (step === "clause") {
+    if (nonemptyControls(project).length || (project.clauses || []).length) return [true, ""];
+    return [false, "Paste a policy clause to draft control statements."];
+  }
+  if (step === "link") {
+    if (!identifiedRisks(project).length) {
+      return [false, "Add at least one identified risk and link each control to it."];
+    }
+    if (unlinkedControlIds(project).length) {
+      return [false, "Link every control statement to an identified risk."];
+    }
+    if (uncoveredRiskIds(project).length) {
+      return [false, "Every risk needs at least one control statement."];
+    }
+    return [true, ""];
+  }
+  if (step === "review") return canExport(project);
+  return [true, ""];
+}
+
+function canExport(project) {
+  if (!project || !identifiedRisks(project).length) {
+    return [false, "Add at least one identified risk before exporting."];
+  }
+  if (unlinkedControlIds(project).length) {
+    return [false, "Link every control statement to an identified risk before exporting."];
+  }
+  if (unacceptedRiskIds(project).length) {
+    return [false, "Every risk needs an accepted control statement before you can send this to Enact."];
+  }
+  return [true, ""];
+}
+
+function firstIncompleteStep(project) {
+  for (const step of flowSteps(project)) {
+    if (!stepComplete(project, step)) return step;
+  }
+  return "enact";
+}
+
 function saveLocal() {
   if (!state.project) return;
   try {
     state.project = dropLegacyRegister(state.project);
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ project: state.project, scores: state.scores, saved: new Date().toISOString() }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      project: state.project, scores: state.scores, saved: new Date().toISOString(), flowStep: state.flowStep,
+    }));
   } catch { /* storage full or unavailable: the OSCAL file is the real save */ }
 }
 const saveSoon = debounce(saveLocal, 600);
@@ -312,6 +475,7 @@ function loadLocal() {
     const data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
     if (!(data && data.project && Array.isArray(data.project.controls))) return null;
     data.project = dropLegacyRegister(data.project);
+    if (data.project.authoring_path !== "risks") delete data.project.authoring_path;
     return data;
   } catch { return null; }
 }
@@ -319,6 +483,14 @@ function loadLocal() {
 function clearLocal() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
   dropLegacyRiskStore();
+}
+
+function loadGuideDismissed() {
+  try { return JSON.parse(localStorage.getItem(GUIDE_KEY) || "{}") || {}; } catch { return {}; }
+}
+
+function saveGuideDismissed() {
+  try { localStorage.setItem(GUIDE_KEY, JSON.stringify(state.guideDismissed || {})); } catch { /* ignore */ }
 }
 
 function loadLibrary() {
@@ -653,14 +825,16 @@ async function aiBulk() {
 // ---------------------------------------------------------------- views
 
 function navFor(view) {
-  if (view === "work" || view === "result") return "clauses";
+  if (view === "work" || view === "result" || view === "flow") return "clauses";
   if (view === "workspace") return "workspace";
   return view;
 }
 
 function showView(view) {
   if (view === "work" && !state.project) view = "workspace";
+  if (view === "flow" && !state.project) view = "workspace";
   if (view === "work" && state.resultStep) view = "result";
+  if (view === "flow" && state.flowStep === "review") view = "work";
   if (view !== "result") state.resultStep = false;
   state.view = view;
   const nav = navFor(view);
@@ -672,6 +846,9 @@ function showView(view) {
   $("#start").hidden = view !== "workspace";
   applySplash();
   if ($("#result")) $("#result").hidden = view !== "result";
+  const authoring = Boolean(state.project) && (view === "flow" || view === "work");
+  if ($("#flow")) $("#flow").hidden = !authoring;
+  if ($("#flow-step")) $("#flow-step").hidden = view !== "flow";
   $("#work").hidden = view !== "work";
   $("#catalog").hidden = view !== "catalog";
   $("#library").hidden = view !== "library";
@@ -683,8 +860,11 @@ function showView(view) {
   if (view === "workspace") {
     renderResume();
     renderCurrentProject();
+    renderStartChoice();
   }
   if (view === "result" && state.project) renderResult();
+  if (authoring) renderFlowChrome();
+  if (view === "flow" && state.project) renderFlowStep();
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
   if (view === "library") renderLibrary();
@@ -707,7 +887,7 @@ function renderCurrentProject() {
     if (resume) resume.hidden = true;
     $("#current-project-title").textContent = state.project.title || "Untitled policy";
     const n = clauseCounts(state.project);
-    $("#current-project-meta").textContent = `${plural(n.controls, "control")} from ${plural(n.requirements, "requirement")}. Open clauses to keep reviewing.`;
+    $("#current-project-meta").textContent = `${plural(n.controls, "control")} from ${plural(n.requirements, "requirement")}. Continue the authoring steps.`;
   }
 }
 
@@ -719,10 +899,9 @@ function renderCrumb() {
   const parts = ["Workspace"];
   if (state.view === "result" && state.project) {
     parts.push("Here's what we drafted");
-  } else if (state.view === "work" && state.project) {
-    parts.push(state.project.title || "Clauses");
-    if (state.selected?.control) parts.push("Control");
-    else if (state.selected?.clause) parts.push("Clause");
+  } else if ((state.view === "work" || state.view === "flow") && state.project) {
+    parts.push(state.project.title || "Project");
+    if (state.flowStep && STEP_LABELS[state.flowStep]) parts.push(STEP_LABELS[state.flowStep]);
   } else if (state.view === "catalog") parts.push("Catalog");
   else if (state.view === "library") parts.push("Library");
   else if (state.view === "risks") parts.push("Identified risks");
@@ -771,30 +950,458 @@ function dismissSplash() {
   const splash = $("#splash");
   if (splash) splash.hidden = true;
   if (!state.project) showView("workspace");
-  $("#paste-form textarea")?.focus();
+  $("#start-from-risks")?.focus();
 }
 
 // ---------------------------------------------------------------- opening a project
 
-function openProject(data, { resultStep = false } = {}) {
+function openProject(data, { resultStep = false, path = null, flowStep = null } = {}) {
   showNotice("");
   state.project = dropLegacyRegister(data.project);
+  if (path === "risks") state.project.authoring_path = "risks";
+  else if (path === "clauses") delete state.project.authoring_path;
+  else if (state.project.authoring_path !== "risks") delete state.project.authoring_path;
   state.scores = data.scores || {};
   state.checked.clear();
   state.filter = "all";
-  const first = state.project.controls.find((c) => c.status === "draft") || state.project.controls[0];
+  const first = (state.project.controls || []).find((c) => c.status === "draft") || (state.project.controls || [])[0];
   state.selected = first ? { control: first.id } : null;
   state.editorTab = "statement";
   state.resultStep = Boolean(resultStep && (state.project.controls || []).length);
+  const savedStep = flowStep || data.flowStep;
+  const allowed = new Set(flowSteps(state.project));
+  state.flowStep = allowed.has(savedStep) ? savedStep : (state.resultStep ? "clause" : firstIncompleteStep(state.project));
   for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
   saveLocal();
-  showView(state.resultStep ? "result" : "work");
-  if (!state.resultStep) render();
+  if (state.resultStep) showView("result");
+  else openFlow();
   renderCatalog();
-  if (!state.resultStep && state.selected) {
+  if (state.view === "work" && state.selected) {
     const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
     document.getElementById(id)?.scrollIntoView({ block: "nearest" });
   }
+}
+
+function openFlow() {
+  if (!state.project) return showView("workspace");
+  if (!state.flowStep) state.flowStep = firstIncompleteStep(state.project);
+  if (state.flowStep === "review" && !state.selected && (state.project.controls || [])[0]) {
+    state.selected = { control: state.project.controls[0].id };
+  }
+  showView(state.flowStep === "review" ? "work" : "flow");
+}
+
+function renderStartChoice() {
+  const choice = $("#start-choice");
+  const drop = $("#drop");
+  if (!choice || !drop) return;
+  const clause = state.startPath === "clause";
+  choice.hidden = clause;
+  drop.hidden = !clause;
+}
+
+function setFlowError(message) {
+  const box = $("#flow-error");
+  if (!box) return;
+  box.textContent = message || "";
+  box.hidden = !message;
+}
+
+function renderFlowChrome() {
+  renderStepper();
+  renderStepGuide();
+  renderFlowNav();
+}
+
+function renderStepper() {
+  const list = $("#stepper");
+  if (!list || !state.project) return;
+  const steps = flowSteps(state.project);
+  const current = state.flowStep || firstIncompleteStep(state.project);
+  const nodes = steps.map((step, i) => {
+    const done = stepComplete(state.project, step);
+    const isCurrent = step === current;
+    const prevDone = steps.slice(0, i).every((s) => stepComplete(state.project, s));
+    const enabled = isCurrent || done || prevDone;
+    const btn = el("button", {
+      type: "button",
+      class: `stepper__step${isCurrent ? " is-current" : ""}${done && !isCurrent ? " is-done" : ""}`,
+      "data-step": step,
+      "aria-current": isCurrent ? "step" : null,
+      disabled: enabled ? null : true,
+    },
+      el("span", { class: "stepper__n", text: done && !isCurrent ? "✓" : String(i + 1) }),
+      el("span", { class: "stepper__label" },
+        step === "clause" ? term("Clause", GLOSSARY.Clause) : STEP_LABELS[step]));
+    btn.addEventListener("click", () => goToStep(step));
+    return el("li", {}, btn);
+  });
+  list.replaceChildren(...nodes);
+}
+
+function renderStepGuide() {
+  const panel = $("#step-guide");
+  const reopen = $("#step-guide-open");
+  if (!panel) return;
+  const step = state.flowStep || "risks";
+  const guide = STEP_GUIDES[step];
+  const dismissed = Boolean(state.guideDismissed[step]);
+  panel.hidden = !guide || dismissed;
+  if (reopen) reopen.hidden = !guide || !dismissed;
+  if (!guide || dismissed) {
+    panel.replaceChildren();
+    return;
+  }
+  const hide = el("button", { type: "button", class: "btn btn--quiet btn--small step-guide__dismiss", text: "Hide guide" });
+  hide.addEventListener("click", () => {
+    state.guideDismissed[step] = true;
+    saveGuideDismissed();
+    renderStepGuide();
+  });
+  panel.replaceChildren(
+    el("h3", { text: guide.title }),
+    el("h4", { text: "What" }), el("p", { text: guide.what }),
+    el("h4", { text: "Why" }), el("p", { text: guide.why }),
+    el("h4", { text: "A good example" }), el("p", { text: guide.example }),
+    el("h4", { text: "Common mistakes" }), el("p", { text: guide.mistakes }),
+    hide,
+  );
+}
+
+function renderFlowNav() {
+  const back = $("#flow-back");
+  const next = $("#flow-next");
+  const nav = $("#flow-nav");
+  if (!nav || !state.project) return;
+  const steps = flowSteps(state.project);
+  const i = steps.indexOf(state.flowStep);
+  const last = i === steps.length - 1;
+  nav.hidden = state.view === "result";
+  if (back) back.disabled = i <= 0;
+  if (next) {
+    next.textContent = state.flowStep === "review" ? "Send to Enact"
+      : state.flowStep === "enact" ? "Download catalog"
+      : "Next";
+    next.hidden = false;
+    next.disabled = last && state.flowStep !== "enact" ? true : false;
+  }
+}
+
+function goToStep(step) {
+  if (!state.project) return;
+  const steps = flowSteps(state.project);
+  if (!steps.includes(step)) return;
+  state.flowStep = step;
+  setFlowError("");
+  if (step === "review" && !state.selected && (state.project.controls || [])[0]) {
+    state.selected = { control: state.project.controls[0].id };
+  }
+  saveLocal();
+  showView(step === "review" ? "work" : "flow");
+}
+
+function flowNext() {
+  if (!state.project) return;
+  if (state.flowStep === "enact") {
+    openExportDialog();
+    return;
+  }
+  const [ok, message] = canAdvance(state.project, state.flowStep);
+  if (!ok) {
+    setFlowError(message);
+    return;
+  }
+  setFlowError("");
+  const steps = flowSteps(state.project);
+  const i = steps.indexOf(state.flowStep);
+  if (i < 0 || i >= steps.length - 1) return;
+  goToStep(steps[i + 1]);
+}
+
+function flowBack() {
+  if (!state.project) return;
+  const steps = flowSteps(state.project);
+  const i = steps.indexOf(state.flowStep);
+  if (i <= 0) return;
+  goToStep(steps[i - 1]);
+}
+
+function startRiskPath() {
+  if (!confirmReplace()) return;
+  const uuid = (crypto.randomUUID && crypto.randomUUID()) || `00000000-0000-4000-8000-${String(Date.now()).slice(-12)}`;
+  state.project = {
+    uuid, title: "Untitled policy", source: "", version: "", clauses: [], controls: [],
+    risks: [], authoring_path: "risks",
+  };
+  state.scores = {};
+  state.selected = null;
+  state.flowStep = "risks";
+  state.startPath = null;
+  saveLocal();
+  showView("flow");
+}
+
+function showClausePath() {
+  state.startPath = "clause";
+  renderStartChoice();
+  $("#paste-form textarea")?.focus();
+}
+
+function hideClausePath() {
+  state.startPath = null;
+  renderStartChoice();
+  $("#start-from-risks")?.focus();
+}
+
+function renderFlowStep() {
+  const box = $("#flow-step");
+  if (!box || !state.project) return;
+  box.hidden = false;
+  const step = state.flowStep;
+  if (step === "risks") return renderIdentifyStep(box);
+  if (step === "controls") return renderDevelopStep(box);
+  if (step === "link") return renderLinkStep(box);
+  if (step === "enact") return renderEnactStep(box);
+  box.replaceChildren();
+}
+
+function renderIdentifyStep(box) {
+  ensureRisks();
+  const statement = el("input", {
+    type: "text", id: "flow-risk-statement", maxlength: "500", autocomplete: "off",
+    placeholder: "Short risk statement, e.g. Screens left unlocked.",
+    "aria-required": "true",
+  });
+  const note = el("input", {
+    type: "text", id: "flow-risk-note", maxlength: "500", autocomplete: "off",
+    placeholder: "Optional note",
+  });
+  const add = el("button", { type: "button", class: "btn btn--primary", id: "flow-risk-add", text: "Add risk" });
+  const submit = () => {
+    const text = statement.value;
+    if (!String(text || "").trim()) {
+      setFlowError("A risk statement is required.");
+      statement.focus();
+      return;
+    }
+    setFlowError("");
+    addIdentifiedRisk(text, note.value);
+    statement.value = "";
+    note.value = "";
+    renderFlowStep();
+    renderFlowChrome();
+  };
+  add.addEventListener("click", submit);
+  statement.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+  const risks = state.project.risks || [];
+  const rows = risks.map((risk) => {
+    const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Remove" });
+    remove.addEventListener("click", () => {
+      if (confirm("Remove this identified risk? Linked controls stay; the link is dropped.")) {
+        removeIdentifiedRisk(risk.id);
+        renderFlowStep();
+        renderFlowChrome();
+      }
+    });
+    return el("div", { class: "risk-row", "data-risk-id": risk.id },
+      el("span", { class: "pill", text: risk.id }),
+      el("span", { class: "risk-row__statement", text: risk.statement }),
+      remove);
+  });
+  box.replaceChildren(
+    el("h3", { class: "section-title", text: "Identify risks" }),
+    el("p", { class: "start__lede", text: "Enter the risks you already identified. At least one is required to continue." }),
+    el("div", { class: "risks-form card" },
+      el("p", { class: "risks-form__label", text: "Add an identified risk" }),
+      el("label", { class: "field" }, el("span", { text: "Statement" }), statement),
+      el("label", { class: "field" }, el("span", {}, "Note ", el("em", { text: "optional" })), note),
+      el("div", { class: "actions" }, add)),
+    risks.length ? el("div", { class: "risk-list" }, rows)
+      : el("p", { class: "field-error", id: "risks-needed", text: "Add at least one identified risk to continue." }),
+  );
+}
+
+function renderDevelopStep(box) {
+  ensureRisks();
+  const risks = identifiedRisks(state.project);
+  if (!risks.length) {
+    box.replaceChildren(el("p", { class: "field-error", text: "Add identified risks first." }));
+    return;
+  }
+  const cards = risks.map((risk) => {
+    const linked = linkedControlsFor(state.project, risk.id);
+    const missing = !linked.length;
+    const area = el("textarea", {
+      rows: "3",
+      "data-control-for": risk.id,
+      placeholder: "Write a control statement that treats this risk.",
+      "aria-label": `Control statement for ${risk.id}`,
+    });
+    const clause = el("textarea", {
+      rows: "2", class: "optional-clause",
+      placeholder: "Optional: attach a policy clause as context.",
+      "aria-label": `Optional clause for ${risk.id}`,
+    });
+    const add = el("button", { type: "button", class: "btn btn--primary", text: "Add statement" });
+    add.addEventListener("click", () => {
+      if (!String(area.value || "").trim()) {
+        setFlowError("Every risk needs at least one non-empty control statement.");
+        area.focus();
+        return;
+      }
+      setFlowError("");
+      addControlForRisk(risk, area.value, clause.value);
+      renderFlowStep();
+      renderFlowChrome();
+    });
+    const suggest = el("button", { type: "button", class: "btn", "data-suggest": risk.id, text: "Suggest from library" });
+    suggest.addEventListener("click", () => openRiskSuggestDialog(risk));
+    const mapped = linked.length
+      ? linked.map((c) => el("p", { class: "mapped-risk__statement" },
+          el("span", { class: "pill", text: c.status === "accepted" ? "Accepted" : "Draft" }),
+          " ", c.text))
+      : [el("p", { class: "field-error", text: "This risk needs a control statement." })];
+    return el("article", { class: "card risk-control-card", "data-risk-id": risk.id },
+      el("h3", {}, el("span", { class: "pill", text: risk.id }), " ", risk.statement),
+      missing ? el("p", { class: "field-error", text: "Required: add a control statement." }) : null,
+      ...mapped,
+      el("label", { class: "field" }, el("span", { text: "New control statement" }), area),
+      el("label", { class: "field" }, el("span", {}, "Policy clause ", el("em", { text: "optional" })), clause),
+      el("div", { class: "actions" }, add, suggest));
+  });
+  box.replaceChildren(
+    el("h3", { class: "section-title", text: "Develop control statements" }),
+    el("p", { class: "start__lede", text: "Every risk needs at least one non-empty control statement before you review." }),
+    ...cards,
+  );
+}
+
+function renderLinkStep(box) {
+  ensureRisks();
+  const controls = nonemptyControls(state.project);
+  const legacy = authoringPath(state.project) === "clauses" && !identifiedRisks(state.project).length;
+  const prompt = legacy
+    ? el("p", { class: "legacy-prompt", id: "legacy-risk-prompt",
+        text: "This project started from clauses. Add identified risks and link each control before review." })
+    : null;
+  const statement = el("input", {
+    type: "text", id: "link-risk-statement", maxlength: "500", autocomplete: "off",
+    placeholder: "Short risk statement",
+  });
+  const addRisk = el("button", { type: "button", class: "btn", id: "link-risk-add", text: "Add risk" });
+  addRisk.addEventListener("click", () => {
+    if (!String(statement.value || "").trim()) {
+      setFlowError("A risk statement is required.");
+      return;
+    }
+    setFlowError("");
+    addIdentifiedRisk(statement.value, "");
+    statement.value = "";
+    renderFlowStep();
+    renderFlowChrome();
+  });
+  const risks = state.project.risks || [];
+  const firstId = risks[0] && risks[0].id;
+  const linkAll = el("button", { type: "button", class: "btn", id: "link-remaining", text: "Link remaining to first risk" });
+  linkAll.hidden = !firstId || !unlinkedControlIds(state.project).length;
+  linkAll.addEventListener("click", () => {
+    if (!firstId) return;
+    for (const control of state.project.controls) {
+      if (String(control.text || "").trim() && !(control.risk_ids || []).length) linkRisk(control, firstId);
+    }
+    saveLocal();
+    renderFlowStep();
+    renderFlowChrome();
+  });
+  const rows = controls.map((control) => {
+    const unlinked = !(control.risk_ids || []).length;
+    const select = el("select", { "aria-label": `Risk for ${control.id}` });
+    select.append(el("option", { value: "", text: risks.length ? "Link a risk" : "Add a risk first" }));
+    for (const risk of risks) {
+      select.append(el("option", {
+        value: risk.id, text: `${risk.id} — ${risk.statement}`,
+        selected: (control.risk_ids || []).includes(risk.id) ? true : null,
+      }));
+    }
+    select.addEventListener("change", () => {
+      if (!select.value) return;
+      control.risk_ids = [select.value];
+      control.risk = purposeFromRisks(state.project, control.risk_ids);
+      saveLocal();
+      renderFlowStep();
+      renderFlowChrome();
+    });
+    return el("div", { class: "link-row" },
+      el("div", {},
+        el("p", { text: control.text }),
+        unlinked ? el("p", { class: "field-error", text: "This control is not linked to a risk." }) : null),
+      select);
+  });
+  box.replaceChildren(
+    el("h3", { class: "section-title", text: "Link to risks" }),
+    prompt,
+    el("p", { class: "start__lede", text: "Every control must treat an identified risk. Add a risk if you need one." }),
+    el("div", { class: "risks-form card" },
+      el("label", { class: "field" }, el("span", { text: "Identified risk" }), statement),
+      el("div", { class: "actions" }, addRisk, linkAll)),
+    rows.length ? el("div", {}, rows) : el("p", { class: "muted", text: "No control drafts yet." }),
+  );
+}
+
+function renderEnactStep(box) {
+  const [ok, message] = canExport(state.project);
+  const download = el("button", { type: "button", class: "btn btn--primary btn--lg", id: "enact-download", text: "Download OSCAL catalog" });
+  download.disabled = !ok;
+  download.addEventListener("click", () => openExportDialog());
+  box.replaceChildren(
+    el("div", { class: "card enact-panel" },
+      el("h3", { class: "section-title", text: "Send to Enact" }),
+      el("p", { text: "Codify writes the catalog. Enact runs the checks. They share a file, not a server. Download only — nothing is uploaded." }),
+      el("ol", { class: "enact-handoff__steps" },
+        el("li", { text: "Download the OSCAL catalog on this device." }),
+        el("li", {}, "Open ", el("a", { href: ENACT_APP, target: "_blank", rel: "noopener noreferrer", text: "Enact" }), " (Pages app)."),
+        el("li", {}, "Load that JSON as the catalog. See ",
+          el("a", { href: ENACT_DOC, target: "_blank", rel: "noopener noreferrer", text: "Using Codify with Enact" }), ".")),
+      ok ? null : el("p", { class: "field-error", id: "enact-gate", text: message }),
+      el("div", { class: "actions" }, download,
+        el("button", { type: "button", class: "btn", id: "enact-other", text: "Other formats" }))),
+  );
+  $("#enact-other")?.addEventListener("click", () => openExportDialog());
+}
+
+function addControlForRisk(risk, text, clauseText) {
+  const statement = String(text || "").trim();
+  if (!statement) return;
+  const control = {
+    id: nextSuggestedControlId(risk.id),
+    clause: "",
+    text: statement,
+    guidance: "",
+    risk: risk.statement,
+    who: "",
+    notes: [],
+    status: "draft",
+    origin: "person",
+    source_type: "clause",
+    risk_ids: [risk.id],
+  };
+  const attached = String(clauseText || "").trim();
+  if (attached) {
+    const used = new Set((state.project.clauses || []).map((c) => c.id));
+    let n = 1;
+    let cid = `c${n}`;
+    while (used.has(cid)) cid = `c${++n}`;
+    state.project.clauses.push({
+      id: cid, text: attached, section: "", heading: "", type: "requirement",
+      reason: "attached as optional context", duplicate_of: null,
+    });
+    control.clause = cid;
+  }
+  state.project.controls.push(control);
+  saveLocal();
+  call({ action: "score", project: state.project }).then((data) => {
+    state.scores = data.scores || {};
+  }).catch(() => {});
 }
 
 function clauseCounts(project) {
@@ -845,11 +1452,8 @@ function renderResult() {
 
 function continueFromResult() {
   state.resultStep = false;
-  showView("work");
-  if (state.selected) {
-    const id = state.selected.control ? `ctl-${state.selected.control}` : `clause-${state.selected.clause}`;
-    document.getElementById(id)?.scrollIntoView({ block: "nearest" });
-  }
+  state.flowStep = "link";
+  showView("flow");
 }
 
 function readFile(file) {
@@ -883,7 +1487,7 @@ const scoreOf = (id) => (state.scores[id] ? state.scores[id].confidence : null);
 function ensureProject() {
   if (!state.project) {
     const uuid = (crypto.randomUUID && crypto.randomUUID()) || `00000000-0000-4000-8000-${String(Date.now()).slice(-12)}`;
-    state.project = { uuid, title: "", source: "", version: "", clauses: [], controls: [] };
+    state.project = { uuid, title: "", source: "", version: "", clauses: [], controls: [], risks: [] };
     state.scores = {};
   }
   state.project = dropLegacyRegister(state.project);
@@ -913,6 +1517,7 @@ function render() {
   if (state.view === "catalog") renderCatalog();
   if (state.view === "library") renderLibrary();
   if (state.view === "risks") renderRisks();
+  if (state.project && (state.view === "work" || state.view === "flow")) renderFlowChrome();
 }
 
 function renderMoreLabel() {
@@ -953,6 +1558,20 @@ function renderHead() {
     : selected.status === "accepted" ? "accept" : "review";
   for (const li of $$(".flow [data-stage]")) {
     li.classList.toggle("is-current", li.dataset.stage === stage);
+  }
+  const uncovered = uncoveredRiskIds(p);
+  const unlinked = unlinkedControlIds(p);
+  if (countsBox && (uncovered.length || unlinked.length || identifiedRisks(p).length)) {
+    countsBox.append(
+      el("p", { id: "review-coverage" },
+        uncovered.length
+          ? el("span", { class: "coverage-flag", text: `${plural(uncovered.length, "risk")} with no control` })
+          : el("span", { class: "muted", text: identifiedRisks(p).length ? "Every identified risk has a linked control." : "Add identified risks to cover." }),
+        " · ",
+        unlinked.length
+          ? el("span", { class: "coverage-flag", text: `${plural(unlinked.length, "control")} not linked to a risk` })
+          : el("span", { class: "muted", text: "Every control is linked to a risk." })),
+    );
   }
 }
 
@@ -1844,14 +2463,20 @@ function renderRiskSuggest() {
   }
   for (const entry of libraryHits) {
     const add = el("button", { type: "button", class: "btn btn--small", text: "Add" });
-    add.addEventListener("click", () => addSuggestedStatement(risk, { statement: entry.statement, origin: "person", libraryId: entry.id }));
+    add.addEventListener("click", () => {
+      addSuggestedStatement(risk, { statement: entry.statement, origin: "person", libraryId: entry.id });
+      if (state.view === "flow") { renderFlowStep(); renderFlowChrome(); }
+    });
     rows.push(el("div", { class: "risk-suggest__row template-row" },
       el("p", { text: entry.statement }),
       add));
   }
   for (const draft of state.suggestAi) {
     const add = el("button", { type: "button", class: "btn btn--small", text: "Add" });
-    add.addEventListener("click", () => addSuggestedStatement(risk, { statement: draft.text, origin: "ai", libraryId: null, draft }));
+    add.addEventListener("click", () => {
+      addSuggestedStatement(risk, { statement: draft.text, origin: "ai", libraryId: null, draft });
+      if (state.view === "flow") { renderFlowStep(); renderFlowChrome(); }
+    });
     rows.push(el("div", { class: "risk-suggest__row template-row" },
       el("p", { text: draft.text }),
       el("span", { class: "pill", text: "AI" }),
@@ -1872,6 +2497,7 @@ function renderRiskSuggest() {
       const dialog = $("#risk-suggest-dialog");
       if (dialog && dialog.open) dialog.close();
       renderRisks();
+      if (state.view === "flow") { renderFlowStep(); renderFlowChrome(); }
     };
   }
 }
@@ -2307,6 +2933,8 @@ async function exportAs(format, button) {
       });
     } else {
       if (!state.project) throw new Error("Load a policy before exporting.");
+      const [ok, message] = canExport(state.project);
+      if (!ok) throw new Error(message);
       out = await call({ action: "export", format, project: state.project });
     }
     if (out.content_base64) {
@@ -2322,6 +2950,16 @@ async function exportAs(format, button) {
 
 function openExportDialog() {
   if (!state.project) return showError("Load a policy before exporting.");
+  const [ok, message] = canExport(state.project);
+  const gate = $("#export-gate");
+  if (gate) {
+    gate.hidden = ok;
+    gate.textContent = ok ? "" : message;
+  }
+  for (const b of $$("#export-dialog [data-export]")) {
+    if (String(b.dataset.export || "").startsWith("library")) continue;
+    b.disabled = !ok;
+  }
   const dialog = $("#export-dialog");
   if (dialog && dialog.showModal) dialog.showModal();
 }
@@ -2357,6 +2995,17 @@ function init() {
 
   $("#splash-continue")?.addEventListener("click", dismissSplash);
   $("#result-continue")?.addEventListener("click", continueFromResult);
+  $("#start-from-risks")?.addEventListener("click", startRiskPath);
+  $("#start-from-clause")?.addEventListener("click", showClausePath);
+  $("#start-clause-back")?.addEventListener("click", hideClausePath);
+  $("#flow-next")?.addEventListener("click", flowNext);
+  $("#flow-back")?.addEventListener("click", flowBack);
+  $("#step-guide-open")?.addEventListener("click", () => {
+    if (!state.flowStep) return;
+    delete state.guideDismissed[state.flowStep];
+    saveGuideDismissed();
+    renderStepGuide();
+  });
 
   $("#paste-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2366,7 +3015,7 @@ function init() {
     if (!confirmReplace()) return;
     busy($("#paste-submit"), "Codifying…", async () => openProject(await call({
       action: "open", name: "pasted text", text,
-    }), { resultStep: true }));
+    }), { resultStep: true, path: "clauses" }));
   });
 
   const drop = $("#drop");
@@ -2389,7 +3038,7 @@ function init() {
     if (!confirmReplace()) return;
     busy(e.currentTarget, "Opening…", async () => {
       const text = await (await fetch("acme-policy.md")).text();
-      openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }), { resultStep: true });
+      openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }), { resultStep: true, path: "clauses" });
     });
   });
 
@@ -2410,11 +3059,13 @@ function init() {
     state.project = null;
     state.selected = null;
     state.resultStep = false;
+    state.flowStep = null;
+    state.startPath = null;
     showView("workspace");
   };
   $("#close-project").addEventListener("click", closeProject);
   $("#current-project-close")?.addEventListener("click", closeProject);
-  $("#current-project-open")?.addEventListener("click", () => showView("work"));
+  $("#current-project-open")?.addEventListener("click", () => openFlow());
   $("#work-title")?.addEventListener("input", () => {
     if (!state.project) return;
     state.project.title = $("#work-title").value;
@@ -2457,6 +3108,7 @@ function init() {
     renderBulk();
   });
 
+  state.guideDismissed = loadGuideDismissed();
   loadAi();
   renderAiButton();
   $("#ai-open").addEventListener("click", openAiDialog);

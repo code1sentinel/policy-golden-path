@@ -16,6 +16,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 from playwright import sync_api
+from playwright.sync_api import expect
 
 from codify.webapp import make_server
 
@@ -104,18 +105,53 @@ def page(browser, base_url, provider):
     assert errors == [], errors
 
 
+def choose_clause_path(page):
+    """Path B on the start screen: paste / Try an example."""
+    choice = page.locator("#start-from-clause")
+    if choice.is_visible():
+        choice.click()
+    expect(page.locator("#paste-form")).to_be_visible()
+
+
+def choose_risk_path(page):
+    """Path A on the start screen: identify risks first."""
+    page.click("#start-from-risks")
+    expect(page.locator("#flow:not([hidden])")).to_be_visible()
+
+
 def finish_open(page, timeout=120_000):
-    """After Codify or Try an example, pass the result step into the workspace."""
-    page.wait_for_selector("#result:not([hidden]) #result-continue, #work:not([hidden]) .ctl", timeout=timeout)
+    """After Codify or Try an example, pass the result step into the authoring flow."""
+    page.wait_for_selector(
+        "#result:not([hidden]) #result-continue, #flow:not([hidden]), #work:not([hidden]) .ctl",
+        timeout=timeout,
+    )
     cont = page.locator("#result:not([hidden]) #result-continue")
     if cont.count():
         cont.click()
-    page.wait_for_selector("#work:not([hidden]) .ctl", timeout=timeout)
+    page.wait_for_selector("#flow:not([hidden]), #work:not([hidden]) .ctl", timeout=timeout)
+
+
+def goto_review(page, risk="Screens left unlocked at unattended desks."):
+    """Path B link step: add a risk, link remaining controls, open Review."""
+    if page.locator("#work:not([hidden])").is_visible():
+        return
+    expect(page.locator("#flow:not([hidden])")).to_be_visible()
+    stmt = page.locator("#link-risk-statement")
+    if stmt.is_visible():
+        stmt.fill(risk)
+        page.click("#link-risk-add")
+        remaining = page.locator("#link-remaining")
+        if remaining.is_visible():
+            remaining.click()
+        page.click("#flow-next")
+    page.wait_for_selector("#work:not([hidden])", timeout=30_000)
 
 
 @pytest.fixture
 def demo(page):
-    """The Acme demo policy, open in the workspace."""
+    """The Acme demo policy, covered and open on Review."""
+    choose_clause_path(page)
     page.click("#demo")
     finish_open(page)  # Pyodide's first load can be slow
+    goto_review(page)
     return page

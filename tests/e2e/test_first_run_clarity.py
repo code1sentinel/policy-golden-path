@@ -2,7 +2,7 @@
 
 from playwright.sync_api import expect
 
-from conftest import finish_open
+from conftest import choose_clause_path, finish_open, goto_review
 
 
 def test_demo_header_has_no_null_and_explains_counts(demo):
@@ -20,6 +20,7 @@ def test_sidebar_has_identified_risks_not_a_register(page):
 
 
 def test_example_text_is_editable_and_codify_opens_a_result_step(page):
+    choose_clause_path(page)
     box = page.locator("#paste-form textarea[name='text']")
     expect(box).not_to_have_attribute("placeholder", box.input_value())
     text = box.input_value()
@@ -30,6 +31,8 @@ def test_example_text_is_editable_and_codify_opens_a_result_step(page):
     expect(page.locator("#result-title")).to_contain_text("what we drafted")
     expect(page.locator("#result-drafts")).to_contain_text("Grant access")
     page.click("#result-continue")
+    expect(page.locator("#flow:not([hidden])")).to_be_visible()
+    goto_review(page)
     expect(page.locator("#work:not([hidden]) textarea.statement")).to_be_visible()
 
 
@@ -43,9 +46,11 @@ def test_review_has_one_primary_accept_and_plain_language(demo):
 
 
 def test_access_control_purpose_hint_is_not_brute_force(page):
+    choose_clause_path(page)
     page.fill("#paste-form textarea", "Access to systems shall be granted on a need-to-know basis.")
     page.click("#paste-submit")
     finish_open(page)
+    goto_review(page)
     expect(page.locator("#editor")).not_to_contain_text("brute-force")
     expect(page.locator("#props")).not_to_contain_text("brute-force")
 
@@ -63,7 +68,7 @@ def test_export_marks_oscal_recommended(demo):
 def test_glossary_explains_oscal_and_catalog_vs_library(demo):
     expect(demo.locator("abbr.term", has_text="OSCAL").first).to_have_attribute(
         "title", "A standard format from NIST for writing security controls so other GRC tools can read them.")
-    expect(demo.locator(".flow abbr.term", has_text="Clause")).to_be_visible()
+    expect(demo.locator("#stepper, .flow").locator("abbr.term", has_text="Clause").first).to_be_visible()
     demo.click("[data-nav='catalog']")
     expect(demo.locator("#catalog")).to_contain_text("This project's")
     expect(demo.locator("#catalog")).to_contain_text("Library")

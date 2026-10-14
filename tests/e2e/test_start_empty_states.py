@@ -4,10 +4,13 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import finish_open
+from conftest import choose_clause_path, finish_open, goto_review
 
 
 def test_start_has_one_primary_and_a_quiet_example(page):
+    expect(page.locator("#start-from-risks")).to_be_visible()
+    expect(page.locator("#start-from-risks")).to_contain_text("Recommended")
+    choose_clause_path(page)
     expect(page.locator("#start .btn--primary:visible")).to_have_count(1)
     expect(page.locator("#paste-submit")).to_have_text("Codify")
     expect(page.locator("#demo")).to_have_text("Try an example")
@@ -27,8 +30,10 @@ def test_start_has_no_club_or_version_chrome(page):
 
 
 def test_example_chip_still_opens_the_acme_demo(page):
+    choose_clause_path(page)
     page.click("#demo")
     finish_open(page)
+    goto_review(page)
     expect(page.locator("#work-summary")).to_contain_text("38 control drafts")
 
 

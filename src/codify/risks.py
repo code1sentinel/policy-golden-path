@@ -80,6 +80,10 @@ def normalize_project(project: dict) -> dict:
     if not isinstance(project, dict):
         return project
     out = dict(project)
+    if out.get("authoring_path") == "risks":
+        out["authoring_path"] = "risks"
+    else:
+        out.pop("authoring_path", None)
     out["risks"] = clean_risks(out.get("risks"))
     known = {r["id"] for r in out["risks"]}
     cleaned = []

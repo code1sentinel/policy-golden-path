@@ -12,11 +12,11 @@ The page is an authoring app:
 - **Writing column** — the control statement, with the legacy clause above it
 - **Right panel** — status, score, and review hints
 
-**Workspace** in the sidebar returns to the paste start. **Clauses** is the open project.
+**Workspace** in the sidebar returns to the start (two paths: risks or a clause). **Clauses** is the open project. A numbered stepper shows Identify risks / Develop controls (or Paste a clause / Link to risks), then Review and Send to Enact. Each step has a short guide you can hide and open again.
 
 A pasted project is named from the first clause. You can rename it at the top of the workspace.
 
-The strip **Clause → Draft → Review → Accept** is status, not a set of links. Hover a word for what it means.
+The strip **Clause → Draft → Review → Accept** in the editor is status, not a set of links. Hover a word for what it means. The stepper above is the authoring path and *is* a set of steps.
 
 ## Parts of a statement
 

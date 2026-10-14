@@ -1,12 +1,12 @@
 # Identified risks
 
-Identified risks are **input** to authoring. You enter the risks you already have; control statements exist to address them.
+Identified risks are **input** to authoring. You enter the risks you already have; control statements exist to address them. On the web, they are required before Review and export ([ADR 0013](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0013-risk-first-authoring-flow.md)).
 
 This is not a risk register. There are no scores, likelihood or impact, owners, review cycles, or treatment plans.
 
 ## Add risks
 
-Open **Risks** in the sidebar once a project is loaded.
+**Start from risks** is the recommended path. You can also add them on the **Link to risks** step after pasting a clause, or open **Risks** in the sidebar.
 
 1. Type a short statement (what could go wrong).
 2. Optionally add a note.
@@ -51,4 +51,4 @@ The OSCAL catalog traces each link:
 
 Older catalogs that still carry a leftover **register** (`risk-id` resources, likelihood, scores) open with an empty identified-risks list. The [control statements](catalog-and-library.md) remain.
 
-See [Export formats](export.md) and [Using Codify with Enact](enact.md).
+See [Export formats](export.md) and [Using Codify with Enact](enact.md). The web wizard blocks catalog download until every risk has an accepted control statement.

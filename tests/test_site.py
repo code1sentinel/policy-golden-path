@@ -62,7 +62,9 @@ def test_app_js_treats_ollama_as_ready_without_a_key():
 
 def test_workspace_html_is_a_short_happy_path():
     html = (ROOT / "src/codify/static/index.html").read_text()
-    assert "Turn a policy into control statements" in html
+    assert "How do you want to start?" in html
+    assert 'id="start-from-risks"' in html
+    assert 'id="start-from-clause"' in html
     assert 'name="title"' not in html
     assert 'id="demo"' in html and "Try an example" in html
     assert 'class="steps"' not in html
