@@ -5,9 +5,15 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 BOOK = ROOT / "docs" / "book"
 GITBOOK_YAML = ROOT / ".gitbook.yaml"
+GITBOOK_DOCS_YAML = BOOK / "gitbook-docs.yaml"
+# Official schema URL from GitBook's gitbook-docs.yaml examples.
+# https://gitbook.com/docs/docs-as-code/git-sync/content-configuration
+GITBOOK_DOCS_SCHEMA = "https://api.gitbook.com/gitbook-docs.yaml"
 
 LINK_RE = re.compile(r"!?\[(?:[^\]]*)\]\(([^)]+)\)")
 SUMMARY_ITEM_RE = re.compile(r"^\s*\*\s+\[(?:[^\]]+)\]\(([^)]+)\)\s*$", re.MULTILINE)
@@ -41,6 +47,63 @@ def _yaml_value(text: str, key: str) -> str:
 
 def markdown_files() -> list[Path]:
     return sorted(p for p in BOOK.rglob("*.md") if p.is_file())
+
+
+def _walk_nodes(node: object) -> list[dict]:
+    found: list[dict] = []
+    if isinstance(node, dict):
+        found.append(node)
+        for value in node.values():
+            found.extend(_walk_nodes(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_walk_nodes(item))
+    return found
+
+
+def _content_directories(node: object) -> list[object]:
+    found: list[object] = []
+    for item in _walk_nodes(node):
+        content = item.get("content")
+        if isinstance(content, dict) and "directory" in content:
+            found.append(content["directory"])
+    return found
+
+
+def _resolve_git_sync_directory(spec: str) -> Path:
+    """Resolve content.directory the way GitBook documents.
+
+    Paths are relative to the Git Sync project directory (`docs/book/`) unless
+    they start with `/`, which is the repository root.
+    https://gitbook.com/docs/docs-as-code/git-sync/monorepos
+    """
+    if spec.startswith("/"):
+        return (ROOT / spec.lstrip("/")).resolve()
+    return (BOOK / spec).resolve()
+
+
+def test_site_gitbook_docs_yaml_exists_parses_and_paths_resolve():
+    assert GITBOOK_DOCS_YAML.is_file(), "docs/book/gitbook-docs.yaml is required for site Git Sync"
+    data = yaml.safe_load(GITBOOK_DOCS_YAML.read_text(encoding="utf-8"))
+    assert isinstance(data, dict), "gitbook-docs.yaml must parse as a mapping"
+    assert data.get("$schema") == GITBOOK_DOCS_SCHEMA
+    site = data.get("site")
+    assert isinstance(site, dict), "gitbook-docs.yaml must have a site mapping"
+    assert site.get("title") == "Codify"
+    structure = site.get("structure")
+    assert isinstance(structure, list) and structure, "site.structure must list at least one node"
+    spaces = [item for item in _walk_nodes(data) if item.get("type") == "space"]
+    assert len(spaces) == 1, "site Git Sync maps the curated book as a single space"
+    directories = _content_directories(data)
+    assert directories, "gitbook-docs.yaml must map at least one space content.directory"
+    for spec in directories:
+        if spec is None:
+            continue
+        assert isinstance(spec, str) and spec, f"empty content.directory: {spec!r}"
+        mapped = _resolve_git_sync_directory(spec)
+        assert mapped.is_dir(), f"content.directory does not exist: {spec} -> {mapped}"
+        assert (mapped / "README.md").is_file(), f"README.md missing in {mapped}"
+        assert (mapped / "SUMMARY.md").is_file(), f"SUMMARY.md missing in {mapped}"
 
 
 def test_gitbook_yaml_points_at_curated_book():

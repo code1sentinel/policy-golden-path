@@ -31,8 +31,10 @@ time.
 
 User and contributor documentation for GitBook lives in
 [`docs/book/`](docs/book/README.md) (`SUMMARY.md` is the table of contents).
-Only that folder is published — not every PRD. After Git Sync, the owner
-connects this repo to a GitBook space.
+Only that folder is published — not every PRD. For **site** Git Sync,
+connect this repository, branch `main`, project directory `docs/book`
+([`docs/book/gitbook-docs.yaml`](docs/book/gitbook-docs.yaml)). Repo-root
+[`.gitbook.yaml`](.gitbook.yaml) remains for single-space Git Sync.
 
 ## Use it
 
