@@ -1,0 +1,21 @@
+# GitBook *site* Git Sync (not single-space Git Sync).
+# Lives in the Git Sync Project directory. Official schema and docs:
+#   https://gitbook.com/docs/docs-as-code/git-sync/content-configuration
+#   https://gitbook.com/docs/docs-as-code/git-sync/monorepos
+#   https://api.gitbook.com/gitbook-docs.yaml
+#
+# GitBook configuration: this repository, branch `main`, project directory
+# `docs/book`. The single space maps to this directory; GitBook then reads
+# README.md and SUMMARY.md by default (space-level `.gitbook.yaml` is
+# optional). Repo-root `.gitbook.yaml` stays for single-space Git Sync.
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Codify
+  structure:
+    - type: space
+      key: space-codify
+      title: Codify
+      path: docs
+      default: true
+      content:
+        directory: ./
