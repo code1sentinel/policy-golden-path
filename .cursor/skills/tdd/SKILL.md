@@ -90,3 +90,8 @@ Typical Codify seams:
   (`scripts/validate_oscal.mjs`).
 - Unit tests make no network calls. E2E fakes AI providers.
 - Do not weaken existing tests to make a slice pass.
+- Restoring (or partially restoring) a surface a previous slice deleted:
+  grep unit **and** e2e for absence assertions (`not_to_contain_text`,
+  `to_have_count(0)`, "no X") and update them in the same PR. Playwright
+  locators must be unique (`#id` or a scoped parent), not a class or
+  comma-union that matches more than one node.
