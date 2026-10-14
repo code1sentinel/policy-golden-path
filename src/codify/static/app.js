@@ -2848,10 +2848,27 @@ async function redraftClause(clause, button) {
   await busy(button, "Drafting…", async () => replaceControls(clause, await call({ action: "redraft", clause_id: clause.id, text: clause.text })));
 }
 
+function inheritRiskLinks(outgoing, incoming) {
+  const inherited = [];
+  for (const control of outgoing) {
+    for (const id of control.risk_ids || []) {
+      if (id && !inherited.includes(id)) inherited.push(id);
+    }
+  }
+  if (!inherited.length) return;
+  for (const control of incoming) {
+    if ((control.risk_ids || []).length) continue;
+    control.risk_ids = [...inherited];
+    if (!control.risk) control.risk = purposeFromRisks(state.project, control.risk_ids);
+  }
+}
+
 function replaceControls(clause, data, show = true) {
-  // put new drafts where the clause's controls were
+  // put new drafts where the clause's controls were; keep identified-risk links
+  const outgoing = controlsOf(clause.id);
+  inheritRiskLinks(outgoing, data.controls || []);
   const at = state.project.controls.findIndex((c) => c.clause === clause.id);
-  for (const c of controlsOf(clause.id)) { delete state.scores[c.id]; state.checked.delete(c.id); }
+  for (const c of outgoing) { delete state.scores[c.id]; state.checked.delete(c.id); }
   state.project.controls = state.project.controls.filter((c) => c.clause !== clause.id);
   state.project.controls.splice(at >= 0 ? at : insertionPoint(clause), 0, ...data.controls);
   Object.assign(state.scores, data.scores);

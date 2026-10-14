@@ -30,8 +30,8 @@ def test_clauses_catalog_and_library_views(demo):
 
     demo.click("[data-nav='catalog']")
     expect(demo.locator("#catalog:not([hidden])")).to_be_visible()
-    expect(demo.locator(".data-table")).to_contain_text("Source")
-    expect(demo.locator(".data-table")).to_contain_text("Clause")
+    expect(demo.locator("#catalog .data-table")).to_contain_text("Source")
+    expect(demo.locator("#catalog .data-table")).to_contain_text("Clause")
 
     demo.click("[data-nav='library']")
     expect(demo.locator("#library:not([hidden])")).to_be_visible()
