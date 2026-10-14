@@ -13,7 +13,7 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 ### Added
 
 - Site Git Sync: `docs/book/gitbook-docs.yaml` maps the curated book as
-  the Codify site’s single space (project directory `docs/book`, branch
+  the Codify site's single space (project directory `docs/book`, branch
   `main`). Repo-root `.gitbook.yaml` is unchanged for single-space sync.
   Schema and format follow
   [GitBook content configuration](https://gitbook.com/docs/docs-as-code/git-sync/content-configuration)
