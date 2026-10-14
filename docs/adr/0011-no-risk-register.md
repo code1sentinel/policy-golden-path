@@ -4,7 +4,9 @@ Date: 2026-10-09
 
 ## Status
 
-Accepted
+Accepted. Refined by
+[0012-identified-risks-as-input.md](0012-identified-risks-as-input.md):
+there is still no register; identified risks may be entered as input.
 
 Supersedes [0008-risk-input-and-oscal-tracing.md](0008-risk-input-and-oscal-tracing.md)
 entirely, and the Risks **Library** / **Register** surfaces in

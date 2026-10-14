@@ -16,32 +16,26 @@ CSS = (ROOT / "src/codify/static/app.css").read_text(encoding="utf-8")
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
-def test_shell_has_no_risks_nav_or_register_export():
-    assert 'data-nav="risks"' not in INDEX
-    assert 'data-view="risks"' not in INDEX
-    assert 'id="risks"' not in INDEX
+def test_shell_has_no_register_export():
     assert "Risk register" not in INDEX
     assert 'data-export="risks"' not in INDEX
     assert 'id="risk-dialog"' not in INDEX
     assert 'id="risk-import-dialog"' not in INDEX
     assert 'id="recommend-dialog"' not in INDEX
-    assert "No risks yet" not in JS
     for nav in ("workspace", "clauses", "catalog", "library", "export", "guide"):
         assert f'data-nav="{nav}"' in INDEX
 
 
 def test_copy_has_no_leftover_register_mentions():
-    assert "Risks" not in INDEX
     assert "risk library" not in INDEX.lower()
     assert "risk register" not in INDEX.lower()
     assert "GLOSSARY" in JS
-    glossary = JS.split("const GLOSSARY = {", 1)[1].split("};", 1)[0]
-    assert "Risk" not in glossary
-    assert ".risks-view" not in CSS
-    assert "dropLegacyRegister" in JS
+    assert "dropLegacyRegister" in JS or "normalizeIdentifiedRisks" in JS
     assert "LEGACY_RISKS_KEY" in JS
     assert "codify:statements" in JS
     assert "codify:splash-seen" in JS
+    assert "heatmap" not in CSS
+    assert ".risk-table" not in CSS
 
 
 def test_clean_project_drops_malformed_risks_and_keeps_controls():
@@ -57,20 +51,22 @@ def test_clean_project_drops_malformed_risks_and_keeps_controls():
     catalog = json.loads(saved["content"])["catalog"]
     resources = catalog.get("back-matter", {}).get("resources", [])
     assert not any(any(p.get("name") == "risk-id" for p in r.get("props", [])) for r in resources)
-    assert "risks" not in api.call({"action": "open", "name": saved["name"], "content": saved["content"]})["project"]
+    reopened = api.call({"action": "open", "name": saved["name"], "content": saved["content"]})["project"]
+    assert reopened["risks"] == []
     again = api.call({"action": "score", "project": {**project, "risks": [{"title": "x"}]}})
     assert again["scores"]
+    assert again["coverage"]["uncovered_risk_ids"] == []
 
 
 def test_legacy_mixed_catalog_opens_without_a_register():
     raw = json.loads((FIXTURES / "legacy-mixed-clause-risk.json").read_text())
     project = from_oscal(raw)
-    assert "risks" not in project
+    assert project["risks"] == []
     texts = [c["text"] for c in project["controls"]]
     assert any("lock screens" in t.lower() for t in texts)
     assert any("Restrict access" in t for t in texts)
     assert all(c.get("source_type") == "clause" for c in project["controls"])
-    assert all(not c.get("risk_id") for c in project["controls"])
+    assert all(c.get("risk_ids") == [] for c in project["controls"])
     catalog = to_oscal(project)["catalog"]
     assert not any(g.get("id") == "s-risks" or g.get("title") == "Risks" for g in catalog.get("groups", []))
     resources = catalog.get("back-matter", {}).get("resources", [])
@@ -80,10 +76,11 @@ def test_legacy_mixed_catalog_opens_without_a_register():
 def test_legacy_risk_only_catalog_keeps_the_control_statement():
     raw = json.loads((FIXTURES / "legacy-risk-only.json").read_text())
     project = from_oscal(raw)
-    assert "risks" not in project
+    assert project["risks"] == []
     assert project["controls"]
     assert "Restrict access" in project["controls"][0]["text"]
     assert project["controls"][0]["source_type"] == "clause"
+    assert project["controls"][0]["risk_ids"] == []
 
 
 def test_register_actions_and_export_are_gone():

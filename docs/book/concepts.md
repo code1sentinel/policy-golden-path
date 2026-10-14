@@ -32,7 +32,10 @@ This project's control statements — the set you export as OSCAL.
 Reusable accepted statements saved on this device, across projects. Not the catalog.
 
 **The risk it treats**
-The purpose of a control: why it exists. Write it as the risk the statement addresses (for example, access that is no longer needed). This is a line on the control, not a risk register.
+The purpose of a control: why it exists. Write it as the risk the statement addresses (for example, access that is no longer needed). This is a line on the control, not a risk register. When the control is linked to [identified risks](identified-risks.md), this field shows the linked statement.
+
+**Identified risks**
+Risks you already identified, entered as input so controls can address them. A short statement and optional note. Not a register: no scores, owners, or treatment plans.
 
 **Parameter / `[N]`**
 A blank the organisation must set so the statement can be tested — often a number of days. Unfilled blanks look like `[N]`.
@@ -46,6 +49,6 @@ Aspirations, consequences, permissions, or descriptions of the policy itself. Th
 ## What Codify is not
 
 - Not a mapping to IM8 or another external catalog
-- Not a risk register or residual-risk workflow
+- Not a risk register or residual-risk workflow (identified risks are input only)
 - Not an assessment runner — that is [Enact](enact.md)
 - Not a place that hosts your policy or API keys

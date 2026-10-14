@@ -16,4 +16,5 @@ before implementation.
 - [first-run-clarity.md](first-run-clarity.md) — first-time GRC walkthrough fixes
 - [second-walkthrough-polish.md](second-walkthrough-polish.md) — second first-time walkthrough
 - [remove-risk-register.md](remove-risk-register.md) — drop the local risk register
+- [identified-risks-as-input.md](identified-risks-as-input.md) — identified risks as input, not a register
 

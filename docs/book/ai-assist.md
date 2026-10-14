@@ -24,7 +24,7 @@ The key is **never** written to:
 
 ## What is sent
 
-One clause per request: its text, its section heading, and Codify's rule drafts for it. Nothing else from the policy.
+One clause per request: its text, its section heading, and Codify's rule drafts for it. Nothing else from the policy. From [identified risks](identified-risks.md), if AI is already on, **Also draft with AI** sends that risk statement through the same path — still no new endpoint.
 
 The request goes straight from your browser to the provider you choose, under your account and that provider's terms. There is no Codify server in between.
 

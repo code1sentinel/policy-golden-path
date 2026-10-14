@@ -46,11 +46,11 @@ def test_resume_drops_register_fields_and_keeps_controls(browser, base_url):
     page.click("#resume-open")
     expect(page.locator("#work:not([hidden])")).to_be_visible()
     expect(page.locator("textarea.statement")).to_have_value("Require users to lock screens.")
-    expect(page.locator("nav.sidebar__nav")).not_to_contain_text("Risks")
+    expect(page.locator("nav.sidebar__nav")).to_contain_text("Risks")
     page.click("#export-open-top")
     expect(page.locator("#export-dialog")).not_to_contain_text("Risk register")
     saved = json.loads(page.evaluate("localStorage.getItem('codify:project')"))
-    assert "risks" not in saved["project"]
+    assert saved["project"]["risks"] == []
     assert saved["project"]["controls"][0]["text"] == "Require users to lock screens."
     assert saved["project"]["controls"][0]["risk"] == "Screens left unlocked."
     statements = json.loads(page.evaluate("localStorage.getItem('codify:statements')"))

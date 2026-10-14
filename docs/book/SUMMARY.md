@@ -7,6 +7,7 @@
 * [Getting started](getting-started.md)
 * [Reviewing controls](reviewing-controls.md)
 * [Catalog and statement library](catalog-and-library.md)
+* [Identified risks](identified-risks.md)
 * [Export formats](export.md)
 * [Optional AI assist](ai-assist.md)
 * [Using Codify with Enact](enact.md)

@@ -42,8 +42,10 @@ They are a starting point to edit, not finished controls.
   CSV/Excel (`.xlsx`), or a saved OSCAL catalog. There is no Title field
   and clause numbers are optional ([ADR 0006](adr/0006-clause-only-input.md)).
   Multi-clause files may still split on the policy's own numbering and
-  Word headings. There is no risk register
-  ([ADR 0011](adr/0011-no-risk-register.md)).
+  Word headings.   There is no risk register
+  ([ADR 0011](adr/0011-no-risk-register.md)). Identified risks may be
+  entered as input so controls can address them
+  ([ADR 0012](adr/0012-identified-risks-as-input.md)).
 - **Sort:** requirement, scope, definition, role, exception, not-a-control;
   flag duplicates; show the reason; allow the type to be changed.
 - **Draft:** rule-based split, active voice, drop the organisation as subject,
@@ -78,7 +80,9 @@ They are a starting point to edit, not finished controls.
 - Server-side calls to AI providers.
 - Authentication, multi-user, or exposing `codify-web` on a public interface.
 - A risk register, FAIR quantitative scoring, or residual-risk workflow
-  (removed; see [ADR 0011](adr/0011-no-risk-register.md)).
+  (removed; see [ADR 0011](adr/0011-no-risk-register.md)). Identified risks
+  as input are in
+  [identified-risks-as-input.md](prds/identified-risks-as-input.md).
 - Implementation statements (Codify scores catalog control statements only).
 
 ## Success criteria
@@ -148,7 +152,9 @@ across projects on this machine. See
 
 Library follows GRC SaaS IA (statement list + detail slide-over) adapted
 from Vanta Mobbin flows. The Risks Library vs Register surfaces were
-removed ([ADR 0011](adr/0011-no-risk-register.md)). See
+removed ([ADR 0011](adr/0011-no-risk-register.md)). Identified risks
+returned as input only
+([identified-risks-as-input.md](prds/identified-risks-as-input.md)). See
 [docs/prds/vanta-grc-surfaces.md](prds/vanta-grc-surfaces.md) and
 [ADR 0010](adr/0010-vanta-grc-surfaces.md).
 
@@ -178,6 +184,9 @@ removed ([ADR 0011](adr/0011-no-risk-register.md)). See
 | LangChain — numbered quickstart | https://mobbin.com/screens/568fff70-41fd-4660-a3b6-eb843e6e14d9 | Guide: stacked sections, short labels |
 | Vanta — add a control | https://mobbin.com/flows/539b1513-fc0c-4085-929a-4aea4c453860 | From library: split list + preview |
 | Vanta — framework / control detail | https://mobbin.com/flows/280ae4f2-78b0-4e33-8ba3-b72c8c7685a8 | Library: list + detail slide-over |
+| Vanta — risk scenario → recommended controls | https://mobbin.com/screens/c5d6df8f-69b2-4729-950d-c0fc5b6a20e6 | Identified risk → suggested library statements dialog |
+| Vanta — control detail mapped elements | https://mobbin.com/screens/a31c2c1c-11e7-468f-8751-16bc93561d89 | Control: mapped identified risks |
+| Vanta — related controls table | https://mobbin.com/screens/615f46f7-bdab-47fd-b1ef-93a03da670e4 | Coverage table: risk / control, uncovered and unlinked flags |
 
 ## Constraints that new work must keep
 
@@ -190,8 +199,10 @@ removed ([ADR 0011](adr/0011-no-risk-register.md)). See
   no Title field; clause numbers are not required or shown.
 - Device-wide statement library is a separate `codify:statements` store, not
   the catalog ([ADR 0009](adr/0009-device-wide-statement-library.md)).
-- No risk register ([ADR 0011](adr/0011-no-risk-register.md)). Statement
-  library list + detail slide-over remains ([ADR 0010](adr/0010-vanta-grc-surfaces.md)).
+- No risk register ([ADR 0011](adr/0011-no-risk-register.md)). Identified
+  risks are optional input, not a register
+  ([ADR 0012](adr/0012-identified-risks-as-input.md)). Statement library
+  list + detail slide-over remains ([ADR 0010](adr/0010-vanta-grc-surfaces.md)).
 - Standard-library runtime for the package; optional `dev` / `e2e` only for
   tests.
 

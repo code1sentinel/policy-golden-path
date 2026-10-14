@@ -24,6 +24,8 @@ const GLOSSARY = {
   Accept: "Keep this statement in this project's catalog and on this device.",
   Catalog: "This project's control statements — the set you export as OSCAL.",
   Library: "Reusable accepted statements saved on this device, across projects.",
+  Risks: "Identified risks you already have. Control statements exist to address them. Not a register.",
+  "Identified risks": "Risks you already identified. Control statements exist to address them. Not a register.",
 };
 const PART_HELP = {
   action: "Start with the verb (Review, Restrict, Encrypt).",
@@ -39,7 +41,7 @@ const SPLASH_KEY = "codify:splash-seen";
 const LEGACY_RISKS_KEY = "codify:risks";  // leftover store from older builds; never rewrite statements
 
 const state = {
-  project: null,       // {uuid, title, source, clauses: [...], controls: [...]}
+  project: null,       // {uuid, title, source, clauses: [...], controls: [...], risks: [...]}
   scores: {},          // control id -> {confidence, improvements}
   selected: null,      // {control: id} or {clause: id}
   filter: "all",
@@ -53,6 +55,10 @@ const state = {
   selectedLibrary: null, // library entry id
   libraryPickId: null,
   resultStep: false,   // short "here's what we drafted" before the 3-pane workspace
+  selectedRisk: null,  // identified-risk id
+  suggestRiskId: null,
+  suggestPicked: new Set(),
+  suggestAi: [],
 };
 
 // ---------------------------------------------------------------- helpers
@@ -193,18 +199,103 @@ function dropLegacyRiskStore() {
   try { localStorage.removeItem(LEGACY_RISKS_KEY); } catch { /* ignore */ }
 }
 
+const REGISTER_FIELDS = ["likelihood", "impact", "score", "owner", "asset", "threat", "vulnerability"];
+const REGISTER_STATUSES = ["identified", "treating", "accepted", "closed"];
+const MATCH_STOP = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "by", "due", "for", "from", "in", "into",
+  "is", "it", "of", "on", "or", "that", "the", "this", "to", "when", "with", "without",
+]);
+
+function isRegisterRisk(raw) {
+  if (!raw || typeof raw !== "object") return true;
+  if (REGISTER_FIELDS.some((key) => key in raw)) return true;
+  if (REGISTER_STATUSES.includes(raw.status)) return true;
+  return !String(raw.statement || "").trim();
+}
+
+function nextRiskId(risks) {
+  let n = 0;
+  for (const risk of risks) {
+    const match = /^R-(\d{3,})$/.exec(risk.id || "");
+    if (match) n = Math.max(n, parseInt(match[1], 10));
+  }
+  return `R-${String(n + 1).padStart(3, "0")}`;
+}
+
+function cleanRisks(value) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const raw of value) {
+    if (isRegisterRisk(raw)) continue;
+    const statement = String(raw.statement || "").trim().replace(/\s+/g, " ");
+    const note = String(raw.note || "").trim().replace(/\s+/g, " ");
+    let id = String(raw.id || "").trim();
+    if (!id || seen.has(id) || !/^R-\d{3,}$/.test(id)) id = nextRiskId(out);
+    seen.add(id);
+    out.push({ id, statement, note });
+  }
+  return out;
+}
+
 function dropLegacyRegister(project) {
   dropLegacyRiskStore();
   if (!project || typeof project !== "object") return project;
   const next = { ...project };
-  delete next.risks;
+  next.risks = cleanRisks(next.risks);
+  const known = new Set(next.risks.map((r) => r.id));
   if (Array.isArray(next.controls)) {
     next.controls = next.controls.map((c) => {
       if (!c || typeof c !== "object") return c;
-      return { ...c, source_type: "clause", risk_id: "" };
+      const ids = Array.isArray(c.risk_ids) ? c.risk_ids.filter((id) => known.has(id)) : [];
+      const rest = { ...c };
+      delete rest.risk_id;
+      return { ...rest, source_type: "clause", risk_ids: ids };
     });
   }
   return next;
+}
+
+function matchTokens(text) {
+  return new Set((String(text || "").toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter((w) => !MATCH_STOP.has(w)));
+}
+
+function matchLibrary(entries, statement) {
+  const needle = matchTokens(statement);
+  if (!needle.size) return [];
+  const ranked = [];
+  for (const entry of entries) {
+    const purpose = entry.parts && typeof entry.parts === "object" ? (entry.parts.purpose || "") : "";
+    const overlap = [...needle].filter((w) => matchTokens(`${entry.statement || ""} ${purpose}`).has(w));
+    if (overlap.length) ranked.push({ n: overlap.length, entry });
+  }
+  ranked.sort((a, b) => b.n - a.n || String(a.entry.id).localeCompare(String(b.entry.id)));
+  return ranked.map((row) => row.entry);
+}
+
+function coverageFlags(project) {
+  const linked = new Set();
+  const unlinked = [];
+  for (const control of project.controls || []) {
+    const ids = control.risk_ids || [];
+    if (!ids.length) unlinked.push(control.id);
+    for (const id of ids) linked.add(id);
+  }
+  const uncovered = (project.risks || []).filter((r) => !linked.has(r.id)).map((r) => r.id);
+  return { uncovered, unlinked };
+}
+
+function purposeFromRisks(project, ids) {
+  const byId = Object.fromEntries((project.risks || []).map((r) => [r.id, r.statement]));
+  return ids.map((id) => byId[id]).filter(Boolean).join(" ");
+}
+
+function riskById(id) {
+  return (state.project && state.project.risks || []).find((r) => r.id === id) || null;
+}
+
+function controlsForRisk(id) {
+  return (state.project.controls || []).filter((c) => (c.risk_ids || []).includes(id));
 }
 
 function saveLocal() {
@@ -263,7 +354,7 @@ async function rememberStatement(control, { used = false } = {}) {
     statement: text,
     parts: (state.lastCheck[control.id] && state.lastCheck[control.id].parts) || control.parts || null,
     source_type: "clause",
-    risk_id: "",
+    risk_id: (control.risk_ids && control.risk_ids[0]) || "",
     used,
   });
   saveLibrary(data.library);
@@ -568,7 +659,6 @@ function navFor(view) {
 }
 
 function showView(view) {
-  if (view === "risks") view = state.project ? "work" : "workspace";
   if (view === "work" && !state.project) view = "workspace";
   if (view === "work" && state.resultStep) view = "result";
   if (view !== "result") state.resultStep = false;
@@ -585,6 +675,7 @@ function showView(view) {
   $("#work").hidden = view !== "work";
   $("#catalog").hidden = view !== "catalog";
   $("#library").hidden = view !== "library";
+  if ($("#risks")) $("#risks").hidden = view !== "risks";
   const exportTop = $("#export-open-top");
   const closeBtn = $("#close-project");
   if (exportTop) exportTop.hidden = !state.project;
@@ -597,6 +688,7 @@ function showView(view) {
   if (view === "work" && state.project) render();
   if (view === "catalog") renderCatalog();
   if (view === "library") renderLibrary();
+  if (view === "risks") renderRisks();
   renderCrumb();
 }
 
@@ -633,6 +725,7 @@ function renderCrumb() {
     else if (state.selected?.clause) parts.push("Clause");
   } else if (state.view === "catalog") parts.push("Catalog");
   else if (state.view === "library") parts.push("Library");
+  else if (state.view === "risks") parts.push("Identified risks");
   else if (state.view === "guide") parts.push("Guide");
   const nodes = [];
   parts.forEach((p, i) => {
@@ -819,6 +912,7 @@ function render() {
   renderCrumb();
   if (state.view === "catalog") renderCatalog();
   if (state.view === "library") renderLibrary();
+  if (state.view === "risks") renderRisks();
 }
 
 function renderMoreLabel() {
@@ -1197,7 +1291,7 @@ function renderControlEditor(box, c) {
   const guidance = el("textarea", { rows: "2", placeholder: "Tools or how-to examples, e.g. AWS Backup" });
   guidance.value = c.guidance || "";
   const riskBox = el("textarea", { rows: "2", placeholder: "What could happen without this control" });
-  riskBox.value = c.risk || "";
+  riskBox.value = purposeFromRisks(state.project, c.risk_ids || []) || c.risk || "";
   const who = el("input", { placeholder: "e.g. The IT Department", autocomplete: "off" });
   who.value = c.who || "";
 
@@ -1297,6 +1391,7 @@ function renderControlEditor(box, c) {
     result,
     sub,
     extras,
+    mappedRisksField(c),
     el("div", { class: "editor__foot" }, openClause, clause.id ? redraft : null, clause.id ? add : null, remove),
   );
   result.replaceChildren(el("p", { class: "placeholder", text: "Checking…" }));
@@ -1340,6 +1435,7 @@ function renderProps(control, data) {
       : "Edit the statement, then Accept when it is clear and testable." }),
     el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Score" }),
       el("span", { class: "prop-row__value", text: score === null ? "–" : pct(score) })),
+    mappedRisksProp(control),
     el("p", { class: "prop-help", text: control.status === "accepted"
       ? `Accepted at ${score === null ? "–" : pct(score)}. Remaining gaps are optional improvements.`
       : SCORE_HELP }),
@@ -1416,6 +1512,59 @@ function controlSourceLabel(control) {
   return control.clause ? "Clause" : "—";
 }
 
+function mappedRisksField(control) {
+  const ids = control.risk_ids || [];
+  const flags = coverageFlags(state.project);
+  const unlinked = flags.unlinked.includes(control.id);
+  const rows = ids.map((id) => {
+    const risk = riskById(id);
+    const unlink = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Unlink" });
+    unlink.addEventListener("click", () => unlinkRisk(control, id));
+    return el("div", { class: "mapped-risk" },
+      el("div", { class: "mapped-risk__meta" },
+        el("span", { class: "pill", text: id }),
+        unlinked ? null : el("span", { class: "mapped-risk__statement", text: (risk && risk.statement) || id })),
+      unlink);
+  });
+  const available = (state.project.risks || []).filter((r) => !ids.includes(r.id));
+  const select = el("select", { "aria-label": "Link an identified risk" },
+    el("option", { value: "", text: available.length ? "Link an identified risk" : "No other identified risks" }),
+    available.map((r) => el("option", { value: r.id, text: `${r.id} — ${r.statement}` })));
+  select.disabled = !available.length;
+  select.addEventListener("change", () => {
+    if (select.value) linkRisk(control, select.value);
+  });
+  const openRisks = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Identified risks" });
+  openRisks.addEventListener("click", () => showView("risks"));
+  return el("div", { class: "mapped-risks" },
+    el("span", { class: "field-label", text: "Mapped risks" }),
+    unlinked ? el("p", { class: "coverage-flag", text: "Not linked to an identified risk." }) : null,
+    rows.length ? rows : el("p", { class: "hint", text: "Link the identified risk this statement treats." }),
+    el("div", { class: "mapped-risks__add" }, select, openRisks));
+}
+
+function linkRisk(control, riskId) {
+  const ids = [...(control.risk_ids || [])];
+  if (!ids.includes(riskId)) ids.push(riskId);
+  control.risk_ids = ids;
+  const linked = purposeFromRisks(state.project, ids);
+  if (linked) control.risk = linked;
+  saveLocal();
+  if (state.view === "work") render();
+  else if (state.view === "risks") renderRisks();
+  else render();
+}
+
+function unlinkRisk(control, riskId) {
+  control.risk_ids = (control.risk_ids || []).filter((id) => id !== riskId);
+  const linked = purposeFromRisks(state.project, control.risk_ids);
+  control.risk = linked;
+  saveLocal();
+  if (state.view === "work") render();
+  else if (state.view === "risks") renderRisks();
+  else render();
+}
+
 function renderCatalog() {
   const box = $("#catalog-body");
   if (!box) return;
@@ -1428,21 +1577,346 @@ function renderCatalog() {
     box.replaceChildren(emptyState("No controls yet.", "Open first draft", () => { showView("work"); openFirstDraft(); }, "empty--list"));
     return;
   }
+  const flags = coverageFlags(state.project);
   const body = rows.map((c) => {
     const open = el("button", { type: "button", text: c.text || "(empty)" });
     open.addEventListener("click", () => { showView("work"); select({ control: c.id }); });
+    const linked = (c.risk_ids || []).join(", ") || "—";
     return el("tr", {},
       el("td", { text: c.id }),
       el("td", {}, open),
       el("td", {}, el("span", { class: "pill", text: controlSourceLabel(c) })),
+      el("td", {}, flags.unlinked.includes(c.id)
+        ? el("span", { class: "coverage-flag", text: "Unlinked" })
+        : el("span", { class: "pill", text: linked })),
       el("td", {}, el("span", { class: `state state--${c.status}`, text: STATUS_LABELS[c.status] })));
   });
   box.replaceChildren(el("div", { class: "catalog-body" },
     el("table", { class: "data-table" },
       el("thead", {}, el("tr", {},
         el("th", { text: "ID" }), el("th", { text: "Control" }),
-        el("th", { text: "Source" }), el("th", { text: "Status" }))),
+        el("th", { text: "Source" }), el("th", { text: "Risks" }), el("th", { text: "Status" }))),
       el("tbody", {}, body))));
+}
+
+function mappedRisksProp(control) {
+  const ids = control.risk_ids || [];
+  const unlinked = coverageFlags(state.project).unlinked.includes(control.id);
+  if (!ids.length && !(state.project.risks || []).length) {
+    return el("p", { class: "prop-help", text: "Add identified risks if you want this statement to treat one." });
+  }
+  return el("div", { class: "mapped-risks mapped-risks--props" },
+    el("div", { class: "prop-row" }, el("span", { class: "prop-row__label", text: "Mapped risks" }),
+      el("span", { class: "prop-row__value", text: ids.length ? ids.join(", ") : "None" })),
+    unlinked ? el("p", { class: "coverage-flag", text: "Not linked to an identified risk." }) : null,
+    ids.map((id) => {
+      const risk = riskById(id);
+      return el("p", { class: "mapped-risk__statement", text: risk ? risk.statement : id });
+    }));
+}
+
+function ensureRisks() {
+  if (!state.project.risks) state.project.risks = [];
+  state.project.risks = cleanRisks(state.project.risks);
+}
+
+function addIdentifiedRisk(statement, note) {
+  ensureRisks();
+  const text = String(statement || "").trim().replace(/\s+/g, " ");
+  if (!text) return;
+  const risk = { id: nextRiskId(state.project.risks), statement: text, note: String(note || "").trim() };
+  state.project.risks.push(risk);
+  state.selectedRisk = risk.id;
+  saveLocal();
+  renderRisks();
+}
+
+function updateIdentifiedRisk(id, fields) {
+  const risk = riskById(id);
+  if (!risk) return;
+  if ("statement" in fields) risk.statement = String(fields.statement || "").trim().replace(/\s+/g, " ");
+  if ("note" in fields) risk.note = String(fields.note || "").trim();
+  if (!risk.statement) return;
+  for (const control of controlsForRisk(id)) {
+    const linked = purposeFromRisks(state.project, control.risk_ids || []);
+    if (linked) control.risk = linked;
+  }
+  saveLocal();
+}
+
+function removeIdentifiedRisk(id) {
+  ensureRisks();
+  state.project.risks = state.project.risks.filter((r) => r.id !== id);
+  for (const control of state.project.controls) {
+    if (!(control.risk_ids || []).includes(id)) continue;
+    control.risk_ids = control.risk_ids.filter((x) => x !== id);
+    control.risk = purposeFromRisks(state.project, control.risk_ids);
+  }
+  if (state.selectedRisk === id) state.selectedRisk = (state.project.risks[0] && state.project.risks[0].id) || null;
+  saveLocal();
+  renderRisks();
+}
+
+function renderRisks() {
+  const box = $("#risks-body");
+  if (!box) return;
+  if (!state.project) {
+    box.replaceChildren(emptyState("Load a policy first.", "Paste a clause", () => showView("workspace"), "empty--list"));
+    return;
+  }
+  ensureRisks();
+  const flags = coverageFlags(state.project);
+  const statement = el("input", {
+    type: "text", id: "risk-statement", maxlength: "500", autocomplete: "off",
+    placeholder: "Short risk statement, e.g. Screens left unlocked.",
+  });
+  const note = el("input", {
+    type: "text", id: "risk-note", maxlength: "500", autocomplete: "off",
+    placeholder: "Optional note",
+  });
+  const add = el("button", { type: "button", class: "btn btn--primary", id: "risk-add", text: "Add risk" });
+  const submit = () => addIdentifiedRisk(statement.value, note.value);
+  add.addEventListener("click", submit);
+  statement.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+  const form = el("div", { class: "risks-form card" },
+    el("p", { class: "risks-form__label", text: "Add an identified risk" }),
+    el("label", { class: "field" }, el("span", { text: "Statement" }), statement),
+    el("label", { class: "field" }, el("span", { text: "Note" }, el("em", { text: "optional" })), note),
+    el("div", { class: "actions" }, add));
+
+  const uncoveredN = flags.uncovered.length;
+  const unlinkedN = flags.unlinked.length;
+  const summary = el("p", { class: "risks-coverage", id: "risks-coverage" },
+    el("span", {
+      class: uncoveredN ? "coverage-flag" : "muted",
+      text: uncoveredN ? `${plural(uncoveredN, "risk")} with no control` : "Every identified risk has a linked control.",
+    }),
+    " · ",
+    el("span", {
+      class: unlinkedN ? "coverage-flag" : "muted",
+      text: unlinkedN ? `${plural(unlinkedN, "control")} not linked to a risk` : "Every control is linked to a risk.",
+    }));
+
+  const risks = state.project.risks;
+  let list;
+  if (!risks.length) {
+    list = emptyState("No identified risks yet. Add the risks you already identified.", null, null, "empty--list");
+  } else {
+    if (!state.selectedRisk || !riskById(state.selectedRisk)) state.selectedRisk = risks[0].id;
+    list = el("div", { class: "risk-list" }, risks.map((risk) => {
+      const uncovered = flags.uncovered.includes(risk.id);
+      const open = el("button", { type: "button", class: "risk-row__open" },
+        el("span", { class: "pill", text: risk.id }),
+        el("span", { class: "risk-row__statement", text: risk.statement }));
+      open.addEventListener("click", () => { state.selectedRisk = risk.id; renderRisks(); });
+      const suggest = el("button", { type: "button", class: "btn btn--small", "data-suggest": risk.id, text: "Suggest statements" });
+      suggest.addEventListener("click", () => openRiskSuggestDialog(risk));
+      const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Remove" });
+      remove.addEventListener("click", () => {
+        if (confirm("Remove this identified risk? Linked controls stay; the link is dropped.")) removeIdentifiedRisk(risk.id);
+      });
+      return el("div", {
+        class: "risk-row",
+        "aria-current": state.selectedRisk === risk.id ? "true" : null,
+        "data-risk-id": risk.id,
+      },
+        open,
+        uncovered ? el("span", { class: "coverage-flag", text: "No control" }) : el("span", { class: "pill", text: plural(controlsForRisk(risk.id).length, "control") }),
+        el("div", { class: "risk-row__actions" }, suggest, remove));
+    }));
+  }
+
+  const selected = riskById(state.selectedRisk);
+  const detail = selected ? renderRiskDetail(selected, flags) : el("p", { class: "placeholder", text: "Add a risk to see matching statements." });
+  const related = renderRelatedTable(flags);
+
+  box.replaceChildren(
+    form,
+    summary,
+    el("div", { class: "risks-layout" }, list, detail),
+    related,
+  );
+}
+
+function renderRiskDetail(risk, flags) {
+  const statement = el("textarea", { rows: "3", id: "risk-edit-statement", "aria-label": "Risk statement" });
+  statement.value = risk.statement;
+  const note = el("textarea", { rows: "2", id: "risk-edit-note", "aria-label": "Optional note" });
+  note.value = risk.note || "";
+  statement.addEventListener("input", () => updateIdentifiedRisk(risk.id, { statement: statement.value }));
+  note.addEventListener("input", () => updateIdentifiedRisk(risk.id, { note: note.value }));
+  const mapped = controlsForRisk(risk.id);
+  const mappedRows = mapped.length
+    ? mapped.map((c) => {
+      const open = el("button", { type: "button", text: c.text || "(empty)" });
+      open.addEventListener("click", () => { showView("work"); select({ control: c.id }); });
+      return el("div", { class: "mapped-risk" },
+        el("span", { class: "pill", text: c.id }),
+        open);
+    })
+    : [el("p", { class: "coverage-flag", text: "No control treats this risk yet." })];
+  const suggest = el("button", { type: "button", class: "btn btn--primary", text: "Suggest statements" });
+  suggest.addEventListener("click", () => openRiskSuggestDialog(risk));
+  return el("aside", { class: "risk-detail", id: "risk-detail", "aria-label": "Risk details" },
+    el("h3", { class: "risk-detail__title", text: risk.id }),
+    flags.uncovered.includes(risk.id) ? el("p", { class: "coverage-flag", text: "No control linked." }) : null,
+    el("label", { class: "field" }, el("span", { text: "Statement" }), statement),
+    el("label", { class: "field" }, el("span", { text: "Note" }, el("em", { text: "optional" })), note),
+    el("h3", { class: "props-card__title", text: "Mapped controls" }),
+    ...mappedRows,
+    el("div", { class: "actions" }, suggest));
+}
+
+function renderRelatedTable(flags) {
+  const rows = [];
+  for (const risk of state.project.risks || []) {
+    const linked = controlsForRisk(risk.id);
+    if (!linked.length) {
+      rows.push(el("tr", { class: "is-uncovered" },
+        el("td", { text: risk.id }),
+        el("td", { text: risk.statement }),
+        el("td", {}, el("span", { class: "coverage-flag", text: "No control" })),
+        el("td", { text: "—" })));
+      continue;
+    }
+    for (const control of linked) {
+      const open = el("button", { type: "button", text: control.text || "(empty)" });
+      open.addEventListener("click", () => { showView("work"); select({ control: control.id }); });
+      rows.push(el("tr", {},
+        el("td", { text: risk.id }),
+        el("td", { text: risk.statement }),
+        el("td", {}, open),
+        el("td", {}, el("span", { class: `state state--${control.status}`, text: STATUS_LABELS[control.status] }))));
+    }
+  }
+  for (const id of flags.unlinked) {
+    const control = controlById(id);
+    if (!control) continue;
+    const open = el("button", { type: "button", text: control.text || "(empty)" });
+    open.addEventListener("click", () => { showView("work"); select({ control: control.id }); });
+    rows.push(el("tr", { class: "is-unlinked" },
+      el("td", {}, el("span", { class: "coverage-flag", text: "—" })),
+      el("td", {}, el("span", { class: "coverage-flag", text: "Unlinked control" })),
+      el("td", {}, open),
+      el("td", {}, el("span", { class: `state state--${control.status}`, text: STATUS_LABELS[control.status] }))));
+  }
+  if (!rows.length) {
+    return el("p", { class: "placeholder", text: "Related controls will appear here once you add a risk or a control." });
+  }
+  return el("div", { class: "related-table" },
+    el("h3", { class: "section-title", text: "Related controls" }),
+    el("table", { class: "data-table", id: "risks-related" },
+      el("thead", {}, el("tr", {},
+        el("th", { text: "Risk" }), el("th", { text: "Scenario" }),
+        el("th", { text: "Control" }), el("th", { text: "Status" }))),
+      el("tbody", {}, rows)));
+}
+
+function openRiskSuggestDialog(risk) {
+  state.suggestRiskId = risk.id;
+  state.suggestPicked = new Set();
+  state.suggestAi = [];
+  const hits = matchLibrary(loadLibrary(), risk.statement);
+  for (const entry of hits) state.suggestPicked.add(entry.id);
+  renderRiskSuggest();
+  const dialog = $("#risk-suggest-dialog");
+  if (dialog && dialog.showModal) dialog.showModal();
+}
+
+function renderRiskSuggest() {
+  const risk = riskById(state.suggestRiskId);
+  const title = $("#risk-suggest-title");
+  const scenario = $("#risk-suggest-scenario");
+  const body = $("#risk-suggest-body");
+  if (!risk || !body) return;
+  const libraryHits = matchLibrary(loadLibrary(), risk.statement);
+  const n = libraryHits.length + state.suggestAi.length;
+  if (title) title.textContent = n ? `Add ${n} recommended statement${n === 1 ? "" : "s"}?` : "Recommended statements";
+  if (scenario) scenario.textContent = risk.statement;
+  const rows = [];
+  if (!libraryHits.length && !state.suggestAi.length) {
+    rows.push(el("p", { class: "placeholder", text: "No matching statements in the library yet. Accept a control, or use AI drafting if it is on." }));
+  }
+  for (const entry of libraryHits) {
+    const add = el("button", { type: "button", class: "btn btn--small", text: "Add" });
+    add.addEventListener("click", () => addSuggestedStatement(risk, { statement: entry.statement, origin: "person", libraryId: entry.id }));
+    rows.push(el("div", { class: "risk-suggest__row template-row" },
+      el("p", { text: entry.statement }),
+      add));
+  }
+  for (const draft of state.suggestAi) {
+    const add = el("button", { type: "button", class: "btn btn--small", text: "Add" });
+    add.addEventListener("click", () => addSuggestedStatement(risk, { statement: draft.text, origin: "ai", libraryId: null, draft }));
+    rows.push(el("div", { class: "risk-suggest__row template-row" },
+      el("p", { text: draft.text }),
+      el("span", { class: "pill", text: "AI" }),
+      add));
+  }
+  let aiBtn = null;
+  if (aiReady()) {
+    aiBtn = el("button", { type: "button", class: "btn", id: "risk-suggest-ai", text: "Also draft with AI" });
+    aiBtn.addEventListener("click", () => aiSuggestForRisk(risk, aiBtn));
+  }
+  body.replaceChildren(...rows, aiBtn);
+  const addAll = $("#risk-suggest-add");
+  if (addAll) {
+    addAll.disabled = n === 0;
+    addAll.onclick = () => {
+      for (const entry of libraryHits) addSuggestedStatement(risk, { statement: entry.statement, origin: "person", libraryId: entry.id });
+      for (const draft of state.suggestAi) addSuggestedStatement(risk, { statement: draft.text, origin: "ai", libraryId: null, draft });
+      const dialog = $("#risk-suggest-dialog");
+      if (dialog && dialog.open) dialog.close();
+      renderRisks();
+    };
+  }
+}
+
+async function aiSuggestForRisk(risk, button) {
+  await busy(button, "Drafting…", async () => {
+    const data = await aiDraftClause({ id: risk.id, text: risk.statement, heading: "Identified risk" });
+    state.suggestAi = data.controls || [];
+    renderRiskSuggest();
+  });
+}
+
+function nextSuggestedControlId(base) {
+  const used = new Set(state.project.controls.map((c) => c.id));
+  const stem = String(base || "r").replace(/[^A-Za-z0-9.]+/g, "") || "r";
+  let n = 1;
+  let id = `${stem}-${n}`;
+  while (used.has(id)) id = `${stem}-${++n}`;
+  return id;
+}
+
+function addSuggestedStatement(risk, item) {
+  const text = String(item.statement || "").trim();
+  if (!text) return;
+  const existing = state.project.controls.find((c) => (c.text || "").trim().toLowerCase() === text.toLowerCase());
+  if (existing) {
+    linkRisk(existing, risk.id);
+    if (item.libraryId) {
+      rememberStatement({ text, id: existing.id, risk_ids: existing.risk_ids, parts: null }, { used: true }).catch((err) => showError(err.message));
+    }
+    return;
+  }
+  const control = {
+    id: nextSuggestedControlId(risk.id),
+    clause: "",
+    text,
+    guidance: (item.draft && item.draft.guidance) || "",
+    risk: risk.statement,
+    who: "",
+    notes: (item.draft && item.draft.notes) || [],
+    status: "draft",
+    origin: item.origin || "person",
+    source_type: "clause",
+    risk_ids: [risk.id],
+  };
+  state.project.controls.push(control);
+  saveLocal();
+  if (item.libraryId) {
+    rememberStatement(control, { used: true }).catch((err) => showError(err.message));
+  }
 }
 
 function statementLead(text) {
@@ -1580,7 +2054,7 @@ function addControlFromLibrary(entry, { clauseId = "" } = {}) {
     id, clause: clauseId, text: entry.statement, guidance: "", risk: "", who: "", notes: [],
     status: "draft", origin: "person",
     source_type: "clause",
-    risk_id: "",
+    risk_ids: [],
   };
   state.project.controls.push(control);
   state.selected = { control: id };
@@ -1595,7 +2069,7 @@ function addControlFromLibrary(entry, { clauseId = "" } = {}) {
 async function useLibraryEntry(entry, mode = "use") {
   try {
     await rememberStatement({ text: entry.statement, id: entry.id, source_type: "clause",
-      risk_id: "", parts: entry.parts }, { used: true });
+      risk_ids: [], parts: entry.parts }, { used: true });
   } catch (err) { showError(err.message); return; }
   const dialog = $("#library-pick");
   if (dialog && dialog.open) dialog.close();
@@ -1782,7 +2256,7 @@ function addControl(clause) {
   let n = controlsOf(clause.id).length + 1;
   let id = `${clause.id.replace(/[^A-Za-z0-9.]+/g, "")}-${n}`;
   while (used.has(id)) id = `${clause.id.replace(/[^A-Za-z0-9.]+/g, "")}-${++n}`;
-  const control = { id, clause: clause.id, text: "", guidance: "", risk: "", who: "", notes: [], status: "draft", origin: "person", source_type: "clause", risk_id: "" };
+  const control = { id, clause: clause.id, text: "", guidance: "", risk: "", who: "", notes: [], status: "draft", origin: "person", source_type: "clause", risk_ids: [] };
   const last = state.project.controls.map((c) => c.clause).lastIndexOf(clause.id);
   state.project.controls.splice(last >= 0 ? last + 1 : insertionPoint(clause), 0, control);
   state.selected = { control: id };

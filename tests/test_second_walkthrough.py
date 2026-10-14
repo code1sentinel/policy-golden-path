@@ -91,7 +91,6 @@ def test_library_shows_the_statement_once():
 def test_keeps_risk_purpose_wording_and_no_register():
     assert "the risk it treats" in JS
     assert "Guidance, risk, who" in JS
-    assert 'data-nav="risks"' not in INDEX
     assert "Risk register" not in INDEX
     from codify.guides import GUIDE
     joined = str(GUIDE)

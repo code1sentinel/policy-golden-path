@@ -8,7 +8,7 @@ The workspace is where you edit a draft next to the original clause, fill any bl
 
 The page is an authoring app:
 
-- **Sidebar** — Workspace, Clauses, Catalog, Library, Export, Guide
+- **Sidebar** — Workspace, Clauses, Catalog, Library, Risks, Export, Guide
 - **Writing column** — the control statement, with the legacy clause above it
 - **Right panel** — status, score, and review hints
 
@@ -31,7 +31,7 @@ A testable control usually has four parts assessors look for:
 
 Those parts appear once under the statement. Missing ones are easy to see.
 
-Under **Guidance, risk, who** you can add tools or how-to examples, who implements the control, and a short line for the risk it treats. Those extras sit in the catalog; they do not replace the statement.
+Under **Guidance, risk, who** you can add tools or how-to examples, who implements the control, and a short line for the risk it treats. If you have [identified risks](identified-risks.md), link them here; the purpose field then shows the linked statement. Those extras sit in the catalog; they do not replace the statement.
 
 ## Score
 

@@ -18,7 +18,7 @@ The site and the local app use the system font stack. They do not load fonts, sc
 
 Work in the browser is stored only in this browser:
 
-- `codify:project` — the open project
+- `codify:project` — the open project (clauses, controls, identified risks)
 - `codify:statements` — the statement library
 - `codify:splash-seen` — whether you dismissed the welcome
 - `codify:theme` — Light / Dark / System

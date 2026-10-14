@@ -17,4 +17,5 @@ def test_statement_library_opens_a_detail_slideover(page):
     expect(page.locator("#library-detail")).to_contain_text("Clause")
     expect(page.locator("#library-detail .library-use")).to_be_visible()
     expect(page.locator("#library-pick-detail")).to_have_count(1)
-    expect(page.locator("nav.sidebar__nav")).not_to_contain_text("Risks")
+    expect(page.locator("nav.sidebar__nav")).to_contain_text("Risks")
+    expect(page.locator("#export-dialog")).to_have_count(1)

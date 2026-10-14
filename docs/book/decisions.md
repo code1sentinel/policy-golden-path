@@ -16,6 +16,7 @@ Status is taken from each file. An accepted ADR is binding until a later one sup
 | [0008. Risk input and OSCAL tracing](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0008-risk-input-and-oscal-tracing.md) | Superseded by 0011 | Added a local risk register and catalog tracing. Enact still reads the catalog. |
 | [0009. Device-wide statement library](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0009-device-wide-statement-library.md) | Accepted | Accepted statements are stored on this device, separate from the catalog. |
 | [0010. Vanta GRC surfaces](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0010-vanta-grc-surfaces.md) | Accepted (register part superseded) | Statement library is a list + detail. Risks Library / Register were removed by 0011. |
-| [0011. No risk register](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0011-no-risk-register.md) | Accepted | Codify has no risk register. The statement library remains. |
+| [0011. No risk register](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0011-no-risk-register.md) | Accepted (refined by 0012) | Codify has no risk register. The statement library remains. |
+| [0012. Identified risks as input](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0012-identified-risks-as-input.md) | Accepted | Identified risks are optional input to authoring, not a register. |
 
 New decisions go in `docs/adr/NNNN-title.md`, numbered from the next free integer. Follow [0001](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0001-record-architecture-decisions.md).

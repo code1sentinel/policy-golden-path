@@ -13,9 +13,9 @@ Open **Catalog** in the sidebar to see every control and the clause it came from
 - One group per policy section, one control per statement
 - The file you download is OSCAL 1.1.2 JSON
 - Reopening that file resumes the project
-- There is no risk register
+- Identified risks are optional input on the same project, not a register. See [Identified risks](identified-risks.md).
 
-The catalog is also the save file. Older catalogs that still carry a leftover risk register still open: the register is ignored and the control statements stay.
+The catalog is also the save file. Older catalogs that still carry a leftover risk register still open: the register is ignored, identified risks start empty, and the control statements stay.
 
 ## Statement library
 

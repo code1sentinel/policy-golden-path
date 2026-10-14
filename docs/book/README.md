@@ -17,7 +17,7 @@ The live app is at [https://code1sentinel.github.io/policy-golden-path/](https:/
 - **GRC people** modernising a legacy policy: paste a clause, review the draft, accept it, and keep a catalog in git.
 - **Engineers** who want the same conversion in a script or pipeline.
 
-It is not a cloud GRC platform. There is no account, no upload, and no risk register.
+It is not a cloud GRC platform. There is no account, no upload, and no risk register. You may enter [identified risks](identified-risks.md) as input so controls can address them.
 
 ## What you get
 

@@ -19,7 +19,7 @@ Export **OSCAL catalog** from Codify (the recommended download). Open that JSON 
 
 You do not need the statement library, Excel, or the conversion report for Enact. Enact reads `catalog.groups[].controls[]` statements. It never sees the on-device library.
 
-If a control has a purpose or “risk it treats” line, that travels in the catalog as a property. Enact can ignore fields it does not use.
+If a control has a purpose or “risk it treats” line, that travels in the catalog as a property. Identified-risk links travel as `treats-risk` properties and `rel=related` links to back-matter resources. Enact can ignore fields it does not use.
 
 ## Typical path
 
