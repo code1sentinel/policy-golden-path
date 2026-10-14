@@ -95,18 +95,18 @@
         </div>
       </section>
 
-      <!-- Start: no project open -->
+      <!-- Start: no project open — two paths (ADR 0013) -->
       <section id="start" class="start" aria-labelledby="start-title">
         <div class="start__layout">
           <div class="start__main">
-            <h2 id="start-title" class="section-title section-title--first">Turn a policy into control statements</h2>
-            <p class="start__lede">Paste a clause or open a file. Codify drafts each requirement into a control. The box starts with an example you can edit.</p>
+            <h2 id="start-title" class="section-title section-title--first">How do you want to start?</h2>
+            <p class="start__lede">Control statements exist to treat identified risks. Then you download the catalog and load it in Enact.</p>
 
             <div id="current-project" class="card current-project" hidden>
               <p class="current-project__text"><strong>Current policy:</strong> <span id="current-project-title"></span></p>
               <p id="current-project-meta" class="muted"></p>
               <div class="actions">
-                <button type="button" class="btn btn--primary" id="current-project-open">Open clauses</button>
+                <button type="button" class="btn btn--primary" id="current-project-open">Continue</button>
                 <button type="button" class="btn btn--quiet" id="current-project-close">Close</button>
               </div>
             </div>
@@ -119,7 +119,23 @@
               </div>
             </div>
 
-            <div class="card start__load" id="drop">
+            <div id="start-choice" class="start-choice" role="group" aria-label="Choose a starting path">
+              <button type="button" class="choice-card choice-card--recommended" id="start-from-risks">
+                <span class="choice-card__kicker">Recommended</span>
+                <span class="choice-card__title">Start from risks</span>
+                <span class="choice-card__lede">Enter the risks you already identified, then write control statements that treat them.</span>
+              </button>
+              <button type="button" class="choice-card" id="start-from-clause">
+                <span class="choice-card__kicker">Alternative</span>
+                <span class="choice-card__title">Start from a policy clause</span>
+                <span class="choice-card__lede">Paste a clause. Codify drafts controls, then you link each one to a risk.</span>
+              </button>
+            </div>
+
+            <div class="card start__load" id="drop" hidden>
+              <p class="start-clause-back">
+                <button type="button" class="btn btn--quiet" id="start-clause-back">Back to choices</button>
+              </p>
               <form id="paste-form" novalidate>
                 <label class="field">
                   <span>Example clause <em>edit or replace, then press Codify</em></span>
@@ -144,12 +160,29 @@ User accounts shall be reviewed regularly.</textarea>
             <div class="checklist">
               <h3 class="checklist__title">Set up this workspace</h3>
               <ol class="checklist__list">
-                <li>Paste a clause or open a file</li>
-                <li>Review the drafted control</li>
-                <li>Accept and export the catalog</li>
+                <li>Start from risks (recommended) or a clause</li>
+                <li>Cover every risk with a control statement</li>
+                <li>Review, accept, and send the catalog to Enact</li>
               </ol>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section id="flow" class="flow-view" aria-labelledby="flow-title" hidden>
+        <h2 id="flow-title" class="visually-hidden">Authoring steps</h2>
+        <div class="flow-view__head">
+          <ol class="stepper" id="stepper" aria-label="Authoring steps"></ol>
+          <button type="button" class="btn btn--quiet btn--small" id="step-guide-open" hidden>Show guide</button>
+        </div>
+        <div class="flow-view__body">
+          <div id="flow-step" class="flow-step"></div>
+          <aside id="step-guide" class="step-guide" hidden></aside>
+        </div>
+        <p id="flow-error" class="field-error" role="alert" hidden></p>
+        <div class="flow-nav" id="flow-nav">
+          <button type="button" class="btn" id="flow-back">Previous</button>
+          <button type="button" class="btn btn--primary" id="flow-next">Next</button>
         </div>
       </section>
 
@@ -272,12 +305,21 @@ User accounts shall be reviewed regularly.</textarea>
     <form method="dialog">
       <div class="dialog__head">
         <div class="dialog__title">
-          <h2 id="export-title">Export</h2>
+          <h2 id="export-title">Send to Enact</h2>
         </div>
         <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
       </div>
       <p class="dialog__lede">Download a copy on this device. Nothing is uploaded.</p>
+      <div class="enact-handoff" id="enact-handoff">
+        <p><strong>Codify writes the catalog. Enact runs the checks.</strong> They share a file, not a server.</p>
+        <ol class="enact-handoff__steps">
+          <li>Download the OSCAL catalog below.</li>
+          <li>Open <a href="https://code1sentinel.github.io/enact/" target="_blank" rel="noopener noreferrer">Enact</a> (Pages app).</li>
+          <li>Load that JSON as the catalog. See <a href="https://github.com/code1sentinel/policy-golden-path/blob/main/docs/book/enact.md" target="_blank" rel="noopener noreferrer">Using Codify with Enact</a>.</li>
+        </ol>
+      </div>
       <p class="export-help">The catalog is this project's OSCAL file (a NIST format other GRC tools read). Library downloads are optional copies of accepted statements on this device.</p>
+      <p id="export-gate" class="field-error" hidden></p>
       <ul class="export-list" id="export-menu">
         <li class="export-list__row export-list__row--recommended is-recommended">
           <div>

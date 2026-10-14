@@ -109,6 +109,11 @@ def _clean_project(value) -> dict:
     out = {"uuid": _text(value.get("uuid"), "uuid", 64), "title": _text(value.get("title"), "title", 500),
            "source": _text(value.get("source"), "source", 500), "version": __version__,
            "clauses": [], "controls": [], "risks": raw_risks}
+    path = value.get("authoring_path")
+    if path == "risks":
+        out["authoring_path"] = "risks"
+    elif path == "clauses":
+        out["authoring_path"] = "clauses"
     for c in clauses:
         if not isinstance(c, dict):
             raise BadRequest("each clause must be an object")

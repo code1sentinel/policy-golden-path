@@ -18,6 +18,7 @@ def test_oscal_tab_shows_this_control_and_copy_announces(demo):
 
 
 def test_export_dialog_lists_each_format_once(demo, tmp_path):
+    demo.locator(".editor__primary >> text=Accept").click()
     expect(demo.locator("#export-open-top")).to_be_visible()
     expect(demo.locator("#export-dialog")).to_be_hidden()
     demo.click("#export-open-top")

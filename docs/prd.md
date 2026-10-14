@@ -38,13 +38,14 @@ They are a starting point to edit, not finished controls.
 
 ## Scope (today)
 
-- **Ingest:** pasted clause text (the happy path), Word (`.docx`),
-  CSV/Excel (`.xlsx`), or a saved OSCAL catalog. There is no Title field
-  and clause numbers are optional ([ADR 0006](adr/0006-clause-only-input.md)).
-  Multi-clause files may still split on the policy's own numbering and
-  Word headings.   There is no risk register
-  ([ADR 0011](adr/0011-no-risk-register.md)). Identified risks may be
-  entered as input so controls can address them
+- **Ingest:** two web start paths ([ADR 0013](adr/0013-risk-first-authoring-flow.md)):
+  start from identified risks (recommended), or paste clause text (path B,
+  CLI, and files). Word (`.docx`), CSV/Excel (`.xlsx`), or a saved OSCAL
+  catalog still open. There is no Title field and clause numbers are optional
+  ([ADR 0006](adr/0006-clause-only-input.md)). Multi-clause files may still
+  split on the policy's own numbering and Word headings. There is no risk
+  register ([ADR 0011](adr/0011-no-risk-register.md)). Identified risks are
+  input so controls can address them
   ([ADR 0012](adr/0012-identified-risks-as-input.md)).
 - **Sort:** requirement, scope, definition, role, exception, not-a-control;
   flag duplicates; show the reason; allow the type to be changed.
@@ -63,9 +64,11 @@ They are a starting point to edit, not finished controls.
   help; Accept is the single primary until the control is accepted, then
   **Accepted ✓** and **Next control** lead. Sidebar **Workspace** returns
   to the paste start. Pasted projects get a name from the first clause.
-- **Export:** **OSCAL catalog** is the recommended download (catalog 1.1.2);
-  Excel, CSV (spreadsheet-safe), the Markdown report, and optional
-  statement-library JSON/CSV from the export dialog.
+- **Export:** **Send to Enact** downloads the **OSCAL catalog** (recommended,
+  catalog 1.1.2) on this device; Excel, CSV (spreadsheet-safe), the Markdown
+  report, and optional statement-library JSON/CSV. The web wizard blocks
+  project formats until every identified risk has an accepted control
+  statement. No upload.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -82,7 +85,9 @@ They are a starting point to edit, not finished controls.
 - A risk register, FAIR quantitative scoring, or residual-risk workflow
   (removed; see [ADR 0011](adr/0011-no-risk-register.md)). Identified risks
   as input are in
-  [identified-risks-as-input.md](prds/identified-risks-as-input.md).
+  [identified-risks-as-input.md](prds/identified-risks-as-input.md); the
+  web flow is
+  [risk-first-authoring-flow.md](prds/risk-first-authoring-flow.md).
 - Implementation statements (Codify scores catalog control statements only).
 
 ## Success criteria
@@ -187,6 +192,9 @@ returned as input only
 | Vanta — risk scenario → recommended controls | https://mobbin.com/screens/c5d6df8f-69b2-4729-950d-c0fc5b6a20e6 | Identified risk → suggested library statements dialog |
 | Vanta — control detail mapped elements | https://mobbin.com/screens/a31c2c1c-11e7-468f-8751-16bc93561d89 | Control: mapped identified risks |
 | Vanta — related controls table | https://mobbin.com/screens/615f46f7-bdab-47fd-b1ef-93a03da670e4 | Coverage table: risk / control, uncovered and unlinked flags |
+| Snowflake — wizard stepper | https://mobbin.com/screens/01219fec-3d72-4a0a-a10f-5e7e119942e7 | Numbered steps with current / complete state |
+| SoundCloud — per-step guide + required fields | https://mobbin.com/screens/44ede9ee-7c41-4422-acc9-8c63adfae176 | What / why / example / mistakes; inline required-field errors |
+| DoorDash Merchant — two start choices | https://mobbin.com/screens/2fd80f67-ebf0-4615-a9d0-74099c07498e | Recommended path vs alternative on start |
 
 ## Constraints that new work must keep
 
@@ -200,8 +208,10 @@ returned as input only
 - Device-wide statement library is a separate `codify:statements` store, not
   the catalog ([ADR 0009](adr/0009-device-wide-statement-library.md)).
 - No risk register ([ADR 0011](adr/0011-no-risk-register.md)). Identified
-  risks are optional input, not a register
-  ([ADR 0012](adr/0012-identified-risks-as-input.md)). Statement library
+  risks are input, not a register
+  ([ADR 0012](adr/0012-identified-risks-as-input.md)); the web wizard
+  requires them for Review and export
+  ([ADR 0013](adr/0013-risk-first-authoring-flow.md)). Statement library
   list + detail slide-over remains ([ADR 0010](adr/0010-vanta-grc-surfaces.md)).
 - Standard-library runtime for the package; optional `dev` / `e2e` only for
   tests.

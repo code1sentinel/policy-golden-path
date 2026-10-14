@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import finish_open
+from conftest import choose_clause_path, finish_open
 
 
 CLAUSE = (
@@ -20,9 +20,11 @@ def library_store(page):
 
 
 def open_pasted(page, text):
+    choose_clause_path(page)
     page.fill("#paste-form textarea", text)
     page.click("#paste-submit")
     finish_open(page)
+    page.click("[data-nav='clauses']")
     page.wait_for_selector("#work:not([hidden]) textarea.statement", timeout=30_000)
 
 

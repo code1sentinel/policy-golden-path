@@ -49,6 +49,6 @@ Aspirations, consequences, permissions, or descriptions of the policy itself. Th
 ## What Codify is not
 
 - Not a mapping to IM8 or another external catalog
-- Not a risk register or residual-risk workflow (identified risks are input only)
+- Not a risk register or residual-risk workflow (identified risks are input; required on the web wizard, not scored)
 - Not an assessment runner — that is [Enact](enact.md)
 - Not a place that hosts your policy or API keys

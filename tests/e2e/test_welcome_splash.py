@@ -5,7 +5,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import finish_open
+from conftest import choose_clause_path, finish_open, goto_review
 
 
 def _open(browser, base_url, *, splash_seen=False, resume=False, color_scheme="dark"):
@@ -39,15 +39,14 @@ def test_get_started_reveals_paste_start_and_persists(browser, base_url):
     page.click("#splash-continue")
     expect(page.locator("#splash")).to_be_hidden()
     expect(page.locator("#start:not([hidden])")).to_be_visible()
-    expect(page.locator("#paste-submit")).to_be_visible()
-    expect(page.locator("#paste-submit")).to_have_text("Codify")
-    expect(page.locator("#start .btn--primary:visible")).to_have_count(1)
+    expect(page.locator("#start-from-risks")).to_be_visible()
+    expect(page.locator("#paste-submit")).to_be_hidden()
     assert page.evaluate("localStorage.getItem('codify:splash-seen')") == "1"
 
     page.reload(wait_until="domcontentloaded")
     expect(page.locator("#splash")).to_be_hidden()
     expect(page.locator("#start:not([hidden])")).to_be_visible()
-    expect(page.locator("#paste-submit")).to_have_text("Codify")
+    expect(page.locator("#start-from-risks")).to_be_visible()
     ctx.close()
 
 
@@ -55,7 +54,7 @@ def test_seen_flag_skips_splash(browser, base_url):
     ctx, page = _open(browser, base_url, splash_seen=True)
     expect(page.locator("#splash")).to_be_hidden()
     expect(page.locator("#start:not([hidden])")).to_be_visible()
-    expect(page.locator("#paste-submit")).to_have_text("Codify")
+    expect(page.locator("#start-from-risks")).to_be_visible()
     ctx.close()
 
 
@@ -71,9 +70,11 @@ def test_resume_skips_splash_even_when_unseen(browser, base_url):
 def test_try_an_example_works_after_dismiss(browser, base_url):
     ctx, page = _open(browser, base_url)
     page.click("#splash-continue")
+    choose_clause_path(page)
     expect(page.locator("#demo")).to_be_visible()
     page.click("#demo")
     finish_open(page)
+    goto_review(page)
     expect(page.locator("#work-summary")).to_contain_text("38 control drafts")
     ctx.close()
 

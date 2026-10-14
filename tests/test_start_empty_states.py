@@ -9,6 +9,8 @@ JS = (ROOT / "src/codify/static/app.js").read_text(encoding="utf-8")
 
 
 def test_start_hero_is_the_clause_textarea_with_one_primary():
+    assert 'id="start-from-risks"' in INDEX
+    assert "Recommended" in INDEX
     assert 'id="demo"' in INDEX
     assert "Try an example" in INDEX
     assert "Try the Acme demo" not in INDEX

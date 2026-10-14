@@ -19,7 +19,10 @@ def test_index_html_has_no_external_asset_origins():
     html = INDEX.read_text(encoding="utf-8")
     assert "fonts.googleapis.com" not in html
     assert "fonts.gstatic.com" not in html
-    assert not re.search(r"""(?:href|src)\s*=\s*['"]https?://""", html), html
+    # User-clicked documentation links (Enact, the book) are not asset loads.
+    assert not re.search(
+        r"""<(?:script|link|img|iframe|source)\b[^>]*(?:href|src)\s*=\s*['"]https?://""",
+        html, re.I), html
 
 
 def test_local_csp_does_not_allow_font_origins():

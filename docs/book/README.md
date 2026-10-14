@@ -1,8 +1,8 @@
 # Introduction
 
-**Codify** turns legacy policy clauses into OSCAL 1.1.2 control statements.
+**Codify** turns identified risks and legacy policy clauses into OSCAL 1.1.2 control statements.
 
-Give it a policy. It sorts each clause, drafts control statements from the requirements, scores each draft as you edit it, and exports a catalog other GRC tools can read.
+Start from the risks you already identified (recommended), or paste a clause. Codify drafts control statements, scores each draft as you edit it, and downloads a catalog you can load in Enact.
 
 {% hint style="info" %}
 Codify runs on your device. Your policy is not uploaded. Rule-based drafts never use AI.
@@ -14,7 +14,7 @@ The live app is at [https://code1sentinel.github.io/policy-golden-path/](https:/
 
 ## Who it is for
 
-- **GRC people** modernising a legacy policy: paste a clause, review the draft, accept it, and keep a catalog in git.
+- **GRC people** modernising a legacy policy: start from risks or a clause, review the draft, accept it, and keep a catalog in git.
 - **Engineers** who want the same conversion in a script or pipeline.
 
 It is not a cloud GRC platform. There is no account, no upload, and no risk register. You may enter [identified risks](identified-risks.md) as input so controls can address them.
