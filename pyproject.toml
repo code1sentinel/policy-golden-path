@@ -20,7 +20,7 @@ dev = [
     "pytest>=8",
     "openpyxl>=3.1",  # only to test reading real-world workbooks
     "pyyaml>=6",  # tests/test_gitbook.py parses gitbook-docs.yaml
-    "ruff>=0.6",
+    "ruff>=0.17.0",
     "mypy>=1.11",
     "pip-audit>=2.7",
 ]
