@@ -39,6 +39,7 @@ from .project import (
     ORIGINS, STATUSES, control_oscal, draft_controls, drop_legacy_register, from_oscal,
     new_project, summary, to_csv, to_oscal, to_report, to_xlsx,
 )
+from .risks import MAX_RISKS, coverage
 
 MAX_TEXT = 20000  # characters per field
 MAX_CLAUSES = 5000
@@ -98,9 +99,16 @@ def _clean_project(value) -> dict:
         raise BadRequest("'project' needs 'clauses' and 'controls' lists")
     if len(clauses) > MAX_CLAUSES or len(controls) > MAX_CONTROLS:
         raise BadRequest("project is too large")
+    raw_risks = value.get("risks")
+    if raw_risks is None:
+        raw_risks = []
+    if not isinstance(raw_risks, list):
+        raw_risks = []
+    if len(raw_risks) > MAX_RISKS:
+        raise BadRequest("project is too large")
     out = {"uuid": _text(value.get("uuid"), "uuid", 64), "title": _text(value.get("title"), "title", 500),
            "source": _text(value.get("source"), "source", 500), "version": __version__,
-           "clauses": [], "controls": []}
+           "clauses": [], "controls": [], "risks": raw_risks}
     for c in clauses:
         if not isinstance(c, dict):
             raise BadRequest("each clause must be an object")
@@ -118,6 +126,7 @@ def _clean_project(value) -> dict:
         notes = c.get("notes") or []
         if not isinstance(notes, list):
             raise BadRequest("'notes' must be a list")
+        risk_ids = c.get("risk_ids") if isinstance(c.get("risk_ids"), list) else []
         out["controls"].append({
             "id": _text(c.get("id"), "control id", 64) or "?", "clause": _text(c.get("clause"), "clause", 64),
             "text": _text(c.get("text"), "text"), "guidance": _text(c.get("guidance"), "guidance"),
@@ -126,7 +135,7 @@ def _clean_project(value) -> dict:
             "status": c.get("status") if c.get("status") in STATUSES else "draft",
             "origin": c.get("origin") if c.get("origin") in ORIGINS else "person",
             "source_type": "clause",
-            "risk_id": "",
+            "risk_ids": [_text(i, "risk_ids", 64) for i in risk_ids[:50] if i],
         })
     return drop_legacy_register(out)
 
@@ -159,12 +168,13 @@ def open_policy(body: dict) -> dict:
     except (ValueError, KeyError, TypeError) as exc:
         raise BadRequest(f"{name}: {exc}") from None
     project = drop_legacy_register(project)
-    return {"project": project, "summary": summary(project), "scores": _scores(project)}
+    return {"project": project, "summary": summary(project), "scores": _scores(project),
+            "coverage": coverage(project)}
 
 
 def score(body: dict) -> dict:
     project = _clean_project(body.get("project"))
-    return {"summary": summary(project), "scores": _scores(project)}
+    return {"summary": summary(project), "scores": _scores(project), "coverage": coverage(project)}
 
 
 def redraft(body: dict) -> dict:

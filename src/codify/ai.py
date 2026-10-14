@@ -147,7 +147,7 @@ def from_reply(clause_id: str, reply: str, model: str = "") -> list[dict]:
                          "guidance": _part(item.get("guidance")),
                          "risk": _part(item.get("risk")), "who": "", "notes": notes,
                          "status": "draft", "origin": "ai",
-                         "source_type": "clause", "risk_id": ""})
+                         "source_type": "clause", "risk_ids": []})
     if not controls:
         raise ValueError("the AI returned no control statements")
     return [{"id": cid, **c} for cid, c in zip(_control_ids(id_base, len(controls)), controls)]

@@ -9,13 +9,12 @@ JS = (ROOT / "src/codify/static/app.js").read_text(encoding="utf-8")
 
 
 def test_shell_has_sidebar_nav_and_properties_panel():
-    for nav in ("workspace", "clauses", "catalog", "library", "export", "guide"):
+    for nav in ("workspace", "clauses", "catalog", "library", "export", "guide", "risks"):
         assert f'data-nav="{nav}"' in INDEX
-    assert 'data-nav="risks"' not in INDEX
     assert 'id="sidebar"' in INDEX
     assert 'id="props"' in INDEX
     assert 'id="catalog"' in INDEX
-    assert 'id="risks"' not in INDEX
+    assert 'id="risks"' in INDEX
     assert 'id="library"' in INDEX
     assert 'id="export-dialog"' in INDEX
     assert "checklist__list" in INDEX

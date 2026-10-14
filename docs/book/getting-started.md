@@ -76,4 +76,4 @@ You can change a clause's type later. Making it a requirement drafts controls fo
 
 ## Next
 
-[Review the drafts](reviewing-controls.md) in the workspace.
+[Review the drafts](reviewing-controls.md) in the workspace. You can also enter [identified risks](identified-risks.md) you already have — input for authoring, not a register.

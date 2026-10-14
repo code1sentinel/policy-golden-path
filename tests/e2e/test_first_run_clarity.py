@@ -13,9 +13,10 @@ def test_demo_header_has_no_null_and_explains_counts(demo):
     expect(summary).to_contain_text("not converted")
 
 
-def test_sidebar_has_no_risks_destination(page):
-    expect(page.locator("nav.sidebar__nav")).not_to_contain_text("Risks")
-    expect(page.locator("[data-nav='risks']")).to_have_count(0)
+def test_sidebar_has_identified_risks_not_a_register(page):
+    expect(page.locator("nav.sidebar__nav")).to_contain_text("Risks")
+    expect(page.locator("[data-nav='risks']")).to_have_count(1)
+    expect(page.locator("#export-dialog")).not_to_contain_text("Risk register")
 
 
 def test_example_text_is_editable_and_codify_opens_a_result_step(page):

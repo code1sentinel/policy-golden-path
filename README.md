@@ -71,7 +71,7 @@ each clause is there to show.
 | Pasted text | The clause text, one paragraph per clause. Numbers are optional. A single paragraph that starts with a number (`4.2.1 …`) is kept as-is. A longer policy may still split on its own numbering (`5. Access Control` is a section, `5.1` a clause, `(a)` an item that carries its lead-in). |
 | Word (`.docx`) | The same, with Word's headings as sections. Read with the Python standard library. |
 | CSV or Excel (`.xlsx`) | One clause per row: a `clause text` column, and optionally `clause id` and `section`. |
-| A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog opens as a starting point: each control becomes a clause to work on. Older catalogs that still carry a leftover risk register open too: the register is ignored and the control statements stay ([ADR 0011](docs/adr/0011-no-risk-register.md)). |
+| A saved catalog (`.json`) | Opens exactly where you left off. Any other OSCAL catalog opens as a starting point: each control becomes a clause to work on. Older catalogs that still carry a leftover risk register open too: the register is ignored, identified risks start empty, and the control statements stay ([ADR 0011](docs/adr/0011-no-risk-register.md), [ADR 0012](docs/adr/0012-identified-risks-as-input.md)). |
 
 PDF is not read: copy the text and paste it.
 
@@ -198,6 +198,11 @@ set-this-value prompts.
 - **Catalog** lists every control with a source column (the clause it came
   from). There is no risk register
   ([ADR 0011](docs/adr/0011-no-risk-register.md)).
+- **Risks** is identified-risk input: a short statement and optional note.
+  Controls may link to those ids; coverage flags risks with no control and
+  controls with no linked risk. Matching statements come from the on-device
+  library. This is not a scored register
+  ([ADR 0012](docs/adr/0012-identified-risks-as-input.md)).
 - **Library** keeps accepted control statements on this device
   (`codify:statements`, separate from the project autosave). One statement
   is shown once (a detail card, or a compact list plus detail when there
@@ -218,9 +223,10 @@ schema). One group per policy section and one control per statement:
 | `parts[name=guidance]` | tools and how-to moved out of the statement |
 | `parts[name=legacy-text]` | the legacy clause it came from |
 | `parts[name=drafting-notes]` | what the rules changed, and what to decide |
-| `props`: `legacy-clause`, `status`, `origin`, `source-type`, `risk-statement`, `responsible-role` | traceability and review state |
+| `props`: `legacy-clause`, `status`, `origin`, `source-type`, `risk-statement`, `responsible-role`, `treats-risk` | traceability, review state, and identified-risk links |
 | `links[rel=derived-from]` | the legacy clause, kept in `back-matter` |
-| `back-matter.resources` | every legacy clause (with its type) |
+| `links[rel=related]` | an identified-risk back-matter resource, when the control treats that risk |
+| `back-matter.resources` | every legacy clause (with its type), plus one resource per identified risk |
 
 Codify's own names are in the namespace `https://grcengineering.club/ns/codify`.
 

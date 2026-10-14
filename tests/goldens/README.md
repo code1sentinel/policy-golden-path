@@ -18,6 +18,12 @@ frozen in the test.
 `unnumbered-lock-screens-control.json` is that catalog's first control
 object (`control_oscal`), with the derived-from href frozen.
 
+`identified-risk-lock-screens.json` is the same clause with one identified
+risk linked on the control (`treats-risk`, `rel=related`, back-matter
+`identified-risk-id`). Last-modified and the clause resource uuid are
+frozen in the test. This is not a risk register
+([ADR 0012](../../docs/adr/0012-identified-risks-as-input.md)).
+
 Older Codify catalogs that still carry a risk register live under
 `tests/fixtures/` (`legacy-risk-only.json`, `legacy-mixed-clause-risk.json`)
 and are opened only to prove leftover register fields are dropped

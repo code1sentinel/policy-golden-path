@@ -12,6 +12,17 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- Identified risks as input to control authoring
+  ([ADR 0012](docs/adr/0012-identified-risks-as-input.md)): a project holds
+  a simple list (`id`, short statement, optional note). Controls may link
+  to those ids; “risk it treats” displays the linked statement. Coverage
+  flags uncovered risks and unlinked controls. Matching Statement library
+  entries are suggested locally; optional AI assist may also suggest
+  through the existing `ai_prompt` / `ai_reply` path. OSCAL export traces
+  links with `identified-risk-id` resources, `treats-risk` props, and
+  `rel=related`. This is not a register (no scores, owners, or
+  `--risks`). Older saves still load with an empty list.
+
 - Site Git Sync: `docs/book/gitbook-docs.yaml` maps the curated book as
   the Codify site's single space (project directory `docs/book`, branch
   `main`). Repo-root `.gitbook.yaml` is unchanged for single-space sync.

@@ -11,7 +11,7 @@ def test_sidebar_lists_the_authoring_destinations(page):
     expect(nav.get_by_role("button", name="Library")).to_be_visible()
     expect(nav.get_by_role("button", name="Export")).to_be_visible()
     expect(nav.get_by_role("button", name="Guide")).to_be_visible()
-    expect(nav.get_by_role("button", name="Risks")).to_have_count(0)
+    expect(nav.get_by_role("button", name="Risks")).to_be_visible()
 
 
 def test_start_has_a_setup_checklist(page):

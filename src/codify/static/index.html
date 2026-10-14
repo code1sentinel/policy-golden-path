@@ -42,6 +42,10 @@
         <span class="nav-btn__icon" aria-hidden="true">▤</span>
         <span class="nav-btn__label"><abbr class="term" title="Reusable accepted statements saved on this device, across projects.">Library</abbr></span>
       </button>
+      <button type="button" class="nav-btn" data-view="risks" data-nav="risks" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">◇</span>
+        <span class="nav-btn__label"><abbr class="term" title="Risks you already identified. Control statements exist to address them. Not a register.">Risks</abbr></span>
+      </button>
       <button type="button" class="nav-btn" data-nav="export" id="export-open" aria-haspopup="dialog">
         <span class="nav-btn__icon" aria-hidden="true">↓</span>
         <span class="nav-btn__label">Export</span>
@@ -234,6 +238,14 @@ User accounts shall be reviewed regularly.</textarea>
         <div id="library-body"></div>
       </section>
 
+      <section id="risks" class="risks-view" aria-labelledby="risks-title" hidden>
+        <div class="view-head">
+          <h2 id="risks-title" class="section-title section-title--first">Identified risks</h2>
+          <p class="view-head__lede">Enter risks you have already identified. Control statements exist to address them. This is input, not a register — no scores, owners, or treatment plans.</p>
+        </div>
+        <div id="risks-body" class="risks-input"></div>
+      </section>
+
       <!-- Guide -->
       <section id="guide" class="guide-view" aria-labelledby="guide-title" hidden>
         <h2 id="guide-title" class="section-title section-title--first">Writing control statements</h2>
@@ -355,6 +367,23 @@ User accounts shall be reviewed regularly.</textarea>
         <button type="submit" class="btn btn--quiet" value="cancel" formnovalidate>Cancel</button>
         <button type="submit" class="btn" value="off" id="ai-off">Turn off and forget the key</button>
         <button type="submit" class="btn btn--primary" value="on" id="ai-on">Turn on</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="risk-suggest-dialog" class="dialog dialog--suggest" aria-labelledby="risk-suggest-title">
+    <form method="dialog">
+      <div class="dialog__head">
+        <div class="dialog__title">
+          <h2 id="risk-suggest-title">Add recommended statements?</h2>
+        </div>
+        <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
+      </div>
+      <p id="risk-suggest-scenario" class="dialog__lede"></p>
+      <div id="risk-suggest-body" class="risk-suggest"></div>
+      <div class="dialog__actions actions">
+        <button type="submit" class="btn btn--quiet" value="cancel" id="risk-suggest-not-now">Not now</button>
+        <button type="button" class="btn btn--primary" id="risk-suggest-add">Add statements</button>
       </div>
     </form>
   </dialog>

@@ -46,10 +46,10 @@ def test_saved_catalog_resumes_exactly(acme):
     acme["controls"][0]["status"] = "accepted"
     acme["controls"][0]["risk"] = "Excess access could be misused."
     back = from_oscal(json.loads(json.dumps(to_oscal(acme))))
-    keys = ("id", "clause", "text", "guidance", "risk", "who", "notes", "status", "origin", "source_type", "risk_id")
+    keys = ("id", "clause", "text", "guidance", "risk", "who", "notes", "status", "origin", "source_type", "risk_ids")
     assert [{k: c[k] for k in keys} for c in back["controls"]] == [{k: c[k] for k in keys} for c in acme["controls"]]
     assert back["clauses"] == acme["clauses"] and back["title"] == acme["title"] and back["uuid"] == acme["uuid"]
-    assert "risks" not in back
+    assert back["risks"] == []
 
 
 def test_any_catalog_opens_as_a_starting_point():
@@ -64,7 +64,8 @@ def test_any_catalog_opens_as_a_starting_point():
     p = from_oscal(catalog)
     assert p["controls"] == [{"id": "br-1", "clause": "br-1", "text": "Back up data every [N] day(s).",
                               "guidance": "Use AWS Backup.", "risk": "Data could be lost.", "who": "", "notes": [],
-                              "status": "draft", "origin": "catalog", "source_type": "clause", "risk_id": ""}]
+                              "status": "draft", "origin": "catalog", "source_type": "clause", "risk_ids": []}]
+    assert p["risks"] == []
     assert p["clauses"][0]["heading"] == "Backup and Recovery"
     with pytest.raises(ValueError, match="no controls"):
         from_oscal({"catalog": {"metadata": {"title": "empty"}}})
