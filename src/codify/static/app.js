@@ -301,20 +301,19 @@ function cleanRisks(value) {
 function dropLegacyRegister(project) {
   dropLegacyRiskStore();
   if (!project || typeof project !== "object") return project;
-  const next = { ...project };
-  if (next.authoring_path !== "risks") delete next.authoring_path;
-  next.risks = cleanRisks(next.risks);
-  const known = new Set(next.risks.map((r) => r.id));
-  if (Array.isArray(next.controls)) {
-    next.controls = next.controls.map((c) => {
-      if (!c || typeof c !== "object") return c;
-      const ids = Array.isArray(c.risk_ids) ? c.risk_ids.filter((id) => known.has(id)) : [];
-      const rest = { ...c };
-      delete rest.risk_id;
-      return { ...rest, source_type: "clause", risk_ids: ids };
-    });
+  if (project.authoring_path !== "risks") delete project.authoring_path;
+  project.risks = cleanRisks(project.risks);
+  const known = new Set(project.risks.map((r) => r.id));
+  if (Array.isArray(project.controls)) {
+    for (const control of project.controls) {
+      if (!control || typeof control !== "object") continue;
+      control.risk_ids = Array.isArray(control.risk_ids)
+        ? control.risk_ids.filter((id) => known.has(id)) : [];
+      delete control.risk_id;
+      control.source_type = "clause";
+    }
   }
-  return next;
+  return project;
 }
 
 function matchTokens(text) {
@@ -462,7 +461,7 @@ function firstIncompleteStep(project) {
 function saveLocal() {
   if (!state.project) return;
   try {
-    state.project = dropLegacyRegister(state.project);
+    dropLegacyRegister(state.project);
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       project: state.project, scores: state.scores, saved: new Date().toISOString(), flowStep: state.flowStep,
     }));
@@ -1307,7 +1306,9 @@ function renderLinkStep(box) {
   linkAll.addEventListener("click", () => {
     if (!firstId) return;
     for (const control of state.project.controls) {
-      if (String(control.text || "").trim() && !(control.risk_ids || []).length) linkRisk(control, firstId);
+      if (String(control.text || "").trim() && !(control.risk_ids || []).length) {
+        applyRiskLink(control, firstId);
+      }
     }
     saveLocal();
     renderFlowStep();
@@ -1354,7 +1355,7 @@ function renderEnactStep(box) {
   download.disabled = !ok;
   download.addEventListener("click", () => openExportDialog());
   box.replaceChildren(
-    el("div", { class: "card enact-panel" },
+    el("div", { class: "card enact-panel", id: "enact-step" },
       el("h3", { class: "section-title", text: "Send to Enact" }),
       el("p", { text: "Codify writes the catalog. Enact runs the checks. They share a file, not a server. Download only — nothing is uploaded." }),
       el("ol", { class: "enact-handoff__steps" },
@@ -2162,15 +2163,20 @@ function mappedRisksField(control) {
     el("div", { class: "mapped-risks__add" }, select, openRisks));
 }
 
-function linkRisk(control, riskId) {
+function applyRiskLink(control, riskId) {
   const ids = [...(control.risk_ids || [])];
   if (!ids.includes(riskId)) ids.push(riskId);
   control.risk_ids = ids;
   const linked = purposeFromRisks(state.project, ids);
   if (linked) control.risk = linked;
+}
+
+function linkRisk(control, riskId) {
+  applyRiskLink(control, riskId);
   saveLocal();
   if (state.view === "work") render();
   else if (state.view === "risks") renderRisks();
+  else if (state.view === "flow") { renderFlowStep(); renderFlowChrome(); }
   else render();
 }
 

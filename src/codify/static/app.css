@@ -942,9 +942,9 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 .stepper__step:disabled { cursor: default; opacity: 0.7; }
 .flow-view__body {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 16px; align-items: start;
-  min-height: 0; flex: 1;
+  min-height: 0; flex: 1; overflow: auto;
 }
-.flow-step { min-width: 0; }
+.flow-step { min-width: 0; min-height: 0; overflow: auto; }
 .step-guide {
   background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-lg);
   padding: 16px 18px; font-size: 13px; color: var(--muted); line-height: 1.45;
@@ -977,6 +977,8 @@ body:has(#flow:not([hidden])) main {
   flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: 12px; padding-bottom: 12px;
 }
 body:has(#flow:not([hidden])) #flow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+body:has(#work:not([hidden])) #flow { flex: 0 0 auto; }
+body:has(#work:not([hidden])) .flow-view__body { flex: 0 1 auto; max-height: 220px; }
 @media (max-width: 900px) {
   .flow-view__body { grid-template-columns: 1fr; }
   .link-row { grid-template-columns: 1fr; }

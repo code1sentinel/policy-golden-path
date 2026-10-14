@@ -133,18 +133,22 @@ def finish_open(page, timeout=120_000):
 
 def goto_review(page, risk="Screens left unlocked at unattended desks."):
     """Path B link step: add a risk, link remaining controls, open Review."""
-    if page.locator("#work:not([hidden])").is_visible():
+    work = page.locator("#work")
+    if work.is_visible():
         return
-    expect(page.locator("#flow:not([hidden])")).to_be_visible()
+    expect(page.locator("#flow")).to_be_visible()
     stmt = page.locator("#link-risk-statement")
-    if stmt.is_visible():
+    if stmt.count():
         stmt.fill(risk)
         page.click("#link-risk-add")
         remaining = page.locator("#link-remaining")
-        if remaining.is_visible():
+        if remaining.count() and remaining.is_enabled() and not remaining.is_hidden():
             remaining.click()
         page.click("#flow-next")
-    page.wait_for_selector("#work:not([hidden])", timeout=30_000)
+        error = page.locator("#flow-error")
+        if error.is_visible():
+            raise AssertionError(f"Could not open Review: {error.inner_text()}")
+    expect(work).to_be_visible()
 
 
 @pytest.fixture

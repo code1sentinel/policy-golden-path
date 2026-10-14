@@ -40,8 +40,7 @@ def test_path_a_risks_then_controls_then_review_then_enact(page):
     expect(page.locator("textarea.statement")).to_be_visible()
     page.locator(".editor__primary >> text=Accept").click()
     page.click("#flow-next")
-    expect(page.locator("#flow-step")).to_contain_text("Send to Enact")
-    expect(page.locator("#enact-handoff, #flow-step")).to_contain_text("Enact")
+    expect(page.locator("#enact-step")).to_contain_text("Send to Enact")
     expect(page.locator("#enact-download")).to_be_enabled()
     with page.expect_download() as dl:
         page.click("#enact-download")
@@ -59,7 +58,7 @@ def test_path_b_paste_clause_then_link_before_review(page):
     page.click("#paste-submit")
     finish_open(page)
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
-    expect(page.locator("#legacy-risk-prompt, #flow-step")).to_contain_text("risk")
+    expect(page.locator("#legacy-risk-prompt")).to_contain_text("risk")
     page.click("#flow-next")
     expect(page.locator("#flow-error")).to_be_visible()
     goto_review(page)

@@ -150,8 +150,10 @@ def test_shell_has_two_start_paths_stepper_guides_and_enact_handoff():
     assert 'id="step-guide"' in INDEX
     assert 'id="flow-next"' in INDEX
     assert "Send to Enact" in INDEX
+    assert "enact-step" in JS
     assert "code1sentinel.github.io/enact" in INDEX
     assert "Using Codify with Enact" in INDEX or "enact.md" in INDEX
+    assert "body:has(#work:not([hidden])) #flow" in CSS
     assert "likelihood" not in INDEX.lower()
     assert "heatmap" not in JS.lower()
     assert "authoring_path" in JS or "authoringPath" in JS
