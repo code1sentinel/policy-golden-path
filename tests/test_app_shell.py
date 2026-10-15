@@ -17,7 +17,8 @@ def test_shell_has_sidebar_nav_and_properties_panel():
     assert 'id="risks"' in INDEX
     assert 'id="library"' in INDEX
     assert 'id="export-dialog"' in INDEX
-    assert "checklist__list" in INDEX
+    assert 'id="start-from-risks"' in INDEX
+    assert "checklist__list" not in INDEX
     assert ".sidebar" in CSS and ".props-card" in CSS
     assert "sidebar-collapsed" in CSS
     assert "openExportDialog" in JS

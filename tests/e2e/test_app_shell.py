@@ -14,9 +14,10 @@ def test_sidebar_lists_the_authoring_destinations(page):
     expect(nav.get_by_role("button", name="Risks")).to_be_visible()
 
 
-def test_start_has_a_setup_checklist(page):
-    expect(page.locator(".checklist")).to_contain_text("Set up this workspace")
-    expect(page.locator(".checklist")).to_contain_text("Start from risks")
+def test_start_has_no_setup_checklist(page):
+    expect(page.locator(".checklist")).to_have_count(0)
+    expect(page.get_by_text("Set up this workspace")).to_have_count(0)
+    expect(page.locator("#start-from-risks")).to_be_visible()
 
 
 def test_clauses_catalog_and_library_views(demo):

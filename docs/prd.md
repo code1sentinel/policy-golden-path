@@ -115,10 +115,10 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
-A first visit shows a short welcome splash (mark, “Welcome to Codify”,
-one lede, **Get started**) instead of the paste start. After dismiss, or
-when a resume card would show, the paste start appears as before. See
-[docs/prds/welcome-splash.md](prds/welcome-splash.md). First-run copy,
+A first visit is one landing: the one-line headline, a converging flow
+of the two ways in, and two start cards. The welcome splash is folded
+into this screen. A saved project shows the same landing with Resume.
+See [docs/prds/landing-start.md](prds/landing-start.md). First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).
 A second first-time walkthrough polish (accepted state, `[N]` prompts,
@@ -165,7 +165,10 @@ returned as input only
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
-| Linear — welcome splash | https://mobbin.com/screens/62773d0f-3574-4191-ac91-eb8a51697a95 | First visit: centered mark, welcome, one lede, one Get started |
+| Sprig — start cards | https://mobbin.com/screens/77add735-ba8c-4f49-a512-fabd8b2e1826 | Landing: two large start cards, one recommended |
+| Klaviyo — headline + flow | https://mobbin.com/screens/88633529-5820-4f59-93e0-98d0806ad4fd | Landing: one headline, then a simple node flow |
+| Microsoft Copilot — How it works | https://mobbin.com/screens/ebac045b-3c68-4dd0-8811-1ce2a31aaf05 | Landing: generous whitespace, one idea |
+| fal — path choice | https://mobbin.com/screens/484439bd-e04c-4d68-b977-acfc6937eebe | Landing: two path cards as the only primary |
 | Krea AI — single prompt + Generate | https://mobbin.com/screens/323e22c9-d758-4bf1-aee3-dcc9e284a2ef | Start: one hero input, one primary |
 | Gamma — example prompts | https://mobbin.com/screens/23a25ddc-5d71-44d3-af2b-ff2ea0ec1767 | Start: quiet example under the input |
 | Arcade — empty output | https://mobbin.com/screens/7b9d6805-0331-41c2-b7aa-165ea081bb09 | Empty pane: icon + line + next step |

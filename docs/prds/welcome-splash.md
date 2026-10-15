@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Agreed |
+| Status | Superseded by [landing-start.md](landing-start.md) |
 | Slice issues | This agent cannot open GitHub issues; acceptance criteria live here. |
 | Supercedes / extends | [docs/prd.md](../prd.md), [start-hero-empty-states.md](start-hero-empty-states.md), [personal-start-chrome.md](personal-start-chrome.md) |
 | Author | Andre (product owner, 2026-10-07) / this slice |

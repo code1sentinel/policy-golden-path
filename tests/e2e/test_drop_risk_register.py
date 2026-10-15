@@ -36,7 +36,6 @@ def test_resume_drops_register_fields_and_keeps_controls(browser, base_url):
         "saved": "2026-10-08T12:00:00.000Z",
     })
     context = browser.new_context(viewport={"width": 1360, "height": 900})
-    context.add_init_script("localStorage.setItem('codify:splash-seen', '1');")
     context.add_init_script(f"localStorage.setItem('codify:project', {payload!r});")
     context.add_init_script(f"localStorage.setItem('codify:statements', {library!r});")
     context.add_init_script("localStorage.setItem('codify:risks', '[{\"id\":\"R-001\"}]');")

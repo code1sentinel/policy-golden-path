@@ -74,8 +74,9 @@ def test_export_groups_library_downloads_and_drops_save_file():
 
 def test_workspace_nav_stays_on_start_and_title_is_editable():
     show = JS.split("function showView")[1].split("function renderCrumb")[0]
-    assert 'view === "workspace" && state.project' not in show or "renderCurrentProject" in show
-    assert "renderCurrentProject" in JS
+    assert "renderResume" in show
+    assert 'id="resume"' in INDEX
+    assert 'id="resume-open"' in INDEX
     assert 'data-nav="workspace"' in INDEX
     assert "work-title-input" in CSS or 'id="work-title"' in INDEX
     assert "Untitled policy" in JS

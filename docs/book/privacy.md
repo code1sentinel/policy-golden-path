@@ -20,7 +20,6 @@ Work in the browser is stored only in this browser:
 
 - `codify:project` — the open project (clauses, controls, identified risks)
 - `codify:statements` — the statement library
-- `codify:splash-seen` — whether you dismissed the welcome
 - `codify:theme` — Light / Dark / System
 
 Clearing site data removes them. Closing the tab forgets an API key unless you chose to remember it.

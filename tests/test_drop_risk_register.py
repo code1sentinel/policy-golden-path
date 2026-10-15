@@ -33,7 +33,7 @@ def test_copy_has_no_leftover_register_mentions():
     assert "dropLegacyRegister" in JS or "normalizeIdentifiedRisks" in JS
     assert "LEGACY_RISKS_KEY" in JS
     assert "codify:statements" in JS
-    assert "codify:splash-seen" in JS
+    assert "codify:theme" in JS or "codify:project" in JS
     assert "heatmap" not in CSS
     assert ".risk-table" not in CSS
 

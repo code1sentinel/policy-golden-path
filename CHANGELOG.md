@@ -13,7 +13,7 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 ### Added
 
 - Risk-first authoring flow ([ADR 0013](docs/adr/0013-risk-first-authoring-flow.md)):
-  two start paths after the splash — **Start from risks** (recommended) or
+  two start paths — **Start from risks** (recommended) or
   **Start from a policy clause**. Both share Review and **Send to Enact**.
   A stepper and a dismissible per-step guide sit on every step. Web export
   is blocked until every identified risk has an accepted control statement
@@ -76,6 +76,16 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- One landing instead of a splash plus a start screen
+  ([docs/prds/landing-start.md](docs/prds/landing-start.md)). The
+  headline is *Codify turns what you need to address into clear control
+  statements, which you then test in Enact.* A simple flow shows the two
+  ways in meeting at control statements, then Enact. The only primary
+  actions are **Start from risks** (recommended) and **Start from a
+  policy clause**; they open the existing paths from PR #38. Resume (or
+  open a saved project) and a docs link are quiet secondary. The setup
+  checklist and `#28` splash (`codify:splash-seen`) are gone. No new
+  outbound calls.
 - `AGENTS.md` trimmed to a one-line description, unusual commands, and
   pointers. Detailed rules live in `.cursor/rules/` (glob-scoped where
   they apply to one surface). TDD refactor-while-green moved into the

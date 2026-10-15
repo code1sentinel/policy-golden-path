@@ -51,10 +51,11 @@ makes no requests to any third party unless you turn on AI drafting. The first v
 loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
-The first open shows a short **Welcome to Codify** splash. **Get started**
-remembers that choice on this device (`codify:splash-seen`) and opens the
-start: **Start from risks** (recommended) or **Start from a policy clause**.
-A saved project skips the splash so resume stays instant.
+The first open is one landing: a one-line headline, a small flow of the
+two ways in (risks or a policy clause → control statements → Enact), and
+two start cards. **Start from risks** is recommended; **Start from a
+policy clause** is the other path. A saved project on this device shows
+the same landing with **Resume**.
 
 To see the clause path, choose it, edit or replace the example, and press
 **Codify**, or choose **Try an example** to open the **Acme demo policy**.
