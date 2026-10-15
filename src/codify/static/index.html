@@ -86,64 +86,36 @@
       <div id="error" class="error" role="alert" hidden></div>
       <div id="notice" class="loading" role="status" hidden></div>
 
-      <!-- Landing: one screen, two paths (ADR 0013). Splash #28 is folded in. -->
+      <!-- Landing: two flows only (ADR 0013). Splash #28 is folded in. -->
       <section id="start" class="start" aria-labelledby="start-title">
         <div id="landing" class="landing">
-          <h2 id="start-title" class="landing__title">Codify turns what you need to address into clear control statements, which you then test in Enact.</h2>
-
-          <figure id="landing-flow" class="landing-flow" aria-labelledby="landing-flow-caption">
-            <figcaption id="landing-flow-caption" class="visually-hidden">Two ways in meet at control statements, which you then test in Enact.</figcaption>
-            <div class="landing-flow__map" aria-hidden="true">
-              <div class="landing-flow__in">
-                <span class="landing-flow__node">Risks</span>
-                <span class="landing-flow__node">Policy clause</span>
-              </div>
-              <span class="landing-flow__join"></span>
-              <div class="landing-flow__out">
-                <span class="landing-flow__node landing-flow__node--mid">Control statements</span>
-                <span class="landing-flow__arrow">→</span>
-                <span class="landing-flow__node landing-flow__node--end">Enact</span>
-              </div>
-            </div>
-            <ol class="visually-hidden">
-              <li>Risks, then control statements, then Enact</li>
-              <li>Policy clause, then control statements, then Enact</li>
-            </ol>
-          </figure>
-
-          <div id="resume" class="landing-resume" hidden>
-            <p class="landing-resume__text">
-              <strong>Resume</strong>
-              <span id="resume-title"></span>
-              <span id="resume-when" class="muted"></span>
-            </p>
-            <div class="actions">
-              <button type="button" class="btn btn--primary" id="resume-open">Resume</button>
-              <button type="button" class="btn btn--quiet" id="resume-discard">Discard</button>
-            </div>
-          </div>
+          <h2 id="start-title" class="visually-hidden">Choose a starting path</h2>
 
           <div id="start-choice" class="landing-cards" role="group" aria-label="Choose a starting path">
-            <button type="button" class="choice-card choice-card--recommended" id="start-from-risks" aria-describedby="risks-lede risks-example">
-              <span class="choice-card__kicker">Recommended</span>
-              <span class="choice-card__title">Start from risks</span>
-              <span id="risks-lede" class="choice-card__lede">Enter the risks you already identified. Codify helps you write the control statements that treat them.</span>
-              <span id="risks-example" class="choice-card__example">Example: Screens left unlocked at unattended desks.</span>
-            </button>
-            <button type="button" class="choice-card" id="start-from-clause" aria-describedby="clause-lede clause-example">
-              <span class="choice-card__kicker choice-card__kicker--empty" aria-hidden="true">&nbsp;</span>
-              <span class="choice-card__title">Start from a policy clause</span>
-              <span id="clause-lede" class="choice-card__lede">Paste a clause. Codify drafts control statements, then you link each one to a risk.</span>
-              <span id="clause-example" class="choice-card__example">Example: Users shall lock screens when they leave their desk.</span>
-            </button>
+            <article class="flow-card" aria-labelledby="flow-a-title">
+              <h3 id="flow-a-title" class="flow-card__title">Identify risk → Control statement</h3>
+              <ol class="flow-card__steps" aria-label="Identify risk, then control statement, then Enact">
+                <li>Identify risk</li>
+                <li>Control statement</li>
+                <li>Enact</li>
+              </ol>
+              <button type="button" class="btn btn--primary" id="start-from-risks">Get started</button>
+            </article>
+            <article class="flow-card" aria-labelledby="flow-b-title">
+              <h3 id="flow-b-title" class="flow-card__title">Policy clause → Control statement</h3>
+              <ol class="flow-card__steps" aria-label="Policy clause, then control statement, then Enact">
+                <li>Policy clause</li>
+                <li>Control statement</li>
+                <li>Enact</li>
+              </ol>
+              <button type="button" class="btn btn--primary" id="start-from-clause">Get started</button>
+            </article>
           </div>
 
-          <p class="landing__secondary">
-            <label class="landing__quiet">
-              Open a saved project
-              <input type="file" id="open-saved" accept=".json,application/json,.docx,.csv,.xlsx,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-            </label>
-            <a id="landing-docs" class="landing__quiet" href="https://github.com/code1sentinel/policy-golden-path/blob/main/docs/book/getting-started.md">How to use Codify</a>
+          <p id="resume" class="landing-resume" hidden>
+            <button type="button" class="landing__quiet" id="resume-open">Resume</button>
+            <span id="resume-title" class="landing-resume__title"></span>
+            <span id="resume-when" class="visually-hidden"></span>
           </p>
         </div>
 

@@ -6,7 +6,7 @@ This is not a risk register. There are no scores, likelihood or impact, owners, 
 
 ## Add risks
 
-**Start from risks** is the recommended path. You can also add them on the **Link to risks** step after pasting a clause, or open **Risks** in the sidebar.
+**Identify risk → Control statement** is one of the two landing flows. You can also add risks on the **Link to risks** step after pasting a clause, or open **Risks** in the sidebar.
 
 1. Type a short statement (what could go wrong).
 2. Optionally add a note.
@@ -46,7 +46,8 @@ Mapped risks also appear on the control (id, statement, unlink), next to guidanc
 
 The OSCAL catalog traces each link:
 
-- A back-matter resource per identified risk (`identified-risk-id`)
+- A back-matter resource per identified risk: short `title`,
+  `description` / `statement`, `status=open`, and `identified-risk-id`
 - On the control, a `treats-risk` property and a `rel=related` link
 
 Older catalogs that still carry a leftover **register** (`risk-id` resources, likelihood, scores) open with an empty identified-risks list. The [control statements](catalog-and-library.md) remain.

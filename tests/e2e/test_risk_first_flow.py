@@ -7,12 +7,10 @@ from playwright.sync_api import expect
 from conftest import choose_clause_path, choose_risk_path, finish_open, goto_review
 
 
-def test_start_offers_two_paths_with_risks_recommended(page):
-    expect(page.locator("#start-title")).to_contain_text(
-        "Codify turns what you need to address into clear control statements"
-    )
+def test_start_offers_two_get_started_paths(page):
     expect(page.locator("#start-from-risks")).to_be_visible()
-    expect(page.locator("#start-from-risks")).to_contain_text("Recommended")
+    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-clause")).to_have_text("Get started")
     expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator("#paste-form")).to_be_hidden()
     expect(page.locator("#stepper")).to_be_hidden()

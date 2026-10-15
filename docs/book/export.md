@@ -31,7 +31,7 @@ JSON, OSCAL 1.1.2. CI checks every catalog Codify writes against NIST's schema.
 | Drafting notes | What the rules changed, and what to decide |
 | Properties | Legacy clause, review status, origin, risk it treats, who implements it, linked identified risks (`treats-risk`) |
 | Links | `derived-from` the legacy clause; `related` to an identified-risk resource when linked |
-| Back matter | Every legacy clause (with its type), plus one resource per identified risk (`identified-risk-id`) |
+| Back matter | Every legacy clause (with its type), plus one resource per identified risk (`title`, description/statement, `status=open`, `identified-risk-id`) |
 
 Codify's own names use the namespace `https://grcengineering.club/ns/codify`.
 

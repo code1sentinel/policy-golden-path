@@ -13,4 +13,5 @@ def test_splash_is_gone_and_landing_is_the_first_screen():
     assert "codify:splash-seen" not in JS
     assert "codify:splash-seen" not in THEME
     assert 'id="start"' in INDEX
-    assert "Codify turns what you need to address into clear control statements" in INDEX
+    assert 'id="start-from-risks"' in INDEX
+    assert "Get started" in INDEX

@@ -260,11 +260,13 @@ def to_oscal(project: dict) -> dict:
                             _prop("reason", c.get("reason")), _prop("duplicate-of", c.get("duplicate_of"))),
         })
     for risk in identified:
+        statement = risk["statement"]
         resources.append({
             "uuid": risk_uuid[risk["id"]],
-            "title": risk["statement"],
-            "description": risk["statement"],
-            "props": _props(_prop("identified-risk-id", risk["id"]), _prop("note", risk.get("note"))),
+            "title": _title(statement),
+            "description": statement,
+            "props": _props(_prop("identified-risk-id", risk["id"]), _prop("statement", statement),
+                            _prop("status", "open"), _prop("note", risk.get("note"))),
         })
     catalog = {"uuid": pid, "metadata": metadata}
     if groups:
@@ -334,7 +336,7 @@ def from_oscal(data: dict) -> dict:
         if "identified-risk-id" in p:
             identified.append({
                 "id": p["identified-risk-id"],
-                "statement": r.get("description") or r.get("title") or "",
+                "statement": p.get("statement") or r.get("description") or r.get("title") or "",
                 "note": p.get("note", ""),
             })
             if r.get("uuid"):

@@ -1,7 +1,6 @@
-"""Landing: headline and flow, both start cards, and Resume. No splash."""
+"""Landing: two flow cards, both Get started buttons, and a quiet Resume."""
 
 import json
-import re
 
 from playwright.sync_api import expect
 
@@ -28,42 +27,48 @@ def _open(browser, base_url, *, resume=False, color_scheme="dark", width=1360, h
     return context, page
 
 
-def test_first_open_is_the_landing_not_a_splash(browser, base_url):
+def test_first_open_is_two_flow_cards(browser, base_url):
     ctx, page = _open(browser, base_url)
     expect(page.locator("#splash")).to_have_count(0)
     expect(page.locator("#start:not([hidden])")).to_be_visible()
-    expect(page.locator("#start-title")).to_have_text(HEADLINE)
-    expect(page.locator("#landing-flow")).to_be_visible()
-    expect(page.locator("#landing-flow")).to_contain_text("Risks")
-    expect(page.locator("#landing-flow")).to_contain_text("Policy clause")
-    expect(page.locator("#landing-flow")).to_contain_text("Control statements")
-    expect(page.locator("#landing-flow")).to_contain_text("Enact")
+    expect(page.locator("#landing-flow")).to_have_count(0)
+    expect(page.get_by_text(HEADLINE)).to_have_count(0)
     expect(page.locator("#start-from-risks")).to_be_visible()
+    expect(page.locator("#start-from-risks")).to_have_text("Get started")
     expect(page.locator("#start-from-clause")).to_be_visible()
+    expect(page.locator("#start-from-clause")).to_have_text("Get started")
+    expect(page.locator(".flow-card")).to_have_count(2)
+    expect(page.locator(".flow-card").nth(0)).to_contain_text("Identify risk")
+    expect(page.locator(".flow-card").nth(0)).to_contain_text("Control statement")
+    expect(page.locator(".flow-card").nth(0)).to_contain_text("Enact")
+    expect(page.locator(".flow-card").nth(1)).to_contain_text("Policy clause")
+    expect(page.locator(".flow-card").nth(1)).to_contain_text("Control statement")
     expect(page.locator(".checklist")).to_have_count(0)
     expect(page.get_by_text("Set up this workspace")).to_have_count(0)
-    expect(page.get_by_text("Get started")).to_have_count(0)
+    expect(page.get_by_text("How to use Codify")).to_have_count(0)
+    expect(page.get_by_text("Open a saved project")).to_have_count(0)
+    expect(page.locator("#resume")).to_be_hidden()
     ctx.close()
 
 
-def test_start_from_risks_card_opens_path_a(page):
-    expect(page.locator("#start-from-risks")).to_contain_text("Recommended")
-    expect(page.locator("#start-from-risks")).to_contain_text("Screens left unlocked")
+def test_start_from_risks_get_started_opens_path_a(page):
+    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-risks")).not_to_contain_text("Recommended")
     choose_risk_path(page)
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
     expect(page.locator("#stepper")).to_be_visible()
     expect(page.locator("#flow-risk-statement")).to_be_visible()
 
 
-def test_start_from_clause_card_opens_path_b(page):
-    expect(page.locator("#start-from-clause")).to_contain_text("Users shall lock screens")
+def test_start_from_clause_get_started_opens_path_b(page):
+    expect(page.locator("#start-from-clause")).to_have_text("Get started")
     choose_clause_path(page)
     expect(page.locator("#paste-form")).to_be_visible()
     expect(page.locator("#paste-submit")).to_have_text("Codify")
     expect(page.locator("#demo")).to_be_visible()
 
 
-def test_resume_is_prominent_and_opens_the_saved_project(browser, base_url):
+def test_resume_is_a_quiet_link_and_opens_the_saved_project(browser, base_url):
     payload = json.dumps({
         "project": {
             "uuid": "00000000-0000-4000-8000-000000000000",
@@ -87,29 +92,27 @@ def test_resume_is_prominent_and_opens_the_saved_project(browser, base_url):
     context.add_init_script(f"localStorage.setItem('codify:project', {payload!r});")
     page = context.new_page()
     page.goto(base_url, wait_until="domcontentloaded")
-    expect(page.locator("#start-title")).to_have_text(HEADLINE)
     expect(page.locator("#start-from-risks")).to_be_visible()
+    expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator("#resume")).to_be_visible()
-    expect(page.locator("#resume-title")).to_contain_text("Saved policy")
     expect(page.locator("#resume-open")).to_have_text("Resume")
-    expect(page.locator("#resume-open")).to_have_class(re.compile(r"btn--primary"))
+    expect(page.locator("#resume-open")).not_to_have_class("btn--primary")
+    expect(page.locator("#resume-discard")).to_have_count(0)
     page.click("#resume-open")
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
     expect(page.locator("#legacy-risk-prompt")).to_contain_text("started from clauses")
     context.close()
 
 
-def test_landing_secondary_is_quiet_docs_and_open_saved(page):
-    expect(page.locator("#landing-docs")).to_be_visible()
-    expect(page.locator("#landing-docs")).to_have_attribute("href", re.compile(r"getting-started"))
-    expect(page.locator("#open-saved")).to_be_attached()
-    expect(page.get_by_text("Open a saved project")).to_be_visible()
-    expect(page.locator("#start .btn--primary:visible")).to_have_count(0)
+def test_landing_has_no_docs_or_open_saved(page):
+    expect(page.locator("#landing-docs")).to_have_count(0)
+    expect(page.locator("#open-saved")).to_have_count(0)
+    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-clause")).to_have_text("Get started")
 
 
 def test_landing_is_keyboard_reachable_and_stacks_on_mobile(browser, base_url):
     ctx, page = _open(browser, base_url, width=390, height=844)
-    expect(page.locator("#start-title")).to_be_visible()
     expect(page.locator("#start-from-risks")).to_be_visible()
     expect(page.locator("#start-from-clause")).to_be_visible()
     page.locator("#start-from-risks").focus()
@@ -122,11 +125,11 @@ def test_landing_is_keyboard_reachable_and_stacks_on_mobile(browser, base_url):
 def test_landing_uses_theme_tokens_in_light_and_dark(browser, base_url):
     ctx, page = _open(browser, base_url, color_scheme="light")
     expect(page.locator("html")).to_have_attribute("data-theme", "light")
-    expect(page.locator("#start-title")).to_be_visible()
+    expect(page.locator("#start-from-risks")).to_be_visible()
     ctx.close()
     ctx, page = _open(browser, base_url, color_scheme="dark")
     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
-    expect(page.locator("#start-title")).to_be_visible()
+    expect(page.locator("#start-from-risks")).to_be_visible()
     ctx.close()
 
 

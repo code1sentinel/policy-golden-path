@@ -72,8 +72,9 @@ export an OSCAL 1.1.2 catalog that traces those links.
   statement with no overlap is not.
 - Given a control linked to a risk, When the catalog is exported, Then
   the catalog is valid OSCAL 1.1.2, contains a back-matter resource with
-  `identified-risk-id`, a `treats-risk` prop, and a `rel=related` link,
-  and does not emit `source-type=risk` or old `risk-id` register tracing.
+  title, description/statement, `status=open`, `identified-risk-id`, a
+  `treats-risk` prop, and a `rel=related` link, and does not emit
+  `source-type=risk` or old `risk-id` register tracing.
 - Given the workspace, When the sidebar renders, Then there is a Risks
   input view and no Risk register export, heatmap, or likelihood/impact
   fields.

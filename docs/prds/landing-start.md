@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Agreed |
+| Status | Superseded by [landing-flow-cards.md](landing-flow-cards.md) |
 | Slice issues | Acceptance criteria live here (this agent cannot open GitHub issues). |
 | Supercedes / extends | [docs/prd.md](../prd.md), [welcome-splash.md](welcome-splash.md), [risk-first-authoring-flow.md](risk-first-authoring-flow.md), [personal-start-chrome.md](personal-start-chrome.md), [start-hero-empty-states.md](start-hero-empty-states.md) |
 | Author | Product owner / this slice |
