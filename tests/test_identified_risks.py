@@ -141,6 +141,8 @@ def test_oscal_export_traces_identified_risks_without_register_fields():
     catalog = to_oscal(project)["catalog"]
     catalog["metadata"]["last-modified"] = "2026-10-14T00:00:00+00:00"
     catalog["metadata"]["props"] = [p for p in catalog["metadata"].get("props", []) if p.get("name") != "generator"]
+    if not catalog["metadata"]["props"]:
+        del catalog["metadata"]["props"]
     clause_uuid = "11111111-1111-4111-8111-111111111111"
     for resource in catalog.get("back-matter", {}).get("resources", []):
         props = {p["name"]: p["value"] for p in resource.get("props", [])}
