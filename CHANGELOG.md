@@ -76,8 +76,8 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
-- Landing diagrams and first-run copy name the last step **Technical
-  policy (Rego)** instead of a bare **Enact**
+- Landing diagrams and first-run copy name the last step **Policy as
+  code (Rego)** instead of a bare **Enact**
   ([docs/prds/technical-policy-rego-label.md](docs/prds/technical-policy-rego-label.md)).
   A muted caption: *Exported as OSCAL and tested as Rego in Enact*
   (Enact still links to the Enact app). **Send to Enact** stays the

@@ -1,4 +1,4 @@
-# PRD: Name the last step Technical policy (Rego)
+# PRD: Name the last step Policy as code (Rego)
 
 | Field | Value |
 | --- | --- |
@@ -12,7 +12,7 @@
 
 First-time users do not know what **Enact** is. The landing diagrams
 end on that word, so the last step looks like a product they have never
-heard of instead of the outcome: a technical policy in Rego.
+heard of instead of the outcome: policy as code in Rego.
 
 ## Users
 
@@ -22,16 +22,16 @@ heard of instead of the outcome: a technical policy in Rego.
 
 ## Job to be done
 
-See that the last step is a **technical policy (Rego)**, with Enact
+See that the last step is **policy as code (Rego)**, with Enact
 named only as where that policy is tested.
 
 ## Scope
 
 - In:
   - Landing flow diagrams (and any stepper/guide label that is just
-    **Enact**) rename the last step to **Technical policy (Rego)**.
-    Flows read: Identify risk → Control statement → Technical policy
-    (Rego), and Policy clause → Control statement → Technical policy
+    **Enact**) rename the last step to **Policy as code (Rego)**.
+    Flows read: Identify risk → Control statement → Policy as code
+    (Rego), and Policy clause → Control statement → Policy as code
     (Rego).
   - At most one short muted caption under the diagrams:
     *Exported as OSCAL and tested as Rego in Enact*, with **Enact**
@@ -46,14 +46,14 @@ named only as where that policy is tested.
 ## Success criteria
 
 - Given the landing, When it is shown, Then each flow card's last
-  step is **Technical policy (Rego)** and is not the bare word Enact.
+  step is **Policy as code (Rego)** and is not the bare word Enact.
 - Given the landing, When the caption is present, Then it is muted
   and **Enact** is a link to the Enact app.
 - Given **Send to Enact** (dialog or final step), When it is shown,
   Then the action title stays **Send to Enact** and helper text
   explains it turns control statements into testable Rego policy.
 - Given a stepper or step guide whose label was only **Enact**, When
-  it renders, Then it says **Technical policy (Rego)**. Labels that
+  it renders, Then it says **Policy as code (Rego)**. Labels that
   already say **Send to Enact** stay that action wording.
 - Skip-to-content still targets `#main`. No new outbound origins.
 

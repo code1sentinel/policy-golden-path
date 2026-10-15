@@ -116,8 +116,8 @@ Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
 A first visit is two side-by-side flow cards only: Identify risk →
-Control statement → Technical policy (Rego), and Policy clause →
-Control statement → Technical policy (Rego). Each card has a mini
+Control statement → Policy as code (Rego), and Policy clause →
+Control statement → Policy as code (Rego). Each card has a mini
 step diagram and **Get started**. A muted caption points at Enact.
 A saved project shows the same cards with a small Resume link. See
 [docs/prds/landing-flow-cards.md](prds/landing-flow-cards.md) and

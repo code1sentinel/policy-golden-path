@@ -40,10 +40,10 @@ def test_first_open_is_two_flow_cards(browser, base_url):
     expect(page.locator(".flow-card")).to_have_count(2)
     expect(page.locator(".flow-card").nth(0)).to_contain_text("Identify risk")
     expect(page.locator(".flow-card").nth(0)).to_contain_text("Control statement")
-    expect(page.locator(".flow-card").nth(0)).to_contain_text("Technical policy (Rego)")
+    expect(page.locator(".flow-card").nth(0)).to_contain_text("Policy as code (Rego)")
     expect(page.locator(".flow-card").nth(1)).to_contain_text("Policy clause")
     expect(page.locator(".flow-card").nth(1)).to_contain_text("Control statement")
-    expect(page.locator(".flow-card").nth(1)).to_contain_text("Technical policy (Rego)")
+    expect(page.locator(".flow-card").nth(1)).to_contain_text("Policy as code (Rego)")
     expect(page.locator("#landing-caption")).to_contain_text(
         "Exported as OSCAL and tested as Rego in"
     )

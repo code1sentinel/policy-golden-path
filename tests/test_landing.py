@@ -29,7 +29,7 @@ def test_landing_is_two_flow_cards_with_get_started():
     risks = _card(INDEX, "start-from-risks")
     assert "Identify risk" in risks
     assert "Control statement" in risks
-    assert "Technical policy (Rego)" in risks
+    assert "Policy as code (Rego)" in risks
     assert ">Enact<" not in risks
     assert "Get started" in risks
     assert "Recommended" not in risks
@@ -37,7 +37,7 @@ def test_landing_is_two_flow_cards_with_get_started():
     clause = _card(INDEX, "start-from-clause")
     assert "Policy clause" in clause
     assert "Control statement" in clause
-    assert "Technical policy (Rego)" in clause
+    assert "Policy as code (Rego)" in clause
     assert ">Enact<" not in clause
     assert "Get started" in clause
     assert "Users shall lock screens" not in clause
