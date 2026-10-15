@@ -65,7 +65,9 @@ def test_demo_opens_with_drafts_scored(demo):
 
 
 def test_start_is_a_short_cta_not_a_wall(page):
-    expect(page.locator("#start-title")).to_have_text("How do you want to start?")
+    expect(page.locator("#start-title")).to_contain_text(
+        "Codify turns what you need to address into clear control statements"
+    )
     expect(page.locator("#start-from-risks")).to_be_visible()
     expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator(".steps")).to_have_count(0)

@@ -20,7 +20,7 @@ SUMMARY_ITEM_RE = re.compile(r"^\s*\*\s+\[(?:[^\]]+)\]\(([^)]+)\)\s*$", re.MULTI
 SKIP_PREFIXES = ("http://", "https://", "mailto:", "#", "{{")
 
 REQUIRED_SCREENSHOTS = (
-    "welcome-splash.png",
+    "landing-start.png",
     "paste-box.png",
     "drafted-step.png",
     "control-review.png",

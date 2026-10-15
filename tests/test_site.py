@@ -62,7 +62,7 @@ def test_app_js_treats_ollama_as_ready_without_a_key():
 
 def test_workspace_html_is_a_short_happy_path():
     html = (ROOT / "src/codify/static/index.html").read_text()
-    assert "How do you want to start?" in html
+    assert "Codify turns what you need to address into clear control statements" in html
     assert 'id="start-from-risks"' in html
     assert 'id="start-from-clause"' in html
     assert 'name="title"' not in html

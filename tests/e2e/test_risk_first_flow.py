@@ -8,7 +8,9 @@ from conftest import choose_clause_path, choose_risk_path, finish_open, goto_rev
 
 
 def test_start_offers_two_paths_with_risks_recommended(page):
-    expect(page.locator("#start-title")).to_have_text("How do you want to start?")
+    expect(page.locator("#start-title")).to_contain_text(
+        "Codify turns what you need to address into clear control statements"
+    )
     expect(page.locator("#start-from-risks")).to_be_visible()
     expect(page.locator("#start-from-risks")).to_contain_text("Recommended")
     expect(page.locator("#start-from-clause")).to_be_visible()
@@ -87,7 +89,6 @@ def test_old_clause_first_project_opens_on_path_b_and_prompts_for_risks(browser,
         "saved": "2026-10-14T12:00:00.000Z",
     })
     context = browser.new_context(viewport={"width": 1360, "height": 900})
-    context.add_init_script("localStorage.setItem('codify:splash-seen', '1');")
     context.add_init_script(f"localStorage.setItem('codify:project', {payload!r});")
     page = context.new_page()
     page.goto(base_url, wait_until="domcontentloaded")

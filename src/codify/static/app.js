@@ -37,7 +37,6 @@ const SCORE_HELP = "How complete this statement is: testable, scoped, action-fir
 const READY = 0.8;  // drafts at or above this score can be selected for review in bulk
 const SAVE_KEY = "codify:project";
 const LIBRARY_KEY = "codify:statements";
-const SPLASH_KEY = "codify:splash-seen";
 const GUIDE_KEY = "codify:step-guides";
 const LEGACY_RISKS_KEY = "codify:risks";  // leftover store from older builds; never rewrite statements
 const ENACT_APP = "https://code1sentinel.github.io/enact/";
@@ -843,7 +842,6 @@ function showView(view) {
   }
   $("#guide").hidden = view !== "guide";
   $("#start").hidden = view !== "workspace";
-  applySplash();
   if ($("#result")) $("#result").hidden = view !== "result";
   const authoring = Boolean(state.project) && (view === "flow" || view === "work");
   if ($("#flow")) $("#flow").hidden = !authoring;
@@ -858,7 +856,6 @@ function showView(view) {
   if (closeBtn) closeBtn.hidden = !state.project;
   if (view === "workspace") {
     renderResume();
-    renderCurrentProject();
     renderStartChoice();
   }
   if (view === "result" && state.project) renderResult();
@@ -874,20 +871,6 @@ function showView(view) {
 function confirmReplace() {
   if (!state.project) return true;
   return confirm("Replace the open policy? Export the catalog first if you want to keep this version.");
-}
-
-function renderCurrentProject() {
-  const box = $("#current-project");
-  if (!box) return;
-  const open = Boolean(state.project);
-  box.hidden = !open;
-  if (open) {
-    const resume = $("#resume");
-    if (resume) resume.hidden = true;
-    $("#current-project-title").textContent = state.project.title || "Untitled policy";
-    const n = clauseCounts(state.project);
-    $("#current-project-meta").textContent = `${plural(n.controls, "control")} from ${plural(n.requirements, "requirement")}. Continue the authoring steps.`;
-  }
 }
 
 function renderCrumb() {
@@ -914,42 +897,23 @@ function renderCrumb() {
 }
 
 function renderResume() {
+  const box = $("#resume");
+  if (!box) return;
   const saved = loadLocal();
-  $("#resume").hidden = !saved;
-  if (!saved) return;
-  $("#resume-title").textContent = saved.project.title || "Untitled policy";
-  const when = new Date(saved.saved);
-  $("#resume-when").textContent = isNaN(when) ? "" : `(saved ${when.toLocaleString()})`;
-}
-
-function splashSeen() {
-  try { return Boolean(localStorage.getItem(SPLASH_KEY)); } catch { return false; }
-}
-
-function shouldShowSplash() {
-  return !splashSeen() && !loadLocal();
-}
-
-function applySplash() {
-  const splash = $("#splash");
-  if (!splash) return;
-  const open = !state.project && state.view === "workspace" && shouldShowSplash();
-  splash.hidden = !open;
-  if (open) {
-    document.documentElement.setAttribute("data-splash", "open");
-    $("#start").hidden = true;
-  } else {
-    document.documentElement.removeAttribute("data-splash");
+  const current = state.project;
+  const show = Boolean(current || saved);
+  box.hidden = !show;
+  if (!show) return;
+  const title = (current && current.title)
+    || (saved && saved.project && saved.project.title)
+    || "Untitled policy";
+  $("#resume-title").textContent = title;
+  if (current) {
+    $("#resume-when").textContent = "";
+  } else if (saved) {
+    const when = new Date(saved.saved);
+    $("#resume-when").textContent = isNaN(when) ? "" : `(saved ${when.toLocaleString()})`;
   }
-}
-
-function dismissSplash() {
-  try { localStorage.setItem(SPLASH_KEY, "1"); } catch { /* ignore */ }
-  document.documentElement.removeAttribute("data-splash");
-  const splash = $("#splash");
-  if (splash) splash.hidden = true;
-  if (!state.project) showView("workspace");
-  $("#start-from-risks")?.focus();
 }
 
 // ---------------------------------------------------------------- opening a project
@@ -991,11 +955,13 @@ function openFlow() {
 }
 
 function renderStartChoice() {
+  const landing = $("#landing");
   const choice = $("#start-choice");
   const drop = $("#drop");
-  if (!choice || !drop) return;
+  if (!drop) return;
   const clause = state.startPath === "clause";
-  choice.hidden = clause;
+  if (landing) landing.hidden = clause;
+  if (choice) choice.hidden = clause;
   drop.hidden = !clause;
 }
 
@@ -3014,7 +2980,6 @@ function init() {
     });
   }
 
-  $("#splash-continue")?.addEventListener("click", dismissSplash);
   $("#result-continue")?.addEventListener("click", continueFromResult);
   $("#start-from-risks")?.addEventListener("click", startRiskPath);
   $("#start-from-clause")?.addEventListener("click", showClausePath);
@@ -3040,13 +3005,17 @@ function init() {
   });
 
   const drop = $("#drop");
-  const input = $("#file");
-  input.addEventListener("change", () => {
-    if (!input.files[0]) return;
-    if (!confirmReplace()) { input.value = ""; return; }
-    openFile(input.files[0]);
-    input.value = "";
-  });
+  const bindFile = (input) => {
+    if (!input) return;
+    input.addEventListener("change", () => {
+      if (!input.files[0]) return;
+      if (!confirmReplace()) { input.value = ""; return; }
+      openFile(input.files[0]);
+      input.value = "";
+    });
+  };
+  bindFile($("#file"));
+  bindFile($("#open-saved"));
   drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("is-over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
   drop.addEventListener("drop", (e) => {
@@ -3064,12 +3033,20 @@ function init() {
   });
 
   $("#resume-open").addEventListener("click", () => {
+    if (state.project) {
+      openFlow();
+      return;
+    }
     const saved = loadLocal();
     if (saved) openProject(saved);
   });
   $("#resume-discard").addEventListener("click", () => {
     if (confirm("Discard the work saved in this browser? Save an OSCAL catalog first if you want to keep it.")) {
       clearLocal();
+      state.project = null;
+      state.selected = null;
+      state.flowStep = null;
+      state.startPath = null;
       renderResume();
     }
   });
@@ -3085,15 +3062,13 @@ function init() {
     showView("workspace");
   };
   $("#close-project").addEventListener("click", closeProject);
-  $("#current-project-close")?.addEventListener("click", closeProject);
-  $("#current-project-open")?.addEventListener("click", () => openFlow());
   $("#work-title")?.addEventListener("input", () => {
     if (!state.project) return;
     state.project.title = $("#work-title").value;
     saveSoon();
     renderCrumb();
-    const current = $("#current-project-title");
-    if (current) current.textContent = state.project.title || "Untitled policy";
+    const resumeTitle = $("#resume-title");
+    if (resumeTitle) resumeTitle.textContent = state.project.title || "Untitled policy";
   });
   $("#work-title")?.addEventListener("blur", () => {
     if (!state.project) return;

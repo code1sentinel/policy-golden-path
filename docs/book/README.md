@@ -8,7 +8,7 @@ Start from the risks you already identified (recommended), or paste a clause. Co
 Codify runs on your device. Your policy is not uploaded. Rule-based drafts never use AI.
 {% endhint %}
 
-![Welcome splash on first visit: Welcome to Codify, one line of explanation, Get started.](assets/welcome-splash.png)
+![Landing: one headline, a converging flow of the two ways in, and two start cards.](assets/landing-start.png)
 
 The live app is at [https://code1sentinel.github.io/policy-golden-path/](https://code1sentinel.github.io/policy-golden-path/). You can also run the same page locally (`codify-web`) or use the command line (`codify`). All three ways run the same code.
 
