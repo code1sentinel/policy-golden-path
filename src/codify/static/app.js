@@ -3016,7 +3016,6 @@ function init() {
     });
   };
   bindFile($("#file"));
-  bindFile($("#open-saved"));
   drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("is-over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
   drop.addEventListener("drop", (e) => {
@@ -3041,7 +3040,7 @@ function init() {
     const saved = loadLocal();
     if (saved) openProject(saved);
   });
-  $("#resume-discard").addEventListener("click", () => {
+  $("#resume-discard")?.addEventListener("click", () => {
     if (confirm("Discard the work saved in this browser? Save an OSCAL catalog first if you want to keep it.")) {
       clearLocal();
       state.project = null;

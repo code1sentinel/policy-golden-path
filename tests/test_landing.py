@@ -1,4 +1,4 @@
-"""One landing: headline, converging flow, two start cards. No splash."""
+"""Landing: two flow cards with Get started, plus a quiet Resume. No splash."""
 
 from pathlib import Path
 
@@ -14,30 +14,43 @@ HEADLINE = (
 )
 
 
-def test_landing_has_headline_flow_and_two_cards():
-    assert HEADLINE in INDEX
-    assert 'id="start-title"' in INDEX
-    assert 'id="landing-flow"' in INDEX
-    assert "Risks" in INDEX.split('id="landing-flow"', 1)[1][:1200]
-    assert "Policy clause" in INDEX.split('id="landing-flow"', 1)[1][:1200]
-    assert "Control statements" in INDEX.split('id="landing-flow"', 1)[1][:1200]
-    assert "Enact" in INDEX.split('id="landing-flow"', 1)[1][:1200]
+def _card(index: str, start_id: str) -> str:
+    after = index.split(f'id="{start_id}"', 1)
+    assert len(after) == 2, start_id
+    before = after[0].rsplit("<article", 1)
+    assert len(before) == 2, start_id
+    return "<article" + before[1] + after[1].split("</article>", 1)[0]
+
+
+def test_landing_is_two_flow_cards_with_get_started():
     assert 'id="start-from-risks"' in INDEX
     assert 'id="start-from-clause"' in INDEX
-    risks = INDEX.split('id="start-from-risks"', 1)[1].split('id="start-from-clause"', 1)[0]
-    assert "Recommended" in risks
-    assert "Start from risks" in risks
-    assert "Screens left unlocked" in risks
-    clause = INDEX.split('id="start-from-clause"', 1)[1].split("</button>", 1)[0]
-    assert "Start from a policy clause" in clause
-    assert "Users shall lock screens" in clause
+    assert INDEX.count(">Get started<") == 2
+    risks = _card(INDEX, "start-from-risks")
+    assert "Identify risk" in risks
+    assert "Control statement" in risks
+    assert "Enact" in risks
+    assert "Get started" in risks
+    assert "Recommended" not in risks
+    assert "Screens left unlocked" not in risks
+    clause = _card(INDEX, "start-from-clause")
+    assert "Policy clause" in clause
+    assert "Control statement" in clause
+    assert "Enact" in clause
+    assert "Get started" in clause
+    assert "Users shall lock screens" not in clause
+    assert 'id="landing-flow"' not in INDEX
+    assert HEADLINE not in INDEX
+    assert 'id="start-title"' in INDEX
+    assert 'class="visually-hidden"' in INDEX.split('id="start-title"', 1)[0][-80:] + INDEX.split(
+        'id="start-title"', 1
+    )[1][:80]
 
 
 def test_landing_has_no_splash_or_checklist_clutter():
     assert 'id="splash"' not in INDEX
     assert 'id="splash-continue"' not in INDEX
     assert "Welcome to Codify" not in INDEX
-    assert "Get started" not in INDEX
     assert "checklist__list" not in INDEX
     assert "Set up this workspace" not in INDEX
     assert 'id="current-project"' not in INDEX
@@ -50,16 +63,16 @@ def test_landing_has_no_splash_or_checklist_clutter():
     assert 'html[data-splash="open"]' not in CSS
 
 
-def test_landing_has_quiet_secondary_resume_open_and_docs():
+def test_landing_has_only_a_quiet_resume_link():
     assert 'id="resume"' in INDEX
     assert 'id="resume-open"' in INDEX
-    assert "Resume" in INDEX.split('id="resume"', 1)[1][:800]
-    assert 'id="open-saved"' in INDEX
-    assert "Open a saved project" in INDEX
-    assert 'id="landing-docs"' in INDEX
-    assert "getting-started.md" in INDEX.split('id="landing-docs"', 1)[0][-200:] + INDEX.split(
-        'id="landing-docs"', 1
-    )[1][:400]
+    assert "Resume" in INDEX.split('id="resume"', 1)[1][:400]
+    assert 'id="resume-discard"' not in INDEX
+    assert 'id="open-saved"' not in INDEX
+    assert "Open a saved project" not in INDEX
+    assert 'id="landing-docs"' not in INDEX
+    assert "btn--primary" not in INDEX.split('id="resume"', 1)[1].split("</p>", 1)[0]
+    assert "landing__quiet" in INDEX.split('id="resume"', 1)[1][:500] or "landing-resume" in CSS
 
 
 def test_landing_uses_existing_tokens_and_system_fonts():
@@ -69,6 +82,6 @@ def test_landing_uses_existing_tokens_and_system_fonts():
     assert "var(--muted)" in landing_css
     assert "fonts.googleapis" not in landing_css
     assert "Inter" not in landing_css
-    assert ".choice-card" in CSS
+    assert ".flow-card" in CSS
     assert "fonts.googleapis" not in CSS
     assert 'href="#main"' in INDEX

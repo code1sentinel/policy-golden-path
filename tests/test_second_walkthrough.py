@@ -21,7 +21,7 @@ def test_accept_shows_accepted_state_and_undo():
 def test_flow_strip_is_status_not_a_control():
     assert 'aria-label="Review stages (status, not links)"' in INDEX or "not links" in INDEX
     assert "flow__caption" in INDEX or "flow__caption" in JS
-    assert "pointer-events" in CSS.split(".flow", 1)[1].split(".menu", 1)[0] or "cursor: default" in CSS.split(".flow", 1)[1][:800]
+    assert "pointer-events" in CSS.split(".flow {", 1)[1].split(".menu", 1)[0] or "cursor: default" in CSS.split(".flow {", 1)[1][:800]
     assert "flow--status" in CSS or "flow li + li::before" in CSS
 
 

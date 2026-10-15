@@ -14,16 +14,16 @@ The online site and the local web app look the same. Neither loads fonts or othe
 
 ## First visit
 
-The first open is the landing: one line that says what Codify does, a small picture of the two ways in meeting at control statements and then Enact, and two start cards.
+The first open is two side-by-side flow cards. Each has a one-line title, a mini step diagram, and **Get started**.
 
-A saved project on this device shows the same landing with **Resume**.
+A saved project on this device shows the same cards with a small **Resume** link.
 
 ## Choose how to start
 
-- **Start from risks** (recommended) — enter identified risks, then write control statements that treat them. Example: *Screens left unlocked at unattended desks.*
-- **Start from a policy clause** — paste a clause (or try the example). Codify drafts as before; then you link each draft to a risk. Example: *Users shall lock screens when they leave their desk.*
+- **Identify risk → Control statement** — enter identified risks, then write control statements that treat them. **Get started** opens the risk entry step.
+- **Policy clause → Control statement** — paste a clause (or try the example). **Get started** opens the clause box. Codify drafts as before; then you link each draft to a risk.
 
-You can also **Open a saved project** (a catalog you downloaded earlier) or read [this getting-started page](getting-started.md) from the quiet docs link.
+Both flows continue to Enact.
 
 Both paths share **Review** and **Send to Enact**. Every risk needs a control statement; every control must be linked to a risk.
 

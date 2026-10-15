@@ -168,11 +168,68 @@ def test_oscal_export_traces_identified_risks_without_register_fields():
         r for r in catalog["back-matter"]["resources"]
         if any(p.get("name") == "identified-risk-id" for p in r.get("props", []))
     )
+    assert set(resource) <= {"uuid", "title", "description", "props", "document-ids",
+                             "citation", "rlinks", "base64", "remarks"}
+    assert "risk" not in resource
+    assert "status" not in resource
+    assert "statement" not in resource
+    assert resource["title"] == "Screens left unlocked"
+    assert resource["description"] == "Screens left unlocked."
     assert {p["name"]: p["value"] for p in resource["props"]} == {
         "identified-risk-id": "R-001",
+        "statement": "Screens left unlocked.",
+        "status": "open",
         "note": "Optional note.",
     }
     assert all(p.get("ns") == NS for p in resource["props"])
+
+
+def test_from_oscal_restores_risks_from_older_title_description_only():
+    catalog = {
+        "catalog": {
+            "uuid": "00000000-0000-4000-8000-000000000000",
+            "metadata": {
+                "title": "Policy: control statements",
+                "last-modified": "2026-10-14T00:00:00+00:00",
+                "version": "draft",
+                "oscal-version": "1.1.2",
+                "props": [{"name": "generator", "value": "Codify test", "ns": NS}],
+            },
+            "groups": [{
+                "id": "s-0", "title": "Policy",
+                "controls": [{
+                    "id": "c-c1",
+                    "title": "Require users to lock screens",
+                    "props": [
+                        {"name": "label", "value": "c1"},
+                        {"name": "legacy-clause", "value": "c1", "ns": NS},
+                        {"name": "status", "value": "draft", "ns": NS},
+                        {"name": "origin", "value": "rules", "ns": NS},
+                        {"name": "source-type", "value": "clause", "ns": NS},
+                        {"name": "treats-risk", "value": "R-001", "ns": NS},
+                    ],
+                    "parts": [{"id": "c-c1_smt", "name": "statement",
+                               "prose": "Require users to lock screens."}],
+                    "links": [{"href": "#30f6434c-00bc-5c45-af92-f7b974415c6e", "rel": "related"}],
+                }],
+            }],
+            "back-matter": {"resources": [{
+                "uuid": "30f6434c-00bc-5c45-af92-f7b974415c6e",
+                "title": "Screens left unlocked.",
+                "description": "Screens left unlocked.",
+                "props": [
+                    {"name": "identified-risk-id", "value": "R-001", "ns": NS},
+                    {"name": "note", "value": "Optional note.", "ns": NS},
+                ],
+            }]},
+        }
+    }
+    project = from_oscal(catalog)
+    assert project["risks"] == [
+        {"id": "R-001", "statement": "Screens left unlocked.", "note": "Optional note."},
+    ]
+    assert project["controls"][0]["risk_ids"] == ["R-001"]
+    assert "status" not in project["risks"][0]
 
 
 def test_csv_and_report_still_include_the_purpose_field():

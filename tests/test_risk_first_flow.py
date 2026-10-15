@@ -145,7 +145,7 @@ def test_cli_shaped_project_without_risks_still_builds():
 def test_shell_has_two_start_paths_stepper_guides_and_enact_handoff():
     assert 'id="start-from-risks"' in INDEX
     assert 'id="start-from-clause"' in INDEX
-    assert "Recommended" in INDEX
+    assert "Get started" in INDEX
     assert 'id="stepper"' in INDEX
     assert 'id="step-guide"' in INDEX
     assert 'id="flow-next"' in INDEX
@@ -161,5 +161,5 @@ def test_shell_has_two_start_paths_stepper_guides_and_enact_handoff():
     assert "the risk it treats" in JS
     assert ".stepper" in CSS
     assert ".step-guide" in CSS
-    assert ".choice-card" in CSS
+    assert ".flow-card" in CSS
     assert "data-export=\"oscal\"" in INDEX

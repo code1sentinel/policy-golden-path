@@ -39,7 +39,7 @@ They are a starting point to edit, not finished controls.
 ## Scope (today)
 
 - **Ingest:** two web start paths ([ADR 0013](adr/0013-risk-first-authoring-flow.md)):
-  start from identified risks (recommended), or paste clause text (path B,
+  identify risk → control statement, or paste clause text (path B,
   CLI, and files). Word (`.docx`), CSV/Excel (`.xlsx`), or a saved OSCAL
   catalog still open. There is no Title field and clause numbers are optional
   ([ADR 0006](adr/0006-clause-only-input.md)). Multi-clause files may still
@@ -115,10 +115,11 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
-A first visit is one landing: the one-line headline, a converging flow
-of the two ways in, and two start cards. The welcome splash is folded
-into this screen. A saved project shows the same landing with Resume.
-See [docs/prds/landing-start.md](prds/landing-start.md). First-run copy,
+A first visit is two side-by-side flow cards only: Identify risk →
+Control statement (→ Enact), and Policy clause → Control statement
+(→ Enact). Each card has a mini step diagram and **Get started**. A
+saved project shows the same cards with a small Resume link. See
+[docs/prds/landing-flow-cards.md](prds/landing-flow-cards.md). First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).
 A second first-time walkthrough polish (accepted state, `[N]` prompts,

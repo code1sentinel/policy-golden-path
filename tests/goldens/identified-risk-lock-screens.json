@@ -105,12 +105,22 @@
         },
         {
           "uuid": "30f6434c-00bc-5c45-af92-f7b974415c6e",
-          "title": "Screens left unlocked.",
+          "title": "Screens left unlocked",
           "description": "Screens left unlocked.",
           "props": [
             {
               "name": "identified-risk-id",
               "value": "R-001",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "statement",
+              "value": "Screens left unlocked.",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "status",
+              "value": "open",
               "ns": "https://grcengineering.club/ns/codify"
             },
             {

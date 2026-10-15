@@ -76,6 +76,20 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Landing is only the two flows, side by side
+  ([docs/prds/landing-flow-cards.md](docs/prds/landing-flow-cards.md)):
+  Identify risk → Control statement (→ Enact), and Policy clause →
+  Control statement (→ Enact). Each card has a mini step diagram and
+  **Get started**. A saved project keeps a small **Resume** link. The
+  headline, shared diagram, Recommended kicker, docs link, and Open a
+  saved project are gone. No new outbound calls.
+- Identified-risk OSCAL export writes assessment-style fields on each
+  catalog back-matter resource: short `title`, `description` /
+  `statement`, and `status=open` ([ADR 0014](docs/adr/0014-oscal-identified-risk-statements.md)).
+  Controls still use `treats-risk` and `rel=related`. Status is
+  export-only; `project.risks` stays `{id, statement, note?}`. CI
+  validates the identified-risk catalog against NIST OSCAL 1.1.2.
+
 - One landing instead of a splash plus a start screen
   ([docs/prds/landing-start.md](docs/prds/landing-start.md)). The
   headline is *Codify turns what you need to address into clear control
