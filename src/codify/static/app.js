@@ -855,6 +855,7 @@ function showView(view) {
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
   if (view === "workspace") {
+    state.startPath = null;
     renderResume();
     renderStartChoice();
   }

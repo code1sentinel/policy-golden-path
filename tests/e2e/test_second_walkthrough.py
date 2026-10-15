@@ -102,10 +102,10 @@ def test_workspace_opens_start_and_pasted_title_is_not_pasted_text(page):
     expect(page.locator("#crumb")).to_contain_text("Need-to-know policy")
     page.click("[data-nav='workspace']")
     expect(page.locator("#start:not([hidden])")).to_be_visible()
-    expect(page.locator("#current-project:not([hidden])")).to_be_visible()
-    expect(page.locator("#current-project")).to_contain_text("Need-to-know policy")
+    expect(page.locator("#resume:not([hidden])")).to_be_visible()
+    expect(page.locator("#resume")).to_contain_text("Need-to-know policy")
     expect(page.locator("#work")).to_be_hidden()
-    page.click("#current-project-open")
+    page.click("#resume-open")
     expect(page.locator("#work:not([hidden])")).to_be_visible()
 
 
