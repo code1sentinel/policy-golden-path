@@ -35,7 +35,7 @@ jobs:
           tar xzf "pyodide-${PYODIDE_VERSION}.tgz"
       - name: Build the site
         run: python scripts/build_site.py --pyodide package --out site
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
