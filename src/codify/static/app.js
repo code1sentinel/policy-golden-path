@@ -113,8 +113,8 @@ const STEP_GUIDES = {
   },
   enact: {
     title: "Send to Enact",
-    what: "Download the OSCAL catalog on this device, then open it in Enact.",
-    why: "Codify writes the catalog. Enact runs the checks. They share a file, not a server.",
+    what: "Download the OSCAL catalog on this device, then open it in Enact. This turns control statements into testable Rego policy.",
+    why: "Codify writes the catalog. Enact runs the checks as Rego. They share a file, not a server.",
     example: "Save catalog.json, open Enact, load that file.",
     mistakes: "Codify does not upload the catalog. If download is blocked, accept coverage first.",
   },
@@ -1322,7 +1322,7 @@ function renderEnactStep(box) {
   box.replaceChildren(
     el("div", { class: "card enact-panel", id: "enact-step" },
       el("h3", { class: "section-title", text: "Send to Enact" }),
-      el("p", { text: "Codify writes the catalog. Enact runs the checks. They share a file, not a server. Download only — nothing is uploaded." }),
+      el("p", { text: "Send to Enact turns control statements into testable Rego policy. Codify writes the catalog. Enact runs the checks. They share a file, not a server. Download only — nothing is uploaded." }),
       el("ol", { class: "enact-handoff__steps" },
         el("li", { text: "Download the OSCAL catalog on this device." }),
         el("li", {}, "Open ", el("a", { href: ENACT_APP, target: "_blank", rel: "noopener noreferrer", text: "Enact" }), " (Pages app)."),

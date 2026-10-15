@@ -116,10 +116,13 @@ Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
 A first visit is two side-by-side flow cards only: Identify risk →
-Control statement (→ Enact), and Policy clause → Control statement
-(→ Enact). Each card has a mini step diagram and **Get started**. A
-saved project shows the same cards with a small Resume link. See
-[docs/prds/landing-flow-cards.md](prds/landing-flow-cards.md). First-run copy,
+Control statement → Technical policy (Rego), and Policy clause →
+Control statement → Technical policy (Rego). Each card has a mini
+step diagram and **Get started**. A muted caption points at Enact.
+A saved project shows the same cards with a small Resume link. See
+[docs/prds/landing-flow-cards.md](prds/landing-flow-cards.md) and
+[docs/prds/technical-policy-rego-label.md](prds/technical-policy-rego-label.md).
+First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).
 A second first-time walkthrough polish (accepted state, `[N]` prompts,

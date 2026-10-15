@@ -2,7 +2,7 @@
 
 **Codify** turns identified risks and legacy policy clauses into OSCAL 1.1.2 control statements.
 
-Start from the risks you already identified (recommended), or paste a clause. Codify drafts control statements, scores each draft as you edit it, and downloads a catalog you can load in Enact.
+Start from the risks you already identified (recommended), or paste a clause. Codify drafts control statements, scores each draft as you edit it, and downloads a catalog you can load in Enact as testable Rego policy.
 
 {% hint style="info" %}
 Codify runs on your device. Your policy is not uploaded. Rule-based drafts never use AI.

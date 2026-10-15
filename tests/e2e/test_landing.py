@@ -40,9 +40,17 @@ def test_first_open_is_two_flow_cards(browser, base_url):
     expect(page.locator(".flow-card")).to_have_count(2)
     expect(page.locator(".flow-card").nth(0)).to_contain_text("Identify risk")
     expect(page.locator(".flow-card").nth(0)).to_contain_text("Control statement")
-    expect(page.locator(".flow-card").nth(0)).to_contain_text("Enact")
+    expect(page.locator(".flow-card").nth(0)).to_contain_text("Technical policy (Rego)")
     expect(page.locator(".flow-card").nth(1)).to_contain_text("Policy clause")
     expect(page.locator(".flow-card").nth(1)).to_contain_text("Control statement")
+    expect(page.locator(".flow-card").nth(1)).to_contain_text("Technical policy (Rego)")
+    expect(page.locator("#landing-caption")).to_contain_text(
+        "Exported as OSCAL and tested as Rego in"
+    )
+    expect(page.locator("#landing-caption a")).to_have_text("Enact")
+    expect(page.locator("#landing-caption a")).to_have_attribute(
+        "href", "https://code1sentinel.github.io/enact/"
+    )
     expect(page.locator(".checklist")).to_have_count(0)
     expect(page.get_by_text("Set up this workspace")).to_have_count(0)
     expect(page.get_by_text("How to use Codify")).to_have_count(0)
