@@ -76,6 +76,14 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Landing diagrams and first-run copy name the last step **Policy as
+  code (Rego)** instead of a bare **Enact**
+  ([docs/prds/technical-policy-rego-label.md](docs/prds/technical-policy-rego-label.md)).
+  A muted caption: *Exported as OSCAL and tested as Rego in Enact*
+  (Enact still links to the Enact app). **Send to Enact** stays the
+  action, with helper text that it turns control statements into
+  testable Rego policy. No new outbound calls.
+
 - Landing is only the two flows, side by side
   ([docs/prds/landing-flow-cards.md](docs/prds/landing-flow-cards.md)):
   Identify risk → Control statement (→ Enact), and Policy clause →

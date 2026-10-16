@@ -41,6 +41,8 @@ def test_path_a_risks_then_controls_then_review_then_enact(page):
     page.locator(".editor__primary >> text=Accept").click()
     page.click("#flow-next")
     expect(page.locator("#enact-step")).to_contain_text("Send to Enact")
+    expect(page.locator("#enact-step")).to_contain_text("testable Rego policy")
+    expect(page.locator("#stepper")).to_contain_text("Send to Enact")
     expect(page.locator("#enact-download")).to_be_enabled()
     with page.expect_download() as dl:
         page.click("#enact-download")

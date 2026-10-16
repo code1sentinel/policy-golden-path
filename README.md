@@ -52,8 +52,10 @@ loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
 The first open is two side-by-side flows: **Identify risk → Control
-statement** and **Policy clause → Control statement** (then Enact). Each
-card has a mini step diagram and **Get started**. A saved project on this
+statement → Policy as code (Rego)** and **Policy clause → Control
+statement → Policy as code (Rego)**. Each card has a mini step
+diagram and **Get started**. A muted line explains the catalog is
+exported as OSCAL and tested as Rego in Enact. A saved project on this
 device shows the same cards with a small **Resume** link.
 
 To see the clause path, choose it, edit or replace the example, and press

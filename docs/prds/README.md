@@ -15,6 +15,7 @@ before implementation.
 - [welcome-splash.md](welcome-splash.md) — superseded by landing-start.md
 - [landing-start.md](landing-start.md) — superseded by landing-flow-cards.md
 - [landing-flow-cards.md](landing-flow-cards.md) — two flow cards + OSCAL risk statements
+- [technical-policy-rego-label.md](technical-policy-rego-label.md) — last step is Policy as code (Rego)
 - [first-run-clarity.md](first-run-clarity.md) — first-time GRC walkthrough fixes
 - [second-walkthrough-polish.md](second-walkthrough-polish.md) — second first-time walkthrough
 - [remove-risk-register.md](remove-risk-register.md) — drop the local risk register

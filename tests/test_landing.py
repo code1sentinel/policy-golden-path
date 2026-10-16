@@ -29,14 +29,16 @@ def test_landing_is_two_flow_cards_with_get_started():
     risks = _card(INDEX, "start-from-risks")
     assert "Identify risk" in risks
     assert "Control statement" in risks
-    assert "Enact" in risks
+    assert "Policy as code (Rego)" in risks
+    assert ">Enact<" not in risks
     assert "Get started" in risks
     assert "Recommended" not in risks
     assert "Screens left unlocked" not in risks
     clause = _card(INDEX, "start-from-clause")
     assert "Policy clause" in clause
     assert "Control statement" in clause
-    assert "Enact" in clause
+    assert "Policy as code (Rego)" in clause
+    assert ">Enact<" not in clause
     assert "Get started" in clause
     assert "Users shall lock screens" not in clause
     assert 'id="landing-flow"' not in INDEX
@@ -85,3 +87,20 @@ def test_landing_uses_existing_tokens_and_system_fonts():
     assert ".flow-card" in CSS
     assert "fonts.googleapis" not in CSS
     assert 'href="#main"' in INDEX
+
+
+def test_landing_caption_explains_oscal_and_enact():
+    assert 'id="landing-caption"' in INDEX
+    caption = INDEX.split('id="landing-caption"', 1)[1][:400]
+    assert "Exported as OSCAL and tested as Rego in" in caption
+    assert "code1sentinel.github.io/enact" in caption
+    assert "Enact" in caption
+
+
+def test_send_to_enact_keeps_action_and_explains_rego():
+    assert "Send to Enact" in INDEX
+    assert "testable Rego policy" in INDEX
+    assert "testable Rego policy" in JS
+    assert 'enact: "Send to Enact"' in JS
+    assert 'title: "Send to Enact"' in JS
+    assert 'enact: "Enact"' not in JS

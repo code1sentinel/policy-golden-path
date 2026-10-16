@@ -94,23 +94,28 @@
           <div id="start-choice" class="landing-cards" role="group" aria-label="Choose a starting path">
             <article class="flow-card" aria-labelledby="flow-a-title">
               <h3 id="flow-a-title" class="flow-card__title">Identify risk → Control statement</h3>
-              <ol class="flow-card__steps" aria-label="Identify risk, then control statement, then Enact">
+              <ol class="flow-card__steps" aria-label="Identify risk, then control statement, then policy as code (Rego)">
                 <li>Identify risk</li>
                 <li>Control statement</li>
-                <li>Enact</li>
+                <li>Policy as code (Rego)</li>
               </ol>
               <button type="button" class="btn btn--primary" id="start-from-risks">Get started</button>
             </article>
             <article class="flow-card" aria-labelledby="flow-b-title">
               <h3 id="flow-b-title" class="flow-card__title">Policy clause → Control statement</h3>
-              <ol class="flow-card__steps" aria-label="Policy clause, then control statement, then Enact">
+              <ol class="flow-card__steps" aria-label="Policy clause, then control statement, then policy as code (Rego)">
                 <li>Policy clause</li>
                 <li>Control statement</li>
-                <li>Enact</li>
+                <li>Policy as code (Rego)</li>
               </ol>
               <button type="button" class="btn btn--primary" id="start-from-clause">Get started</button>
             </article>
           </div>
+
+          <p id="landing-caption" class="landing-caption">
+            Exported as OSCAL and tested as Rego in
+            <a href="https://code1sentinel.github.io/enact/" target="_blank" rel="noopener noreferrer">Enact</a>
+          </p>
 
           <p id="resume" class="landing-resume" hidden>
             <button type="button" class="landing__quiet" id="resume-open">Resume</button>
@@ -284,7 +289,7 @@ User accounts shall be reviewed regularly.</textarea>
         </div>
         <button type="submit" class="icon-btn" value="cancel" aria-label="Close">×</button>
       </div>
-      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded.</p>
+      <p class="dialog__lede">Download a copy on this device. Nothing is uploaded. Send to Enact turns control statements into testable Rego policy.</p>
       <div class="enact-handoff" id="enact-handoff">
         <p><strong>Codify writes the catalog. Enact runs the checks.</strong> They share a file, not a server.</p>
         <ol class="enact-handoff__steps">
