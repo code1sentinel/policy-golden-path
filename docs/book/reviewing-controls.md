@@ -12,7 +12,7 @@ The page is an authoring app:
 - **Writing column** — the control statement, with the legacy clause above it
 - **Right panel** — status, score, and review hints
 
-**Workspace** in the sidebar returns to the start (two paths: risks or a clause). **Clauses** is the open project. A numbered stepper shows Identify risks / Develop controls (or Paste a clause / Link to risks), then Review and Send to Enact. Each step has a short guide you can hide and open again.
+**Workspace** in the sidebar returns to the start (two paths: risks or a clause). **Clauses** is the open project. Identify risks is a capture page (three landing steps, back to the landing, Continue when at least one risk exists). Later steps still use a numbered stepper: Develop controls (or Paste a clause / Link to risks), then Review and Send to Enact, with a short guide you can hide and open again.
 
 A pasted project is named from the first clause. You can rename it at the top of the workspace.
 

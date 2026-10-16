@@ -58,6 +58,10 @@ diagram and **Get started**. A muted line explains the catalog is
 exported as OSCAL and tested as Rego in Enact. A saved project on this
 device shows the same cards with a small **Resume** link.
 
+Flow A's **Get started** opens a page that asks **What risks have you
+identified?** Type in **Add a risk** (Enter adds, Esc cancels), edit
+rows in place, then **Continue to control statements**.
+
 To see the clause path, choose it, edit or replace the example, and press
 **Codify**, or choose **Try an example** to open the **Acme demo policy**.
 Codify then shows a short **here's what we drafted** step, then **Link to

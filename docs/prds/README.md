@@ -21,4 +21,5 @@ before implementation.
 - [remove-risk-register.md](remove-risk-register.md) — drop the local risk register
 - [identified-risks-as-input.md](identified-risks-as-input.md) — identified risks as input, not a register
 - [risk-first-authoring-flow.md](risk-first-authoring-flow.md) — risk-first web flow with two start paths
+- [identify-risks-page.md](identify-risks-page.md) — Flow A step 1: capture identified risks
 
