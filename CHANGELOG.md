@@ -76,6 +76,18 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Identify risks (Flow A step 1) is a single capture page: **What
+  risks have you identified?**, one guidance sentence, a collapsible
+  writing tip, an inline list (Enter adds, Esc cancels, edit in place,
+  optional note, remove), a friendly empty state, and **Continue to
+  control statements** disabled until at least one risk exists. A small
+  three-step indicator matches the landing card; **Back to the landing**
+  returns to the flow cards. The shared wizard guide, Previous / Next,
+  and risk-id pills are gone from this page. `{id, statement, note?}`
+  and the OSCAL risk export are unchanged
+  ([docs/prds/identify-risks-page.md](docs/prds/identify-risks-page.md),
+  [ADR 0015](docs/adr/0015-identify-risks-page.md)).
+
 - Landing diagrams and first-run copy name the last step **Policy as
   code (Rego)** instead of a bare **Enact**
   ([docs/prds/technical-policy-rego-label.md](docs/prds/technical-policy-rego-label.md)).

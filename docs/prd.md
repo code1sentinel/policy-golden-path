@@ -122,6 +122,10 @@ step diagram and **Get started**. A muted caption points at Enact.
 A saved project shows the same cards with a small Resume link. See
 [docs/prds/landing-flow-cards.md](prds/landing-flow-cards.md) and
 [docs/prds/technical-policy-rego-label.md](prds/technical-policy-rego-label.md).
+Flow A step 1 is a calm capture page: title, one guidance sentence, a
+collapsible writing tip, an inline list of risks, and **Continue to
+control statements** disabled until at least one risk exists. See
+[docs/prds/identify-risks-page.md](prds/identify-risks-page.md).
 First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).

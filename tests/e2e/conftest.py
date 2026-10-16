@@ -118,6 +118,19 @@ def choose_risk_path(page):
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
 
 
+def add_flow_risk(page, statement, note=""):
+    """Identify-risks page: type a statement, Enter to add, optional in-place note."""
+    page.fill("#flow-risk-statement", statement)
+    page.locator("#flow-risk-statement").press("Enter")
+    row = page.locator("#identify-list .identify-row").last
+    expect(row.locator(".identify-row__statement")).to_have_value(statement)
+    if note:
+        note_input = row.locator(".identify-row__note")
+        note_input.fill(note)
+        note_input.blur()
+        expect(note_input).to_have_value(note)
+
+
 def finish_open(page, timeout=120_000):
     """After Codify or Try an example, pass the result step into the authoring flow."""
     page.wait_for_selector(

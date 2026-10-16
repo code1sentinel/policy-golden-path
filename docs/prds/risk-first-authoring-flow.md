@@ -4,7 +4,7 @@
 | --- | --- |
 | Status | Agreed |
 | Slice issues | This PR (one issue → one PR; GitHub issue creation is not available to this agent) |
-| Supercedes / extends | [docs/prd.md](../prd.md), [identified-risks-as-input.md](identified-risks-as-input.md) |
+| Supercedes / extends | [docs/prd.md](../prd.md), [identified-risks-as-input.md](identified-risks-as-input.md). Identify risks page chrome: [identify-risks-page.md](identify-risks-page.md). |
 | Author | Product owner / this slice |
 | Date | 2026-10-14 |
 
