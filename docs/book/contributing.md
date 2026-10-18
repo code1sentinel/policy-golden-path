@@ -1,6 +1,6 @@
 # Contributing
 
-[`AGENTS.md`](https://github.com/code1sentinel/policy-golden-path/blob/main/AGENTS.md) is the short index. Detailed rules live in [`.cursor/rules/`](https://github.com/code1sentinel/policy-golden-path/tree/main/.cursor/rules); procedures live in [`.cursor/skills/`](https://github.com/code1sentinel/policy-golden-path/tree/main/.cursor/skills). The human short version is [`CONTRIBUTING.md`](https://github.com/code1sentinel/policy-golden-path/blob/main/CONTRIBUTING.md). This page is a pointer, not a second contract.
+[`AGENTS.md`](https://github.com/code1sentinel/policy-golden-path/blob/main/AGENTS.md) is the short index. Detailed rules live in [`.cursor/rules/`](https://github.com/code1sentinel/policy-golden-path/tree/main/.cursor/rules); procedures live in [`.cursor/skills/`](https://github.com/code1sentinel/policy-golden-path/tree/main/.cursor/skills). The human short version is [`CONTRIBUTING.md`](https://github.com/code1sentinel/policy-golden-path/blob/main/CONTRIBUTING.md) (including [control templates](https://github.com/code1sentinel/policy-golden-path/blob/main/CONTRIBUTING.md#control-templates)). This page is a pointer, not a second contract.
 
 ## Start from a PRD
 

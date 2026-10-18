@@ -115,12 +115,13 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
-A first visit is two side-by-side flow cards only: Identify risk →
-Control statement → Policy as code (Rego), and Policy clause →
-Control statement → Policy as code (Rego). Each card has a mini
-step diagram and **Get started**. A muted caption points at Enact.
-A saved project shows the same cards with a small Resume link. See
-[docs/prds/landing-flow-cards.md](prds/landing-flow-cards.md) and
+A first visit is a marketing landing in the spirit of Base (Basenames):
+a full-bleed blue hero, a centered risk → control → OSCAL → Rego mock,
+**Get started** into the risk-first flow, and **Start from a policy
+clause** as a secondary button. How it works, feature cards, a contribute
+section, and a closing CTA follow. A saved project shows **Resume your
+project**. See
+[docs/prds/marketing-landing.md](prds/marketing-landing.md) and
 [docs/prds/technical-policy-rego-label.md](prds/technical-policy-rego-label.md).
 Flow A step 1 is a calm capture page: title, one guidance sentence, a
 collapsible writing tip, an inline list of risks, and **Continue to

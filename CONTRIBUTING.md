@@ -53,6 +53,25 @@ merges on red.
 
 UI PRs cite the Mobbin references and attach before/after screenshots.
 
+## Control templates
+
+A **control template** is a reusable, action-first control statement (and
+optional guidance) that another GRC reviewer can start from. It is not a
+full catalog and not a risk register.
+
+To contribute one:
+
+1. Open a [slice issue](.github/ISSUE_TEMPLATE/slice.yml) that names the
+   risk the statement treats and the wording you want to share.
+2. Keep the statement action-first, tool-neutral, and testable — the same
+   rules as the in-app Guide.
+3. Use fictional examples only. Do not paste a real policy, customer
+   names, or secrets.
+4. Prefer a short Markdown example under [`examples/`](examples/), or
+   attach the proposed statement on the issue if a file is not needed yet.
+
+The landing **Contribute a control template** button points here.
+
 ## After merge
 
 - Update Pages comes for free on push to `main` if the site changed; attach

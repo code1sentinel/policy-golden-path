@@ -27,6 +27,7 @@ def test_system_default_follows_prefers_color_scheme(browser, base_url):
 
 def test_theme_toggle_persists_and_system_clears_override(browser, base_url):
     ctx, page = _open(browser, base_url, color_scheme="dark")
+    page.click("#start-from-risks")
     page.click("[data-theme-choice='light']")
     expect(page.locator("html")).to_have_attribute("data-theme", "light")
     expect(page.locator("[data-theme-choice='light']")).to_have_attribute("aria-checked", "true")
@@ -34,6 +35,7 @@ def test_theme_toggle_persists_and_system_clears_override(browser, base_url):
     page.reload()
     page.wait_for_selector("#start:not([hidden])")
     expect(page.locator("html")).to_have_attribute("data-theme", "light")
+    page.click("#start-from-risks")
     page.click("[data-theme-choice='system']")
     assert page.evaluate("localStorage.getItem('codify:theme')") is None
     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
@@ -43,6 +45,7 @@ def test_theme_toggle_persists_and_system_clears_override(browser, base_url):
 
 def test_theme_toggle_makes_no_third_party_requests(browser, base_url):
     ctx, page = _open(browser, base_url, color_scheme="dark")
+    page.click("#start-from-risks")
     seen = []
     page.on("request", lambda req: seen.append(req.url))
     page.click("[data-theme-choice='light']")

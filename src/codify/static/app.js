@@ -843,6 +843,7 @@ function showView(view) {
   }
   $("#guide").hidden = view !== "guide";
   $("#start").hidden = view !== "workspace";
+  document.body.dataset.chrome = view === "workspace" ? "landing" : "app";
   if ($("#result")) $("#result").hidden = view !== "result";
   const authoring = Boolean(state.project) && (view === "flow" || view === "work");
   if ($("#flow")) $("#flow").hidden = !authoring;
@@ -958,12 +959,10 @@ function openFlow() {
 
 function renderStartChoice() {
   const landing = $("#landing");
-  const choice = $("#start-choice");
   const drop = $("#drop");
   if (!drop) return;
   const clause = state.startPath === "clause";
   if (landing) landing.hidden = clause;
-  if (choice) choice.hidden = clause;
   drop.hidden = !clause;
 }
 
@@ -3095,7 +3094,7 @@ function init() {
   }
 
   $("#result-continue")?.addEventListener("click", continueFromResult);
-  $("#start-from-risks")?.addEventListener("click", startRiskPath);
+  for (const b of $$("[data-start-risks]")) b.addEventListener("click", startRiskPath);
   $("#start-from-clause")?.addEventListener("click", showClausePath);
   $("#start-clause-back")?.addEventListener("click", hideClausePath);
   $("#flow-next")?.addEventListener("click", flowNext);

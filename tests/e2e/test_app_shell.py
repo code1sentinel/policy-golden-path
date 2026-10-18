@@ -4,6 +4,7 @@ from playwright.sync_api import expect
 
 
 def test_sidebar_lists_the_authoring_destinations(page):
+    page.click("#start-from-risks")
     nav = page.locator("nav.sidebar__nav")
     expect(nav.get_by_role("button", name="Workspace")).to_be_visible()
     expect(nav.get_by_role("button", name="Clauses")).to_be_visible()
@@ -56,5 +57,5 @@ def test_review_accept_and_dismiss(demo):
 
 
 def test_export_from_the_sidebar_needs_a_policy(page):
-    page.click("[data-nav='export']")
+    page.locator("[data-nav='export']").dispatch_event("click")
     expect(page.locator("#error")).to_contain_text("Load a policy before exporting")
