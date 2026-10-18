@@ -17,7 +17,8 @@ def test_nav_has_exactly_three_destinations():
     for gone in ("workspace", "clauses", "catalog", "library", "export", "guide", "risks"):
         assert f'data-nav="{gone}"' not in INDEX
     nav = INDEX.split('class="sidebar__nav"', 1)[1].split("</nav>", 1)[0]
-    assert nav.count("nav-btn") == 3
+    assert nav.count('class="nav-btn"') == 3
+    assert nav.count("data-nav=") == 3
     assert 'aria-label="Primary"' in INDEX
 
 

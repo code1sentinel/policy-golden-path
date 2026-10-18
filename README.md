@@ -198,18 +198,21 @@ set-this-value prompts.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> (or arrows) next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>
   accept (also from the statement field).
-- **Saving**: work is kept in your browser as you go. **Export** opens a dialog
-  with **OSCAL catalog** as the recommended download (keep, share, or put in
-  git; reopen later), then Excel, CSV, and the conversion report. Statement
-  library JSON/CSV sit under an optional group. The editor's **OSCAL JSON**
-  tab shows this control so you can read or copy it without downloading the file.
-- **Catalog** lists every control with a source column (the clause it came
-  from). There is no risk register
+- **Saving**: work is kept in your browser as you go. **Export** (from the
+  toolbar, not a nav tab) opens a dialog with **OSCAL catalog** as the
+  recommended download (keep, share, or put in git; reopen later), then Excel,
+  CSV, and the conversion report. Statement library JSON/CSV sit under an
+  optional group. The editor's **OSCAL JSON** tab shows this control so you can
+  read or copy it without downloading the file.
+- **Catalog**, identified-risk input, and the statement **library** stay inside
+  the flows (OSCAL from step 3, **Insert from library**); they are not nav tabs.
+  Catalog lists every control with a source column (the clause it came from).
+  There is no risk register
   ([ADR 0011](docs/adr/0011-no-risk-register.md)).
-- **Risks** is identified-risk input: a short statement and optional note.
-  Controls may link to those ids; coverage flags risks with no control and
-  controls with no linked risk. Matching statements come from the on-device
-  library. This is not a scored register
+- **Identified risks** are a short statement and optional note. Controls may
+  link to those ids; coverage flags risks with no control and controls with no
+  linked risk. Matching statements come from the on-device library. This is not
+  a scored register
   ([ADR 0012](docs/adr/0012-identified-risks-as-input.md)).
 - **Library** keeps accepted control statements on this device
   (`codify:statements`, separate from the project autosave). One statement

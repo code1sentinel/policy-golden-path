@@ -1093,7 +1093,9 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
     padding: 8px 4px; font-size: 12px; gap: 0;
   }
   .nav-btn__icon { display: none; }
-  .nav-btn__label { overflow: hidden; text-overflow: ellipsis; }
+  .nav-btn__label {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   body.sidebar-collapsed { grid-template-columns: 1fr; }
   body.sidebar-collapsed .nav-btn__label { display: block; }
   body.sidebar-collapsed .nav-btn { justify-content: center; padding: 8px 4px; }
