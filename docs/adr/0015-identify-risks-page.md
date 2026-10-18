@@ -39,7 +39,8 @@ Flow A step 1 is a single capture page:
 - **Continue to control statements** is the only primary, and it stays
   disabled until at least one identified risk exists.
 - Shared stepper, step guide, and Previous / Next stay on later steps
-  until those pages are redesigned.
+  until those pages are redesigned. Control statements (step 2) is
+  refined by [0016-control-statements-page.md](0016-control-statements-page.md).
 
 Ids remain `R-001`, … in the project. They are not shown as register
 pills on this page. Removing a risk still drops the link on controls;

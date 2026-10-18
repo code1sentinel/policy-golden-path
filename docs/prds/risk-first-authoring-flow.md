@@ -45,7 +45,7 @@ Start from risks (recommended) or from a clause, write control statements that c
 ## Success criteria
 
 - Given the start screen after splash, When it renders, Then two paths are offered and **Start from risks** is the recommended primary.
-- Given path A with no risks, When the person tries to continue, Then they stay on Identify risks with inline validation. Given at least one risk, When they continue, Then they reach Develop control statements.
+- Given path A with no risks, When the person tries to continue, Then they stay on Identify risks with inline validation. Given at least one risk, When they continue, Then they reach Write a control statement for each risk.
 - Given path A, When a risk has no non-empty control, Then they cannot move on; each risk can take a library suggestion or a typed statement; a policy clause may be attached as optional context.
 - Given path B, When the person pastes a clause (or Try an example), Then Codify drafts as today, and they must link every control to a risk (adding risks inline if needed) before Review.
 - Given Review, When coverage is shown, Then uncovered risks and unlinked controls are flagged; the person can edit and accept.

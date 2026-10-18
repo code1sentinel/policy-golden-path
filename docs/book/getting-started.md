@@ -20,8 +20,8 @@ The first open is a product landing: what Codify does, a mock of a risk becoming
 
 ## Choose how to start
 
-- **Get started** — opens **What risks have you identified?** Type each risk in **Add a risk** (Enter adds), then **Continue to control statements**.
-- **Start from a policy clause** — paste a clause (or try the example). Codify drafts as before; then you link each draft to a risk.
+- **Get started** — opens **What risks have you identified?** Type each risk in **Add a risk** (Enter adds), then **Continue to control statements**. Write a statement for each risk, then **Continue to policy as code**.
+- **Start from a policy clause** — paste a clause (or try the example). Codify drafts as before; then you review each clause’s statement and link each draft to a risk.
 
 Both flows end at **Policy as code (Rego)** in [Enact](enact.md).
 

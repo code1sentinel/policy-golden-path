@@ -12,6 +12,19 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Control statements (shared step 2) is a split drafting page: **Write
+  a control statement for each risk** (or **…for each clause**), one
+  guidance sentence, a collapsible writing tip, a left list with
+  coverage dots, a right editor (add / edit / remove statements, quiet
+  **Insert from library**), a progress line, and **Continue to policy
+  as code** disabled until every item has a statement. The same small
+  three-step indicator as Identify risks; Back returns to the previous
+  step. Wizard guide, Previous / Next, optional clause fields, and
+  library panels are gone from this page. Treats-risk links and OSCAL
+  export are unchanged
+  ([docs/prds/control-statements-page.md](docs/prds/control-statements-page.md),
+  [ADR 0016](docs/adr/0016-control-statements-page.md)).
+
 - First visit is a Base-style marketing landing
   ([docs/prds/marketing-landing.md](docs/prds/marketing-landing.md)):
   full-bleed `#0052FF` hero, centered risk → control → OSCAL → Rego mock,
