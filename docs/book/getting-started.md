@@ -20,7 +20,7 @@ A saved project on this device shows the same cards with a small **Resume** link
 
 ## Choose how to start
 
-- **Identify risk → Control statement** — enter identified risks, then write control statements that treat them. **Get started** opens the risk entry step.
+- **Identify risk → Control statement** — enter identified risks, then write control statements that treat them. **Get started** opens **What risks have you identified?** Type each risk in **Add a risk** (Enter adds), then **Continue to control statements**.
 - **Policy clause → Control statement** — paste a clause (or try the example). **Get started** opens the clause box. Codify drafts as before; then you link each draft to a risk.
 
 Both flows end at **Policy as code (Rego)**. A muted line on the landing explains the catalog is exported as OSCAL and tested as Rego in [Enact](enact.md).

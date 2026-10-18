@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, choose_risk_path, finish_open, goto_review
+from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish_open, goto_review
 
 
 def test_start_offers_two_get_started_paths(page):
@@ -18,17 +18,13 @@ def test_start_offers_two_get_started_paths(page):
 
 def test_path_a_risks_then_controls_then_review_then_enact(page):
     choose_risk_path(page)
-    expect(page.locator("#stepper")).to_be_visible()
-    expect(page.locator("#step-guide")).to_contain_text("What")
-    expect(page.locator("#step-guide")).to_contain_text("Why")
-    expect(page.locator("#flow-next")).to_be_visible()
-    page.click("#flow-next")
-    expect(page.locator("#flow-error")).to_contain_text("identified risk")
-    page.fill("#flow-risk-statement", "Screens left unlocked at unattended desks.")
-    page.fill("#flow-risk-note", "From the workshop.")
-    page.click("#flow-risk-add")
-    expect(page.locator("#flow-step")).to_contain_text("R-001")
-    page.click("#flow-next")
+    expect(page.locator("#identify-steps")).to_be_visible()
+    expect(page.locator("#identify-continue")).to_be_disabled()
+    add_flow_risk(
+        page, "Screens left unlocked at unattended desks.", note="From the workshop.")
+    expect(page.locator("#identify-list .identify-row__statement")).to_have_value(
+        "Screens left unlocked at unattended desks.")
+    page.click("#identify-continue")
     expect(page.locator("#flow-step")).to_contain_text("Develop control statements")
     page.click("#flow-next")
     expect(page.locator("#flow-error")).to_contain_text("control statement")

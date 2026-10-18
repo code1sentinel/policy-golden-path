@@ -64,6 +64,7 @@ const state = {
   flowStep: null,      // risks | controls | clause | link | review | enact
   startPath: null,     // "clause" when the paste form is showing
   guideDismissed: {},
+  identifyFocus: null, // selector to focus after the identify list re-renders
 };
 
 const STEP_LABELS = {
@@ -974,6 +975,24 @@ function setFlowError(message) {
 }
 
 function renderFlowChrome() {
+  const identify = Boolean(state.project) && state.view === "flow" && state.flowStep === "risks";
+  $("#flow")?.classList.toggle("flow-view--identify", identify);
+  const head = $(".flow-view__head");
+  const nav = $("#flow-nav");
+  const guide = $("#step-guide");
+  const reopen = $("#step-guide-open");
+  if (identify) {
+    if (head) head.hidden = true;
+    if (nav) nav.hidden = true;
+    if (guide) {
+      guide.hidden = true;
+      guide.replaceChildren();
+    }
+    if (reopen) reopen.hidden = true;
+    setFlowError("");
+    return;
+  }
+  if (head) head.hidden = false;
   renderStepper();
   renderStepGuide();
   renderFlowNav();
@@ -1103,6 +1122,7 @@ function startRiskPath() {
   state.selected = null;
   state.flowStep = "risks";
   state.startPath = null;
+  state.identifyFocus = null;
   saveLocal();
   showView("flow");
 }
@@ -1133,58 +1153,151 @@ function renderFlowStep() {
 
 function renderIdentifyStep(box) {
   ensureRisks();
-  const statement = el("input", {
+  const risks = identifiedRisks(state.project);
+  const back = el("button", {
+    type: "button", class: "btn btn--quiet identify-back", id: "identify-back",
+    text: "Back to the landing",
+  });
+  back.addEventListener("click", () => {
+    saveLocal();
+    showView("workspace");
+    $("#start-from-risks")?.focus();
+  });
+  const steps = el("ol", {
+    class: "identify-steps", id: "identify-steps",
+    "aria-label": "Identify risks, then control statements, then policy as code (Rego)",
+  },
+    el("li", { "aria-current": "step" },
+      el("span", { class: "identify-steps__n", text: "1" }),
+      el("span", { class: "identify-steps__label", text: "Identify risks" })),
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "2" }),
+      el("span", { class: "identify-steps__label", text: "Control statements" })),
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "3" }),
+      el("span", { class: "identify-steps__label", text: "Policy as code (Rego)" })),
+  );
+  const tip = el("details", { class: "identify-tip", id: "identify-tip" },
+    el("summary", { text: "How to write a good risk statement" }),
+    el("p", { text: "Name what could go wrong and why. For example: “Unauthorised access to customer data due to shared admin accounts”." }));
+  const addInput = el("input", {
     type: "text", id: "flow-risk-statement", maxlength: "500", autocomplete: "off",
-    placeholder: "Short risk statement, e.g. Screens left unlocked.",
-    "aria-required": "true",
+    placeholder: "Add a risk", "aria-label": "Add a risk",
   });
-  const note = el("input", {
-    type: "text", id: "flow-risk-note", maxlength: "500", autocomplete: "off",
-    placeholder: "Optional note",
-  });
-  const add = el("button", { type: "button", class: "btn btn--primary", id: "flow-risk-add", text: "Add risk" });
-  const submit = () => {
-    const text = statement.value;
-    if (!String(text || "").trim()) {
-      setFlowError("A risk statement is required.");
-      statement.focus();
-      return;
-    }
-    setFlowError("");
-    addIdentifiedRisk(text, note.value);
-    statement.value = "";
-    note.value = "";
+  const addRisk = () => {
+    if (!String(addInput.value || "").trim()) return;
+    addIdentifiedRisk(addInput.value, "");
+    state.identifyFocus = "#flow-risk-statement";
     renderFlowStep();
     renderFlowChrome();
   };
-  add.addEventListener("click", submit);
-  statement.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
-  const risks = state.project.risks || [];
-  const rows = risks.map((risk) => {
-    const remove = el("button", { type: "button", class: "btn btn--small btn--quiet", text: "Remove" });
-    remove.addEventListener("click", () => {
-      if (confirm("Remove this identified risk? Linked controls stay; the link is dropped.")) {
-        removeIdentifiedRisk(risk.id);
-        renderFlowStep();
-        renderFlowChrome();
-      }
-    });
-    return el("div", { class: "risk-row", "data-risk-id": risk.id },
-      el("span", { class: "pill", text: risk.id }),
-      el("span", { class: "risk-row__statement", text: risk.statement }),
-      remove);
+  addInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addRisk(); }
+    if (e.key === "Escape") { e.preventDefault(); addInput.value = ""; }
+  });
+  const list = el("ul", { class: "identify-list", id: "identify-list" },
+    ...risks.map(identifyRiskRow),
+    el("li", { class: "identify-add" },
+      el("span", { class: "identify-add__mark", "aria-hidden": "true", text: "+" }),
+      addInput));
+  const cont = el("button", {
+    type: "button", class: "btn btn--primary", id: "identify-continue",
+    text: "Continue to control statements",
+    disabled: risks.length ? null : true,
+    title: risks.length ? null : "Add a risk first.",
+  });
+  cont.addEventListener("click", () => {
+    const [ok] = canAdvance(state.project, "risks");
+    if (!ok) return;
+    goToStep("controls");
+  });
+  const empty = risks.length ? null : el("p", {
+    class: "identify-empty", id: "identify-empty", role: "status",
+    text: "Nothing here yet. Add the first risk below — a short sentence of what could go wrong.",
+  });
+  const live = el("p", {
+    class: "visually-hidden", "aria-live": "polite",
+    text: risks.length ? plural(risks.length, "identified risk") : "No identified risks yet",
   });
   box.replaceChildren(
-    el("h3", { class: "section-title", text: "Identify risks" }),
-    el("p", { class: "start__lede", text: "Enter the risks you already identified. At least one is required to continue." }),
-    el("div", { class: "risks-form card" },
-      el("p", { class: "risks-form__label", text: "Add an identified risk" }),
-      el("label", { class: "field" }, el("span", { text: "Statement" }), statement),
-      el("label", { class: "field" }, el("span", {}, "Note ", el("em", { text: "optional" })), note),
-      el("div", { class: "actions" }, add)),
-    risks.length ? el("div", { class: "risk-list" }, rows)
-      : el("p", { class: "field-error", id: "risks-needed", text: "Add at least one identified risk to continue." }),
-  );
+    el("div", { class: "identify-page", id: "identify-page" },
+      back, steps,
+      el("h2", { class: "identify-title", id: "identify-title", text: "What risks have you identified?" }),
+      el("p", {
+        class: "identify-lede", id: "identify-lede",
+        text: "Write each one as a short sentence of what could go wrong. You can add a note if you need to remember where it came from.",
+      }),
+      tip, live, empty, list,
+      el("div", { class: "identify-actions" }, cont)));
+  const focusSel = state.identifyFocus || null;
+  state.identifyFocus = null;
+  if (focusSel) queueMicrotask(() => $(focusSel)?.focus());
+}
+
+function identifyRiskRow(risk) {
+  const statement = el("input", {
+    type: "text", class: "identify-row__statement", maxlength: "500", autocomplete: "off",
+    "aria-label": "Risk statement",
+  });
+  statement.value = risk.statement;
+  const note = el("input", {
+    type: "text", class: "identify-row__note", maxlength: "500", autocomplete: "off",
+    placeholder: "Add a note (optional)", "aria-label": "Optional note",
+  });
+  note.value = risk.note || "";
+  const remove = el("button", {
+    type: "button", class: "btn btn--quiet btn--small identify-row__remove",
+    text: "Remove", "aria-label": `Remove risk: ${risk.statement}`,
+  });
+  statement.addEventListener("focus", () => { statement.dataset.saved = statement.value; });
+  statement.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); statement.blur(); }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      statement.value = statement.dataset.saved || (riskById(risk.id) || risk).statement;
+      statement.blur();
+    }
+  });
+  statement.addEventListener("blur", () => {
+    const current = riskById(risk.id) || risk;
+    if (!String(statement.value || "").trim()) {
+      statement.value = current.statement;
+      return;
+    }
+    updateIdentifiedRisk(risk.id, { statement: statement.value });
+    const saved = riskById(risk.id) || current;
+    statement.value = saved.statement;
+    remove.setAttribute("aria-label", `Remove risk: ${saved.statement}`);
+  });
+  note.addEventListener("focus", () => { note.dataset.saved = note.value; });
+  note.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); note.blur(); }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      note.value = note.dataset.saved || "";
+      note.blur();
+    }
+  });
+  note.addEventListener("blur", () => {
+    updateIdentifiedRisk(risk.id, { note: note.value });
+    const saved = riskById(risk.id);
+    note.value = (saved && saved.note) || "";
+  });
+  remove.addEventListener("click", () => {
+    const list = identifiedRisks(state.project);
+    const i = list.findIndex((item) => item.id === risk.id);
+    const next = list[i + 1] || list[i - 1];
+    removeIdentifiedRisk(risk.id);
+    state.identifyFocus = next
+      ? `#identify-list [data-risk-id="${next.id}"] .identify-row__statement`
+      : "#flow-risk-statement";
+    renderFlowStep();
+    renderFlowChrome();
+  });
+  return el("li", { class: "identify-row", "data-risk-id": risk.id },
+    el("span", { class: "identify-row__mark", "aria-hidden": "true" }),
+    el("div", { class: "identify-row__fields" }, statement, note),
+    remove);
 }
 
 function renderDevelopStep(box) {

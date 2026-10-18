@@ -996,3 +996,82 @@ body:has(#work:not([hidden])) .flow-view__body { flex: 0 1 auto; max-height: 220
   .flow-view__body { grid-template-columns: 1fr; }
   .link-row { grid-template-columns: 1fr; }
 }
+
+/* Identify risks page (ADR 0015 / Flow A step 1) --------------------------- */
+#flow.flow-view--identify .flow-view__body {
+  grid-template-columns: 1fr;
+}
+#flow.flow-view--identify #flow-step {
+  max-width: 42rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.identify-page { display: grid; gap: 14px; }
+.identify-back { justify-self: start; width: fit-content; padding-left: 0; }
+.identify-steps {
+  display: flex; flex-wrap: wrap; gap: 0; list-style: none; margin: 0; padding: 0;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.identify-steps li { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.identify-steps li + li::before {
+  content: "›"; margin: 0 10px 0 4px; font-weight: 400; color: var(--muted);
+}
+.identify-steps [aria-current="step"] { color: var(--text); }
+.identify-steps__n {
+  display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px;
+  border: 1px solid var(--border); font-size: 11px;
+}
+.identify-steps [aria-current="step"] .identify-steps__n {
+  background: var(--orange); border-color: var(--orange); color: var(--on-accent);
+}
+.identify-title {
+  margin: 4px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2;
+  color: var(--text);
+}
+.identify-lede { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.identify-tip {
+  background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius);
+  padding: 8px 14px; color: var(--muted); font-size: 13px; line-height: 1.45;
+}
+.identify-tip summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.identify-tip p { margin: 8px 0 4px; }
+.identify-empty {
+  margin: 0; padding: 16px 16px; border: 1px dashed var(--border-soft);
+  border-radius: var(--radius-lg); color: var(--muted); background: var(--surface);
+}
+.identify-list {
+  list-style: none; margin: 0; padding: 0;
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.identify-row, .identify-add {
+  display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: 10px;
+  align-items: start; padding: 10px 14px; border-bottom: 1px solid var(--border-soft);
+}
+.identify-add { grid-template-columns: 1.25rem minmax(0, 1fr); }
+.identify-row:last-child, .identify-add:last-child { border-bottom: 0; }
+.identify-row__mark, .identify-add__mark {
+  width: 16px; height: 16px; margin-top: 10px; border: 1.5px solid var(--border);
+  border-radius: 999px; color: var(--muted); font-size: 12px; line-height: 13px;
+  display: grid; place-items: center;
+}
+.identify-add__mark { border-style: dashed; }
+.identify-row__fields { display: grid; gap: 2px; min-width: 0; }
+.identify-row__statement, .identify-row__note, .identify-add input {
+  background: transparent; border: 0; padding: 6px 0; border-radius: 0; box-shadow: none;
+}
+.identify-row__note { font-size: 13px; color: var(--muted); }
+.identify-row__statement:focus, .identify-row__note:focus, .identify-add input:focus {
+  border-color: transparent; box-shadow: none;
+}
+.identify-row__statement:focus-visible, .identify-row__note:focus-visible, .identify-add input:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px;
+}
+.identify-actions { display: flex; justify-content: flex-end; padding-top: 4px; }
+@media (max-width: 640px) {
+  .identify-title { font-size: 22px; }
+  .identify-row { grid-template-columns: 1.25rem minmax(0, 1fr); }
+  .identify-row__remove { grid-column: 2; justify-self: start; }
+  .identify-actions { justify-content: stretch; }
+  .identify-actions .btn { width: 100%; }
+}

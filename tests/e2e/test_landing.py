@@ -64,7 +64,7 @@ def test_start_from_risks_get_started_opens_path_a(page):
     expect(page.locator("#start-from-risks")).not_to_contain_text("Recommended")
     choose_risk_path(page)
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
-    expect(page.locator("#stepper")).to_be_visible()
+    expect(page.locator("#identify-steps")).to_be_visible()
     expect(page.locator("#flow-risk-statement")).to_be_visible()
 
 
