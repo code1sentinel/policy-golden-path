@@ -115,8 +115,9 @@ def test_library_lists_a_statement_once(page):
     goto_review(page)
     page.click("#accept-control")
     statement = "Grant access to systems on a need-to-know basis."
+    page.wait_for_function("() => Boolean(localStorage.getItem('codify:statements'))")
     store = page.evaluate("localStorage.getItem('codify:statements')")
-    assert store.count(statement) == 1
+    assert store and store.count(statement) == 1
     page.click("#library-from")
     expect(page.locator("#library-pick")).to_contain_text(statement)
     expect(page.locator("#library-pick")).to_contain_text("OSCAL")

@@ -32,18 +32,22 @@ def test_home_opens_the_landing(page):
     expect(page.locator("#flow")).to_be_hidden()
 
 
+def _current_nav_label(page):
+    return nav(page).locator("[aria-current='page'] .nav-btn__label")
+
+
 def test_risk_entry_opens_identify_risks_and_stays_current(page):
     choose_clause_path(page)
     page.click("[data-nav='risk-entry']")
     expect(page.locator("#identify-title")).to_have_text("What risks have you identified?")
     current = nav(page).locator("[aria-current='page']")
     expect(current).to_have_count(1)
-    expect(current).to_have_text("Risk Entry")
+    expect(_current_nav_label(page)).to_have_text("Risk Entry")
     expect(current).to_have_attribute("aria-pressed", "true")
     add_flow_risk(page, "Screens left unlocked at unattended desks.")
     page.click("#identify-continue")
     expect(page.locator("#statements-steps, #flow-step")).to_be_visible()
-    expect(nav(page).locator("[aria-current='page']")).to_have_text("Risk Entry")
+    expect(_current_nav_label(page)).to_have_text("Risk Entry")
 
 
 def test_policy_clause_opens_paste_step_and_stays_current(page):
@@ -53,12 +57,12 @@ def test_policy_clause_opens_paste_step_and_stays_current(page):
     expect(page.locator("#landing")).to_be_hidden()
     expect(nav(page)).to_be_visible()
     current = nav(page).locator("[aria-current='page']")
-    expect(current).to_have_text("Policy Clause")
+    expect(_current_nav_label(page)).to_have_text("Policy Clause")
     expect(current).to_have_attribute("aria-pressed", "true")
     page.fill("#paste-form textarea", "Users shall lock screens when they leave their desk.")
     page.click("#paste-submit")
     finish_open(page)
-    expect(nav(page).locator("[aria-current='page']")).to_have_text("Policy Clause")
+    expect(_current_nav_label(page)).to_have_text("Policy Clause")
 
 
 def test_nav_fits_one_row_on_a_390px_phone(page):

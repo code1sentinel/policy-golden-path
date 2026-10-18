@@ -68,6 +68,8 @@ def test_accept_lands_in_library_and_survives_another_project(page):
     page.click("#library-from")
     expect(page.locator("#library-pick")).to_be_visible()
     expect(page.locator("#library-pick")).to_contain_text(statement[:40])
+    page.locator("#library-pick").get_by_role("button", name="Close").click()
+    expect(page.locator("#library-pick")).to_be_hidden()
 
     page.click("#close-project")
     open_pasted(page, OTHER)
@@ -85,7 +87,7 @@ def test_use_from_library_then_accept_goes_into_the_current_catalog(page):
     other = page.locator("textarea.statement").input_value()
     assert other != first
     page.click("#library-from")
-    page.locator("#library-pick .library-use").click()
+    page.locator("#library-pick-detail .library-use").click()
     expect(page.locator("#work:not([hidden]) textarea.statement")).to_have_value(first)
     accept_current(page)
     saved = json.loads(page.evaluate("localStorage.getItem('codify:project')"))["project"]
@@ -127,6 +129,8 @@ def test_export_library_downloads_locally(page, tmp_path):
     dl.value.save_as(path)
     payload = json.loads(path.read_text())
     assert payload[0]["statement"] == statement
+    page.click("#export-open-top")
+    page.locator("#export-dialog .export-more summary").click()
     with page.expect_download() as csv_dl:
         page.click("#export-dialog [data-export='library-csv']")
     csv_path = tmp_path / "library.csv"

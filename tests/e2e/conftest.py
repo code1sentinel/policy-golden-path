@@ -148,6 +148,11 @@ def goto_review(page, risk="Screens left unlocked at unattended desks."):
     work = page.locator("#work")
     if work.is_visible():
         return
+    review = page.locator("#stepper [data-step='review']")
+    if review.count() and review.is_enabled():
+        review.click()
+        if work.is_visible():
+            return
     expect(page.locator("#flow")).to_be_visible()
     statements = page.locator("#statements-continue")
     if statements.count() and statements.is_visible() and statements.is_enabled():
