@@ -6,7 +6,7 @@ This is not a risk register. There are no scores, likelihood or impact, owners, 
 
 ## Add risks
 
-**Get started** on the landing opens a page that asks **What risks have you identified?** You can also add risks on the **Link to risks** step after **Start from a policy clause**, or open **Risks** in the sidebar.
+**Get started with identified risks** on the landing opens a page that asks **What risks have you identified?** You can also add risks on the **Link to risks** step after **Get started with an existing policy clause**, or choose **Risk Entry** in the nav.
 
 1. Type a short statement in **Add a risk** (what could go wrong) and press Enter. Esc clears the draft.
 2. Edit a row in place. Optionally add a note if you need to remember where it came from.

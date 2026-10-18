@@ -65,7 +65,7 @@ def test_demo_opens_with_drafts_scored(demo):
 
 
 def test_start_is_a_short_cta_not_a_wall(page):
-    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-risks")).to_have_text("Get started with identified risks")
     expect(page.locator("#start-from-risks")).to_be_visible()
     expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator(".steps")).to_have_count(0)

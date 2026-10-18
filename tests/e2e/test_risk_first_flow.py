@@ -9,8 +9,8 @@ from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish
 
 def test_start_offers_two_get_started_paths(page):
     expect(page.locator("#start-from-risks")).to_be_visible()
-    expect(page.locator("#start-from-risks")).to_have_text("Get started")
-    expect(page.locator("#start-from-clause")).to_have_text("Start from a policy clause")
+    expect(page.locator("#start-from-risks")).to_have_text("Get started with identified risks")
+    expect(page.locator("#start-from-clause")).to_have_text("Get started with an existing policy clause")
     expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator("#paste-form")).to_be_hidden()
     expect(page.locator("#stepper")).to_be_hidden()

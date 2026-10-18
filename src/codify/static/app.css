@@ -498,9 +498,11 @@ body[data-chrome="landing"] main { padding: 0; overflow: visible; min-height: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 12px 16px;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
+  width: 100%;
 }
+.landing-hero__cta-row .btn { text-align: center; }
 .btn--on-hero {
   background: var(--hero-fg);
   border-color: var(--hero-fg);
@@ -1121,6 +1123,12 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   :root { --gutter: 16px; }
   .parts, .grid2 { grid-template-columns: 1fr; }
   .ctl { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .landing-hero__cta-row {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    max-width: 22rem;
+  }
 }
 
 /* AI drafting + export dialog */

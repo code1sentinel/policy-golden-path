@@ -119,8 +119,9 @@ Google Fonts. See
 
 A first visit is a marketing landing in the spirit of Base (Basenames):
 a full-bleed blue hero, a centered risk → control → OSCAL → Rego mock,
-**Get started** into the risk-first flow, and **Start from a policy
-clause** as a secondary button. How it works, feature cards, a contribute
+and two equal-weight start buttons — **Get started with identified
+risks** (primary) and **Get started with an existing policy clause**
+(visible secondary). How it works, feature cards, a contribute
 section, and a closing CTA follow. A saved project shows **Resume your
 project**. See
 [docs/prds/marketing-landing.md](prds/marketing-landing.md) and

@@ -52,11 +52,12 @@ loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
 The first open is a marketing landing: a blue hero, a mock of a risk
-turning into a control then OSCAL and Rego, and **Get started** into the
-risk-first flow. **Start from a policy clause** is a secondary button.
-A saved project on this device shows **Resume your project**.
+turning into a control then OSCAL and Rego, and two start buttons —
+**Get started with identified risks** (primary) and **Get started with
+an existing policy clause** (visible secondary). A saved project on this
+device shows **Resume your project**.
 
-Flow A's **Get started** opens a page that asks **What risks have you
+**Get started with identified risks** opens a page that asks **What risks have you
 identified?** Type in **Add a risk** (Enter adds, Esc cancels), edit
 rows in place, then **Continue to control statements**. Write a statement
 for each risk (left list, right editor), then **Continue to policy as
