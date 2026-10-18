@@ -30,6 +30,8 @@ TEXT_PAIRS = (
     ("--accent-text", "--surface"),
     ("--on-accent", "--orange"),
     ("--on-accent", "--orange-bright"),
+    ("--hero-fg", "--hero"),
+    ("--hero-card-text", "--hero-card"),
 )
 
 UI_PAIRS = (

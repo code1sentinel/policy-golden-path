@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Codify</title>
-  <meta name="description" content="Turn legacy policy clauses into OSCAL control statements.">
+  <meta name="description" content="Turn risks and policy into OSCAL control statements you can test as policy as code.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230D0E12'/%3E%3Cpath d='M0 0h32L0 32z' fill='%235E6AD2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="app.css">
   <script src="theme.js"></script>
 </head>
-<body class="app">
+<body class="app" data-chrome="landing">
   <a class="skip" href="#main">Skip to content</a>
 
   <aside id="sidebar" class="sidebar">
@@ -86,42 +86,146 @@
       <div id="error" class="error" role="alert" hidden></div>
       <div id="notice" class="loading" role="status" hidden></div>
 
-      <!-- Landing: two flows only (ADR 0013). Splash #28 is folded in. -->
+      <!-- Landing: Base-style hero, then how it works (ADR 0013 paths unchanged). -->
       <section id="start" class="start" aria-labelledby="start-title">
         <div id="landing" class="landing">
-          <h2 id="start-title" class="visually-hidden">Choose a starting path</h2>
+          <div class="landing-hero">
+            <header class="landing-bar" id="landing-bar">
+              <a class="landing-wordmark" href="#start" id="landing-wordmark">
+                <span class="landing-mark" aria-hidden="true"></span>
+                <span class="landing-wordmark__name">Codify</span>
+              </a>
+              <nav class="landing-bar__nav" aria-label="Site">
+                <p id="resume" class="landing-resume" hidden>
+                  <button type="button" class="landing-signin" id="resume-open">Resume your project</button>
+                  <span id="resume-title" class="visually-hidden"></span>
+                  <span id="resume-when" class="visually-hidden"></span>
+                </p>
+                <a class="landing-signin" id="landing-docs" href="https://github.com/code1sentinel/policy-golden-path/blob/main/docs/book/README.md" target="_blank" rel="noopener noreferrer">Docs</a>
+                <a class="landing-signin" id="landing-github" href="https://github.com/code1sentinel/policy-golden-path" target="_blank" rel="noopener noreferrer">GitHub</a>
+              </nav>
+            </header>
 
-          <div id="start-choice" class="landing-cards" role="group" aria-label="Choose a starting path">
-            <article class="flow-card" aria-labelledby="flow-a-title">
-              <h3 id="flow-a-title" class="flow-card__title">Identify risk → Control statement</h3>
-              <ol class="flow-card__steps" aria-label="Identify risk, then control statement, then policy as code (Rego)">
-                <li>Identify risk</li>
-                <li>Control statement</li>
-                <li>Policy as code (Rego)</li>
-              </ol>
-              <button type="button" class="btn btn--primary" id="start-from-risks">Get started</button>
-            </article>
-            <article class="flow-card" aria-labelledby="flow-b-title">
-              <h3 id="flow-b-title" class="flow-card__title">Policy clause → Control statement</h3>
-              <ol class="flow-card__steps" aria-label="Policy clause, then control statement, then policy as code (Rego)">
-                <li>Policy clause</li>
-                <li>Control statement</li>
-                <li>Policy as code (Rego)</li>
-              </ol>
-              <button type="button" class="btn btn--primary" id="start-from-clause">Get started</button>
-            </article>
+            <div class="landing-hero__center">
+              <h2 id="start-title" class="landing-hero__title">Turn risks and policy into controls you can test.</h2>
+              <p id="landing-subhead" class="landing-hero__subhead">Draft control statements from risks or policy clauses, export OSCAL, and ship them as policy as code.</p>
+
+              <div class="landing-hero__stage">
+                <ul id="landing-chips" class="hero-chips" aria-hidden="true">
+                  <li class="hero-chip hero-chip--1">Customer data unencrypted</li>
+                  <li class="hero-chip hero-chip--2">Access too broad</li>
+                  <li class="hero-chip hero-chip--3">Accounts never reviewed</li>
+                  <li class="hero-chip hero-chip--4">Screens left unlocked</li>
+                </ul>
+                <figure id="landing-mock" class="hero-card" aria-label="A risk becoming a control statement, then OSCAL and Rego">
+                  <div class="hero-card__row">
+                    <p class="hero-card__kicker">Identified risk</p>
+                    <p class="hero-card__text">Customer data stored unencrypted</p>
+                  </div>
+                  <p class="hero-card__join" aria-hidden="true">↓</p>
+                  <div class="hero-card__row hero-card__row--out">
+                    <p class="hero-card__kicker">Control statement</p>
+                    <p class="hero-card__text">Encrypt customer data at rest.</p>
+                  </div>
+                  <p class="hero-card__join" aria-hidden="true">↓</p>
+                  <div class="hero-card__row">
+                    <p class="hero-card__kicker">OSCAL</p>
+                    <pre class="hero-card__code">{ "id": "sc-28", "title": "Encrypt customer data at rest" }</pre>
+                  </div>
+                  <p class="hero-card__join" aria-hidden="true">↓</p>
+                  <div class="hero-card__row">
+                    <p class="hero-card__kicker">Policy as code (Rego)</p>
+                    <pre class="hero-card__code">deny contains msg if { not encrypted(input.customer_data) }</pre>
+                  </div>
+                </figure>
+              </div>
+
+              <div class="landing-hero__actions">
+                <div class="landing-hero__cta-row">
+                  <button type="button" class="btn btn--lg btn--on-hero" id="start-from-risks" data-start-risks>Get started</button>
+                  <p id="landing-privacy-badge" class="landing-badge">Private by design: runs in your browser</p>
+                </div>
+                <button type="button" class="btn btn--lg btn--on-hero-secondary" id="start-from-clause">Start from a policy clause</button>
+              </div>
+              <p class="landing-hero__alt">
+                <a class="landing-hero__secondary" id="landing-how-link" href="#how-it-works">See how it works</a>
+              </p>
+            </div>
+
+            <a class="landing-scroll" id="landing-scroll" href="#how-it-works">Scroll to explore <span aria-hidden="true">↓</span></a>
           </div>
 
-          <p id="landing-caption" class="landing-caption">
-            Exported as OSCAL and tested as Rego in
-            <a href="https://code1sentinel.github.io/enact/" target="_blank" rel="noopener noreferrer">Enact</a>
-          </p>
+          <section id="how-it-works" class="landing-section" aria-labelledby="how-title">
+            <h2 id="how-title" class="landing-section__title">How it works</h2>
+            <p class="landing-section__lede">Both starting points converge on a control statement you can export and test.</p>
+            <ol class="how-grid">
+              <li class="how-card">
+                <span class="how-card__n" aria-hidden="true">1</span>
+                <h3 class="how-card__title">Identify risks or pick a policy clause</h3>
+                <p>Start from the risks you already have, or paste a legacy clause. Either path is enough to begin.</p>
+              </li>
+              <li class="how-card">
+                <span class="how-card__n" aria-hidden="true">2</span>
+                <h3 class="how-card__title">Draft control statements</h3>
+                <p>Write (or review) action-first, testable statements that treat those risks. Guides sit on every step.</p>
+              </li>
+              <li class="how-card">
+                <span class="how-card__n" aria-hidden="true">3</span>
+                <h3 class="how-card__title">Export as OSCAL to Policy as code (Rego) in Enact</h3>
+                <p>Download an OSCAL 1.1.2 catalog on this device, then test it as Rego in <a id="landing-enact" href="https://github.com/code1sentinel/enact" target="_blank" rel="noopener noreferrer">Enact</a>.</p>
+              </li>
+            </ol>
+            <p id="landing-frameworks" class="landing-frameworks">Works with frameworks like ISO 27001, SOC 2 and NIST</p>
+          </section>
 
-          <p id="resume" class="landing-resume" hidden>
-            <button type="button" class="landing__quiet" id="resume-open">Resume</button>
-            <span id="resume-title" class="landing-resume__title"></span>
-            <span id="resume-when" class="visually-hidden"></span>
-          </p>
+          <section id="landing-features" class="landing-section" aria-labelledby="features-title">
+            <h2 id="features-title" class="landing-section__title">Built for GRC authoring</h2>
+            <div class="feature-grid">
+              <article class="feature-card">
+                <h3>Risk-first or clause-first</h3>
+                <p>Enter identified risks, or paste a policy clause. Both flows meet at the same control statements.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Plain-language guides at every step</h3>
+                <p>What to write, why it matters, and a strong example sit beside the work — not in a separate manual.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Standards-based OSCAL export</h3>
+                <p>The save file is an OSCAL 1.1.2 catalog other GRC tools can read. Send it to Enact as policy as code (Rego).</p>
+              </article>
+              <article class="feature-card">
+                <h3>Private by design</h3>
+                <p>Codify runs in your browser. Policy never leaves this device on the default path. No AI keys stored.</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="landing-contribute" class="landing-section" aria-labelledby="contribute-title">
+            <h2 id="contribute-title" class="landing-section__title">Contribute</h2>
+            <p class="landing-section__lede">Templates and catalogs get better when GRC people share them.</p>
+            <div class="landing-contribute__actions">
+              <a class="btn btn--primary" id="landing-star" href="https://github.com/code1sentinel/policy-golden-path" target="_blank" rel="noopener noreferrer">Star or contribute on GitHub</a>
+              <a class="btn" id="landing-template" href="https://github.com/code1sentinel/policy-golden-path/blob/main/CONTRIBUTING.md#control-templates" target="_blank" rel="noopener noreferrer">Contribute a control template</a>
+            </div>
+          </section>
+
+          <section id="landing-cta" class="landing-cta" aria-labelledby="cta-title">
+            <h2 id="cta-title">Ready to write a control you can test?</h2>
+            <p>Start from a risk. You can paste a clause later if you need to.</p>
+            <div class="landing-cta__row">
+              <button type="button" class="btn btn--lg btn--on-hero" id="landing-cta-start" data-start-risks>Get started</button>
+              <p class="landing-badge">Private by design: runs in your browser</p>
+            </div>
+          </section>
+
+          <footer id="landing-footer" class="landing-footer">
+            <p>Codify runs in your browser. Policy stays on this device.</p>
+            <p>
+              <a href="https://github.com/code1sentinel/policy-golden-path/blob/main/docs/book/README.md" target="_blank" rel="noopener noreferrer">Docs</a>
+              ·
+              <a href="https://github.com/code1sentinel/policy-golden-path" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </p>
+          </footer>
         </div>
 
         <div class="card start__load" id="drop" hidden>

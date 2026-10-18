@@ -49,6 +49,7 @@ def accept_current(page):
 
 
 def test_library_empty_state(page):
+    page.click("#start-from-risks")
     page.click("[data-nav='library']")
     expect(page.locator("#library:not([hidden])")).to_be_visible()
     expect(page.locator("#library")).to_contain_text("No statements saved yet")

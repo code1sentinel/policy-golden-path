@@ -10,6 +10,16 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ## [Unreleased]
 
+### Changed
+
+- First visit is a Base-style marketing landing
+  ([docs/prds/marketing-landing.md](docs/prds/marketing-landing.md)):
+  full-bleed `#0052FF` hero, centered risk → control → OSCAL → Rego mock,
+  **Get started** into Identify risks, **Start from a policy clause** as a
+  secondary button, How it works (Enact linked), feature cards, contribute
+  links, and a closing CTA. A saved project shows **Resume your project**.
+  No GRC Engineering Club branding. No new outbound calls.
+
 ### Added
 
 - Risk-first authoring flow ([ADR 0013](docs/adr/0013-risk-first-authoring-flow.md)):
@@ -81,8 +91,8 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   writing tip, an inline list (Enter adds, Esc cancels, edit in place,
   optional note, remove), a friendly empty state, and **Continue to
   control statements** disabled until at least one risk exists. A small
-  three-step indicator matches the landing card; **Back to the landing**
-  returns to the flow cards. The shared wizard guide, Previous / Next,
+  three-step indicator matches the landing; **Back to the landing**
+  returns to the marketing landing. The shared wizard guide, Previous / Next,
   and risk-id pills are gone from this page. `{id, statement, note?}`
   and the OSCAL risk export are unchanged
   ([docs/prds/identify-risks-page.md](docs/prds/identify-risks-page.md),

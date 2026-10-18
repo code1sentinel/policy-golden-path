@@ -6,13 +6,13 @@ This is not a risk register. There are no scores, likelihood or impact, owners, 
 
 ## Add risks
 
-**Identify risk → Control statement** is one of the two landing flows. **Get started** opens a page that asks **What risks have you identified?** You can also add risks on the **Link to risks** step after pasting a clause, or open **Risks** in the sidebar.
+**Get started** on the landing opens a page that asks **What risks have you identified?** You can also add risks on the **Link to risks** step after **Start from a policy clause**, or open **Risks** in the sidebar.
 
 1. Type a short statement in **Add a risk** (what could go wrong) and press Enter. Esc clears the draft.
 2. Edit a row in place. Optionally add a note if you need to remember where it came from.
 3. **Continue to control statements** stays off until at least one risk is in the list.
 
-A short **How to write a good risk statement** tip is collapsed until you open it. A small step indicator shows Identify risks → Control statements → Policy as code (Rego). **Back to the landing** returns to the two flow cards.
+A short **How to write a good risk statement** tip is collapsed until you open it. A small step indicator shows Identify risks → Control statements → Policy as code (Rego). **Back to the landing** returns to the marketing landing.
 
 Each risk still gets an id (`R-001`, `R-002`, …) in the project; this page does not show those as a register. **Remove** drops the link on controls; the control statements stay.
 

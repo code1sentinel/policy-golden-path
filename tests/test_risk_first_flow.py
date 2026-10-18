@@ -161,5 +161,5 @@ def test_shell_has_two_start_paths_stepper_guides_and_enact_handoff():
     assert "the risk it treats" in JS
     assert ".stepper" in CSS
     assert ".step-guide" in CSS
-    assert ".flow-card" in CSS
+    assert ".landing-hero" in CSS or ".how-card" in CSS
     assert "data-export=\"oscal\"" in INDEX

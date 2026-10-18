@@ -51,12 +51,10 @@ makes no requests to any third party unless you turn on AI drafting. The first v
 loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
-The first open is two side-by-side flows: **Identify risk → Control
-statement → Policy as code (Rego)** and **Policy clause → Control
-statement → Policy as code (Rego)**. Each card has a mini step
-diagram and **Get started**. A muted line explains the catalog is
-exported as OSCAL and tested as Rego in Enact. A saved project on this
-device shows the same cards with a small **Resume** link.
+The first open is a marketing landing: a blue hero, a mock of a risk
+turning into a control then OSCAL and Rego, and **Get started** into the
+risk-first flow. **Start from a policy clause** is a secondary button.
+A saved project on this device shows **Resume your project**.
 
 Flow A's **Get started** opens a page that asks **What risks have you
 identified?** Type in **Add a risk** (Enter adds, Esc cancels), edit

@@ -24,7 +24,9 @@ def test_start_has_one_primary_and_a_quiet_example(page):
 def test_start_has_no_club_or_version_chrome(page):
     expect(page.get_by_text("GRC Engineering Club Singapore")).to_have_count(0)
     expect(page.get_by_text("open source (MIT)")).to_have_count(0)
-    expect(page.locator("footer")).to_have_count(0)
+    expect(page.locator("#landing-footer")).to_be_visible()
+    expect(page.locator("#landing-footer")).not_to_contain_text("GRC Engineering Club Singapore")
+    expect(page.locator("#landing-footer")).not_to_contain_text("open source (MIT)")
     expect(page.locator("#version")).to_have_count(0)
     expect(page.get_by_text(re.compile(r"Version \d+\.\d+"))).to_have_count(0)
 

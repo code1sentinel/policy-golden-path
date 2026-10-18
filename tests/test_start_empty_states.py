@@ -31,7 +31,8 @@ def test_start_chrome_has_no_club_or_version_line():
     assert "GRC Engineering Club Singapore" not in INDEX
     assert "open source (MIT)" not in INDEX
     assert 'id="version"' not in INDEX
-    assert "<footer" not in INDEX
+    assert 'id="landing-footer"' in INDEX
+    assert "GRC Engineering Club Singapore" not in INDEX.split('id="landing-footer"', 1)[1]
     assert "$(\"#version\")" not in JS
     assert "Version ${c.version}" not in JS
     assert ".foot {" not in CSS

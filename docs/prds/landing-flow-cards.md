@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Agreed |
+| Status | Superseded by [marketing-landing.md](marketing-landing.md) |
 | Slice issues | Acceptance criteria live here (this agent cannot open GitHub issues). |
 | Supercedes / extends | [docs/prd.md](../prd.md), [landing-start.md](landing-start.md), [identified-risks-as-input.md](identified-risks-as-input.md) |
 | Author | Product owner / this slice |

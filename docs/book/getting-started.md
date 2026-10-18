@@ -14,16 +14,16 @@ The online site and the local web app look the same. Neither loads fonts or othe
 
 ## First visit
 
-The first open is two side-by-side flow cards. Each has a one-line title, a mini step diagram, and **Get started**.
+The first open is a product landing: what Codify does, a mock of a risk becoming a control (then OSCAL and Rego), and **Get started**.
 
-A saved project on this device shows the same cards with a small **Resume** link.
+**Get started** opens the risk-first flow (Identify risks). **Start from a policy clause** opens the paste box. A saved project on this device shows **Resume your project** in the top bar.
 
 ## Choose how to start
 
-- **Identify risk → Control statement** — enter identified risks, then write control statements that treat them. **Get started** opens **What risks have you identified?** Type each risk in **Add a risk** (Enter adds), then **Continue to control statements**.
-- **Policy clause → Control statement** — paste a clause (or try the example). **Get started** opens the clause box. Codify drafts as before; then you link each draft to a risk.
+- **Get started** — opens **What risks have you identified?** Type each risk in **Add a risk** (Enter adds), then **Continue to control statements**.
+- **Start from a policy clause** — paste a clause (or try the example). Codify drafts as before; then you link each draft to a risk.
 
-Both flows end at **Policy as code (Rego)**. A muted line on the landing explains the catalog is exported as OSCAL and tested as Rego in [Enact](enact.md).
+Both flows end at **Policy as code (Rego)** in [Enact](enact.md).
 
 Both paths share **Review** and **Send to Enact**. Every risk needs a control statement; every control must be linked to a risk.
 

@@ -14,7 +14,8 @@ before implementation.
 - [vanta-grc-surfaces.md](vanta-grc-surfaces.md) — Library detail IA (register part superseded)
 - [welcome-splash.md](welcome-splash.md) — superseded by landing-start.md
 - [landing-start.md](landing-start.md) — superseded by landing-flow-cards.md
-- [landing-flow-cards.md](landing-flow-cards.md) — two flow cards + OSCAL risk statements
+- [landing-flow-cards.md](landing-flow-cards.md) — superseded by marketing-landing.md
+- [marketing-landing.md](marketing-landing.md) — Base-style marketing landing, then Get started
 - [technical-policy-rego-label.md](technical-policy-rego-label.md) — last step is Policy as code (Rego)
 - [first-run-clarity.md](first-run-clarity.md) — first-time GRC walkthrough fixes
 - [second-walkthrough-polish.md](second-walkthrough-polish.md) — second first-time walkthrough
