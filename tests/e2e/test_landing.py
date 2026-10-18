@@ -45,10 +45,11 @@ def test_first_open_is_a_marketing_landing(browser, base_url):
     expect(page.locator("#start-title")).to_have_text(HEADLINE)
     expect(page.locator("#landing-subhead")).to_contain_text(SUBHEAD)
     expect(page.locator("#start-from-risks")).to_be_visible()
-    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-risks")).to_have_text("Get started with identified risks")
+    expect(page.locator("#start-from-risks")).to_have_class(re.compile(r"(^|\s)btn--on-hero($|\s)"))
     expect(page.locator("#landing-cta-start")).to_have_text("Get started")
     expect(page.locator("#start-from-clause")).to_be_visible()
-    expect(page.locator("#start-from-clause")).to_have_text("Start from a policy clause")
+    expect(page.locator("#start-from-clause")).to_have_text("Get started with an existing policy clause")
     expect(page.locator("#start-from-clause")).to_have_class(re.compile(r"btn--on-hero-secondary"))
     expect(page.locator("#landing-privacy-badge")).to_contain_text("Private by design: runs in your browser")
     expect(page.locator("#landing-how-link")).to_have_text("See how it works")
@@ -80,7 +81,7 @@ def test_first_open_is_a_marketing_landing(browser, base_url):
 
 
 def test_start_from_risks_get_started_opens_path_a(page):
-    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-risks")).to_have_text("Get started with identified risks")
     expect(page.locator("#start-from-risks")).not_to_contain_text("Recommended")
     choose_risk_path(page)
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
@@ -95,7 +96,7 @@ def test_cta_get_started_opens_the_risk_flow(page):
 
 
 def test_start_from_clause_link_opens_path_b(page):
-    expect(page.locator("#start-from-clause")).to_have_text("Start from a policy clause")
+    expect(page.locator("#start-from-clause")).to_have_text("Get started with an existing policy clause")
     choose_clause_path(page)
     expect(page.locator("#paste-form")).to_be_visible()
     expect(page.locator("#paste-submit")).to_have_text("Codify")
@@ -150,6 +151,18 @@ def test_landing_is_keyboard_reachable_and_stacks_on_mobile(browser, base_url):
     expect(page.locator("#start-from-risks")).to_be_visible()
     expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator("#landing-mock")).to_be_visible()
+    risk = page.locator("#start-from-risks").bounding_box()
+    clause = page.locator("#start-from-clause").bounding_box()
+    assert risk and clause
+    assert clause["y"] > risk["y"] + risk["height"] - 2
+    overflow = page.evaluate(
+        """() => {
+          const row = document.querySelector('.landing-hero__cta-row');
+          if (!row) return true;
+          return row.scrollWidth > row.clientWidth + 1;
+        }"""
+    )
+    assert overflow is False
     page.locator("#start-from-risks").focus()
     expect(page.locator("#start-from-risks")).to_be_focused()
     page.keyboard.press("Enter")

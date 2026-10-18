@@ -77,7 +77,7 @@ def test_workspace_nav_stays_on_start_and_title_is_editable():
     assert "renderResume" in show
     assert 'id="resume"' in INDEX
     assert 'id="resume-open"' in INDEX
-    assert 'data-nav="workspace"' in INDEX
+    assert 'data-nav="home"' in INDEX
     assert "work-title-input" in CSS or 'id="work-title"' in INDEX
     assert "Untitled policy" in JS
 

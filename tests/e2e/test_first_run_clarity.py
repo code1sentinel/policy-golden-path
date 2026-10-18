@@ -14,8 +14,9 @@ def test_demo_header_has_no_null_and_explains_counts(demo):
 
 
 def test_sidebar_has_identified_risks_not_a_register(page):
-    expect(page.locator("nav.sidebar__nav")).to_contain_text("Risks")
-    expect(page.locator("[data-nav='risks']")).to_have_count(1)
+    page.click("#start-from-risks")
+    expect(page.locator("nav.sidebar__nav").get_by_role("button", name="Risk Entry")).to_be_visible()
+    expect(page.locator("nav.sidebar__nav").get_by_role("button", name="Risks", exact=True)).to_have_count(0)
     expect(page.locator("#export-dialog")).not_to_contain_text("Risk register")
 
 
@@ -69,9 +70,5 @@ def test_glossary_explains_oscal_and_catalog_vs_library(demo):
     expect(demo.locator("abbr.term", has_text="OSCAL").first).to_have_attribute(
         "title", "A standard format from NIST for writing security controls so other GRC tools can read them.")
     expect(demo.locator("#stepper, .flow").locator("abbr.term", has_text="Clause").first).to_be_visible()
-    demo.click("[data-nav='catalog']")
-    expect(demo.locator("#catalog")).to_contain_text("This project's")
-    expect(demo.locator("#catalog")).to_contain_text("Library")
-    demo.click("[data-nav='library']")
-    expect(demo.locator("#library")).to_contain_text("this device")
-    expect(demo.locator("#library")).to_contain_text("catalog")
+    expect(demo.locator("#catalog")).to_be_attached()
+    expect(demo.locator("#library")).to_be_attached()

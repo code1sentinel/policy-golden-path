@@ -25,34 +25,18 @@
         </div>
       </div>
     </div>
-    <nav class="sidebar__nav" aria-label="Views">
-      <button type="button" class="nav-btn" data-view="workspace" data-nav="workspace" aria-pressed="true">
+    <nav class="sidebar__nav" aria-label="Primary">
+      <button type="button" class="nav-btn" data-nav="home" aria-pressed="true" aria-current="page">
         <span class="nav-btn__icon" aria-hidden="true">⌂</span>
-        <span class="nav-btn__label">Workspace</span>
+        <span class="nav-btn__label">Home</span>
       </button>
-      <button type="button" class="nav-btn" data-view="work" data-nav="clauses" aria-pressed="false">
-        <span class="nav-btn__icon" aria-hidden="true">≡</span>
-        <span class="nav-btn__label">Clauses</span>
-      </button>
-      <button type="button" class="nav-btn" data-view="catalog" data-nav="catalog" aria-pressed="false">
-        <span class="nav-btn__icon" aria-hidden="true">▣</span>
-        <span class="nav-btn__label"><abbr class="term" title="This project's control statements — the set you export.">Catalog</abbr></span>
-      </button>
-      <button type="button" class="nav-btn" data-view="library" data-nav="library" aria-pressed="false">
-        <span class="nav-btn__icon" aria-hidden="true">▤</span>
-        <span class="nav-btn__label"><abbr class="term" title="Reusable accepted statements saved on this device, across projects.">Library</abbr></span>
-      </button>
-      <button type="button" class="nav-btn" data-view="risks" data-nav="risks" aria-pressed="false">
+      <button type="button" class="nav-btn" data-nav="risk-entry" aria-pressed="false">
         <span class="nav-btn__icon" aria-hidden="true">◇</span>
-        <span class="nav-btn__label"><abbr class="term" title="Risks you already identified. Control statements exist to address them. Not a register.">Risks</abbr></span>
+        <span class="nav-btn__label">Risk Entry</span>
       </button>
-      <button type="button" class="nav-btn" data-nav="export" id="export-open" aria-haspopup="dialog">
-        <span class="nav-btn__icon" aria-hidden="true">↓</span>
-        <span class="nav-btn__label">Export</span>
-      </button>
-      <button type="button" class="nav-btn" data-view="guide" data-nav="guide" aria-pressed="false">
-        <span class="nav-btn__icon" aria-hidden="true">?</span>
-        <span class="nav-btn__label">Guide</span>
+      <button type="button" class="nav-btn" data-nav="policy-clause" aria-pressed="false">
+        <span class="nav-btn__icon" aria-hidden="true">≡</span>
+        <span class="nav-btn__label">Policy Clause</span>
       </button>
     </nav>
   </aside>
@@ -61,7 +45,7 @@
     <header class="top">
       <div class="top__row">
         <nav class="crumb" id="crumb" aria-label="Breadcrumb">
-          <span class="crumb__item">Workspace</span>
+          <span class="crumb__item">Home</span>
         </nav>
         <div class="top__end">
           <div class="actions work__actions" id="top-actions">
@@ -142,10 +126,10 @@
 
               <div class="landing-hero__actions">
                 <div class="landing-hero__cta-row">
-                  <button type="button" class="btn btn--lg btn--on-hero" id="start-from-risks" data-start-risks>Get started</button>
-                  <p id="landing-privacy-badge" class="landing-badge">Private by design: runs in your browser</p>
+                  <button type="button" class="btn btn--lg btn--on-hero" id="start-from-risks" data-start-risks>Get started with identified risks</button>
+                  <button type="button" class="btn btn--lg btn--on-hero-secondary" id="start-from-clause">Get started with an existing policy clause</button>
                 </div>
-                <button type="button" class="btn btn--lg btn--on-hero-secondary" id="start-from-clause">Start from a policy clause</button>
+                <p id="landing-privacy-badge" class="landing-badge">Private by design: runs in your browser</p>
               </div>
               <p class="landing-hero__alt">
                 <a class="landing-hero__secondary" id="landing-how-link" href="#how-it-works">See how it works</a>

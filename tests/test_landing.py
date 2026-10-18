@@ -35,11 +35,19 @@ def test_landing_is_a_marketing_page_not_two_flow_cards():
     assert 'id="landing-nav-start"' not in INDEX
     assert 'id="start-from-risks"' in INDEX
     assert 'id="landing-cta-start"' in INDEX
-    assert INDEX.count(">Get started<") == 2
+    risk = INDEX.split('id="start-from-risks"', 1)[1][:220]
+    assert "Get started with identified risks" in risk
     assert 'id="start-from-clause"' in INDEX
-    clause = INDEX.split('id="start-from-clause"', 1)[1][:160]
-    assert "Start from a policy clause" in clause
+    clause = INDEX.split('id="start-from-clause"', 1)[1][:220]
+    assert "Get started with an existing policy clause" in clause
+    assert "btn--on-hero" in INDEX.split('id="start-from-risks"', 1)[0][-80:] + risk
     assert "btn--on-hero-secondary" in INDEX.split('id="start-from-clause"', 1)[0][-80:] + clause
+    hero_actions = INDEX.split('class="landing-hero__actions"', 1)[1].split("landing-hero__alt", 1)[0]
+    assert "Get started with identified risks" in hero_actions
+    assert "Get started with an existing policy clause" in hero_actions
+    assert "Private by design: runs in your browser" in hero_actions
+    assert INDEX.count(">Get started<") == 1
+    assert ">Get started<" in INDEX.split('id="landing-cta-start"', 1)[1][:80]
     assert 'id="landing-how-link"' in INDEX
     assert "See how it works" in INDEX
     assert 'href="#how-it-works"' in INDEX
@@ -166,3 +174,9 @@ def test_get_started_buttons_share_the_risk_path_hook():
     assert "data-start-risks" in JS or "[data-start-risks]" in JS
     assert "startRiskPath" in JS
     assert "showClausePath" in JS
+
+
+def test_hero_start_buttons_stack_on_a_phone():
+    assert ".landing-hero__cta-row" in CSS
+    mobile = CSS.split("@media (max-width: 520px)", 1)[1]
+    assert "flex-direction: column" in mobile.split(".landing-hero__cta-row", 1)[1][:400]

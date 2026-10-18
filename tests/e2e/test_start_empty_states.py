@@ -9,7 +9,7 @@ from conftest import choose_clause_path, finish_open, goto_review
 
 def test_start_has_one_primary_and_a_quiet_example(page):
     expect(page.locator("#start-from-risks")).to_be_visible()
-    expect(page.locator("#start-from-risks")).to_have_text("Get started")
+    expect(page.locator("#start-from-risks")).to_have_text("Get started with identified risks")
     choose_clause_path(page)
     expect(page.locator("#start .btn--primary:visible")).to_have_count(1)
     expect(page.locator("#paste-submit")).to_have_text("Codify")

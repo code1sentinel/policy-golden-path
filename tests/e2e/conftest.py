@@ -145,8 +145,14 @@ def finish_open(page, timeout=120_000):
 
 def goto_review(page, risk="Screens left unlocked at unattended desks."):
     """Path B: pass control statements, then link remaining controls, open Review."""
+    page.wait_for_selector("#flow:not([hidden]), #work:not([hidden])", timeout=120_000)
     work = page.locator("#work")
     if work.is_visible():
+        return
+    review = page.locator("#stepper [data-step='review']")
+    if review.count() and review.is_visible() and review.is_enabled():
+        review.click()
+        expect(work).to_be_visible()
         return
     expect(page.locator("#flow")).to_be_visible()
     statements = page.locator("#statements-continue")

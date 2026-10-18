@@ -52,11 +52,12 @@ loads about 13 MB, which the browser then caches. All three ways run the same
 code.
 
 The first open is a marketing landing: a blue hero, a mock of a risk
-turning into a control then OSCAL and Rego, and **Get started** into the
-risk-first flow. **Start from a policy clause** is a secondary button.
-A saved project on this device shows **Resume your project**.
+turning into a control then OSCAL and Rego, and two start buttons —
+**Get started with identified risks** (primary) and **Get started with
+an existing policy clause** (visible secondary). A saved project on this
+device shows **Resume your project**.
 
-Flow A's **Get started** opens a page that asks **What risks have you
+**Get started with identified risks** opens a page that asks **What risks have you
 identified?** Type in **Add a risk** (Enter adds, Esc cancels), edit
 rows in place, then **Continue to control statements**. Write a statement
 for each risk (left list, right editor), then **Continue to policy as
@@ -180,10 +181,10 @@ the rule drafts never use AI.
 
 ## Reviewing
 
-The workspace is an authoring app: a collapsible sidebar (Workspace, Clauses,
-Catalog, Library, Export, Guide), a top bar with a breadcrumb, a centred writing
-column, and a right properties/review panel. **Workspace** is the paste start;
-**Clauses** is the open project. Select a control to edit the statement next to
+The workspace is an authoring app: a collapsible sidebar with three destinations
+(Home, Risk Entry, Policy Clause), a top bar with a breadcrumb, a centred writing
+column, and a right properties/review panel. **Home** is the landing;
+**Risk Entry** and **Policy Clause** open each flow at step 1. Select a control to edit the statement next to
 its legacy clause. Parts of the statement show as sub-items. **Accept** keeps
 it; the button becomes **Accepted ✓** with **Next control** as the primary
 (and **Undo accept**). Add the risk it treats (its purpose); guidance and who
@@ -198,18 +199,21 @@ set-this-value prompts.
 - **Keyboard**: <kbd>j</kbd>/<kbd>k</kbd> (or arrows) next and previous,
   <kbd>r</kbd> reviewed, <kbd>a</kbd> accepted, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>
   accept (also from the statement field).
-- **Saving**: work is kept in your browser as you go. **Export** opens a dialog
-  with **OSCAL catalog** as the recommended download (keep, share, or put in
-  git; reopen later), then Excel, CSV, and the conversion report. Statement
-  library JSON/CSV sit under an optional group. The editor's **OSCAL JSON**
-  tab shows this control so you can read or copy it without downloading the file.
-- **Catalog** lists every control with a source column (the clause it came
-  from). There is no risk register
+- **Saving**: work is kept in your browser as you go. **Export** (from the
+  toolbar, not a nav tab) opens a dialog with **OSCAL catalog** as the
+  recommended download (keep, share, or put in git; reopen later), then Excel,
+  CSV, and the conversion report. Statement library JSON/CSV sit under an
+  optional group. The editor's **OSCAL JSON** tab shows this control so you can
+  read or copy it without downloading the file.
+- **Catalog**, identified-risk input, and the statement **library** stay inside
+  the flows (OSCAL from step 3, **Insert from library**); they are not nav tabs.
+  Catalog lists every control with a source column (the clause it came from).
+  There is no risk register
   ([ADR 0011](docs/adr/0011-no-risk-register.md)).
-- **Risks** is identified-risk input: a short statement and optional note.
-  Controls may link to those ids; coverage flags risks with no control and
-  controls with no linked risk. Matching statements come from the on-device
-  library. This is not a scored register
+- **Identified risks** are a short statement and optional note. Controls may
+  link to those ids; coverage flags risks with no control and controls with no
+  linked risk. Matching statements come from the on-device library. This is not
+  a scored register
   ([ADR 0012](docs/adr/0012-identified-risks-as-input.md)).
 - **Library** keeps accepted control statements on this device
   (`codify:statements`, separate from the project autosave). One statement

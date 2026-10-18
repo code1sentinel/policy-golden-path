@@ -6,13 +6,14 @@ from playwright.sync_api import expect
 def test_sidebar_lists_the_authoring_destinations(page):
     page.click("#start-from-risks")
     nav = page.locator("nav.sidebar__nav")
-    expect(nav.get_by_role("button", name="Workspace")).to_be_visible()
-    expect(nav.get_by_role("button", name="Clauses")).to_be_visible()
-    expect(nav.get_by_role("button", name="Catalog")).to_be_visible()
-    expect(nav.get_by_role("button", name="Library")).to_be_visible()
-    expect(nav.get_by_role("button", name="Export")).to_be_visible()
-    expect(nav.get_by_role("button", name="Guide")).to_be_visible()
-    expect(nav.get_by_role("button", name="Risks")).to_be_visible()
+    expect(nav.get_by_role("button", name="Home")).to_be_visible()
+    expect(nav.get_by_role("button", name="Risk Entry")).to_be_visible()
+    expect(nav.get_by_role("button", name="Policy Clause")).to_be_visible()
+    expect(nav.locator(".nav-btn")).to_have_count(3)
+    expect(nav.get_by_role("button", name="Catalog")).to_have_count(0)
+    expect(nav.get_by_role("button", name="Library")).to_have_count(0)
+    expect(nav.get_by_role("button", name="Export")).to_have_count(0)
+    expect(nav.get_by_role("button", name="Guide")).to_have_count(0)
 
 
 def test_start_has_no_setup_checklist(page):
@@ -30,14 +31,9 @@ def test_clauses_catalog_and_library_views(demo):
     expect(demo.locator("#props")).not_to_contain_text("null")
     expect(demo.locator(".subitems")).to_be_visible()
 
-    demo.click("[data-nav='catalog']")
-    expect(demo.locator("#catalog:not([hidden])")).to_be_visible()
-    expect(demo.locator("#catalog .data-table")).to_contain_text("Source")
-    expect(demo.locator("#catalog .data-table")).to_contain_text("Clause")
-
-    demo.click("[data-nav='library']")
-    expect(demo.locator("#library:not([hidden])")).to_be_visible()
-    expect(demo.locator("#library")).to_contain_text("No statements saved yet")
+    expect(demo.locator("#catalog")).to_be_hidden()
+    expect(demo.locator("#library")).to_be_hidden()
+    expect(demo.locator("#export-dialog")).to_have_count(1)
 
 
 def test_ctrl_enter_accepts_the_current_control(demo):
@@ -56,6 +52,7 @@ def test_review_accept_and_dismiss(demo):
     expect(demo.locator("textarea.statement")).to_be_visible()
 
 
-def test_export_from_the_sidebar_needs_a_policy(page):
-    page.locator("[data-nav='export']").dispatch_event("click")
-    expect(page.locator("#error")).to_contain_text("Load a policy before exporting")
+def test_export_from_the_toolbar_needs_a_policy(page):
+    expect(page.locator("#export-open-top")).to_be_hidden()
+    page.click("#start-from-risks")
+    expect(page.locator("#export-open-top")).to_be_visible()

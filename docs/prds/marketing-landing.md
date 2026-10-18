@@ -29,9 +29,9 @@ do not explain the product.
 
 See that Codify turns identified risks or policy clauses into control
 statements you can export as OSCAL and test as policy as code (Rego).
-Press **Get started** and land on the risk-first Identify risks step.
-Optionally start from a policy clause instead. Resume if this device
-already has a project.
+Press **Get started with identified risks** and land on the risk-first
+Identify risks step. **Get started with an existing policy clause**
+opens paste. Resume if this device already has a project.
 
 ## Scope
 
@@ -49,10 +49,12 @@ already has a project.
   - Hero card: one concrete example end to end — risk *Customer data
     stored unencrypted*, then a control statement, a short OSCAL JSON
     snippet, then one Rego line (HTML/CSS only; no images from the web).
-    Floating chips (4–6) are example risks and clauses. Primary **Get
-    started** sits under the card, with a **Private by design: runs in
-    your browser** trust badge next to it. **Start from a policy clause**
-    is a visible secondary button (`#start-from-clause`). Secondary
+    Floating chips (4–6) are example risks and clauses. Two equal-weight
+    start buttons sit under the card: primary **Get started with
+    identified risks** (`#start-from-risks`) and a visible secondary
+    **Get started with an existing policy clause** (`#start-from-clause`).
+    **Private by design: runs in your browser** stays next to that pair.
+    On a 390px screen the two buttons stack (risk above clause). Secondary
     **See how it works** (anchor to How it works). Headline *Turn risks
     and policy into controls you can test.* Subline: *Draft control
     statements from risks or policy clauses, export OSCAL, and ship them
@@ -74,11 +76,11 @@ already has a project.
     in your browser, no AI keys stored).
   - Closing CTA band with **Get started** again, and a small footer (no
     club or version line).
-  - **Get started** (hero under the card, and closing CTA) opens the
-    existing risk-first path (Identify risks). Button id
-    `#start-from-risks` stays on the hero primary. The CTA button has its
-    own id. `#start-from-clause` is the secondary **Start from a policy
-    clause** button.
+  - Hero **Get started with identified risks** and the closing **Get
+    started** open the existing risk-first path (Identify risks). Button
+    id `#start-from-risks` stays on the hero primary. The CTA button has
+    its own id. `#start-from-clause` is the secondary **Get started with
+    an existing policy clause** button.
   - `#resume` / `#resume-open` stay. No Discard.
   - Hide the authoring sidebar and workspace top bar while the marketing
     landing is showing. Get started / Resume / clause paste restore the
@@ -101,11 +103,11 @@ already has a project.
   style Docs/GitHub, centered risk-to-control mock, floating chips, Get
   started under the card, Scroll to explore), How it works, feature cards,
   closing CTA, and footer, and does not show the two flow cards.
-- Given the landing, When **Get started** is activated, Then the
-  identify-risks step opens.
-- Given the landing, When **Start from a policy clause** is activated,
-  Then the existing paste form is shown (Codify / Try an example / Open a
-  file).
+- Given the landing, When **Get started with identified risks** is
+  activated, Then the identify-risks step opens.
+- Given the landing, When **Get started with an existing policy clause**
+  is activated, Then the existing paste form is shown (Codify / Try an
+  example / Open a file).
 - Given a saved `codify:project`, When the page loads, Then **Resume your
   project** is shown, and Resume opens the saved project on its existing
   path.
@@ -122,7 +124,10 @@ branding. No web fonts.
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
-| **Primary — Base (Basenames)** | https://mobbin.com/screens/e4a9a595-c9fd-40eb-b78c-a87f8a7f5597 | Full-bleed saturated blue (`#0052FF`); tiny square mark top-left; only a Sign In–style text link top-right; centered interactive card; soft blurred floating chips; **Scroll to explore** at the bottom. Codify’s card is a risk → control mock; chips are example risks and clauses; **Get started** sits under the card. |
+| **Primary — Base (Basenames)** | https://mobbin.com/screens/e4a9a595-c9fd-40eb-b78c-a87f8a7f5597 | Full-bleed saturated blue (`#0052FF`); tiny square mark top-left; only a Sign In–style text link top-right; centered interactive card; soft blurred floating chips; **Scroll to explore** at the bottom. Codify’s card is a risk → control mock; chips are example risks and clauses. |
+| Sentry — two hero CTAs | https://mobbin.com/screens/b74cbcc7-12b5-4b98-be43-027a776e6ef3 | Two equal-weight start buttons: filled primary next to an outlined secondary. |
+| Customer.io — Get started + Book a demo | https://mobbin.com/screens/c82a750f-4a32-486a-97c9-cdc95db1463b | Filled primary + outlined secondary with a quiet trust line under the pair. |
+| Dropbox Dash — stacked CTAs | https://mobbin.com/screens/b59243e8-9c21-4120-9e4f-eee85c834d5c | Primary over outlined secondary, stacked on a narrow screen. |
 | Coinbase — marketing hero (secondary) | https://mobbin.com/screens/8569c23a-5805-4014-917b-fa7685ee8773 | Large product headline and short subhead above the visual. |
 | Family — centered hero with feature cards (secondary) | https://mobbin.com/screens/2a5126c9-091d-4870-b52a-12f586941c75 | Generous whitespace and a row of feature cards below the hero. |
 | Kraken — hero with trust/stat strip (secondary) | https://mobbin.com/screens/5c032e77-cca1-456e-8180-41c589e2849d | Quiet trust strip (Codify: on-device, OSCAL 1.1.2, no AI keys stored — not vanity metrics). |

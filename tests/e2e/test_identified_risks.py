@@ -4,51 +4,50 @@ import json
 
 from playwright.sync_api import expect
 
+from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish_open, goto_review
 from test_statement_library import CLAUSE, accept_current, open_pasted, wait_for_library_entries
 
 
 def test_add_identified_risk_and_flag_uncovered(page):
-    open_pasted(page, CLAUSE)
-    page.click("[data-nav='risks']")
-    expect(page.locator("#risks:not([hidden])")).to_be_visible()
-    expect(page.locator("#risks")).to_contain_text("not a register")
-    page.fill("#risk-statement", "Company data is breached due to human error.")
-    page.fill("#risk-note", "From the workshop.")
-    page.click("#risk-add")
-    expect(page.locator(".risk-row")).to_contain_text("human error")
-    expect(page.locator("#risks-coverage")).to_contain_text("no control")
+    choose_risk_path(page)
+    add_flow_risk(page, "Company data is breached due to human error.", note="From the workshop.")
     saved = json.loads(page.evaluate("localStorage.getItem('codify:project')"))
     assert saved["project"]["risks"][0]["statement"] == "Company data is breached due to human error."
     assert saved["project"]["risks"][0]["note"] == "From the workshop."
     assert saved["project"]["risks"][0]["id"] == "R-001"
+    page.click("#identify-continue")
+    expect(page.locator("#statements-list [data-covered='false']")).to_be_visible()
+    expect(page.locator("#statements-list [aria-label='Not covered']")).to_be_visible()
 
 
 def test_suggest_dialog_adds_library_statement_and_clears_coverage(page):
     open_pasted(page, CLAUSE)
     accept_current(page)
     wait_for_library_entries(page, 1)
-    page.click("[data-nav='risks']")
-    page.fill("#risk-statement", "Access that is no longer needed could be misused.")
-    page.click("#risk-add")
-    page.click("[data-suggest='R-001']")
+    page.click("[data-nav='risk-entry']")
+    add_flow_risk(page, "Access that is no longer needed could be misused.")
+    page.click("#identify-continue")
+    page.click("#statements-library")
     expect(page.locator("#risk-suggest-dialog")).to_be_visible()
     expect(page.locator("#risk-suggest-dialog")).not_to_contain_text("null")
     expect(page.locator("#risk-suggest-scenario")).to_contain_text("Access that is no longer needed")
     expect(page.locator(".risk-suggest__row")).to_contain_text("need-to-know")
     page.locator(".risk-suggest__row button", has_text="Add").first.click()
     page.locator("#risk-suggest-not-now").click()
-    expect(page.locator("#risks-coverage")).to_contain_text("Every identified risk has a linked control")
     saved = json.loads(page.evaluate("localStorage.getItem('codify:project')"))
     linked = [c for c in saved["project"]["controls"] if "R-001" in (c.get("risk_ids") or [])]
     assert linked
-    page.click("[data-nav='clauses']")
-    page.locator("textarea.statement").wait_for()
+    page.click("#statements-continue")
+    goto_review(page)
     expect(page.locator("#editor .mapped-risk").first).to_be_visible()
     expect(page.locator("#editor .mapped-risk").first).to_contain_text("R-001")
 
 
 def test_unlinked_control_is_flagged_in_related_table(page):
-    open_pasted(page, CLAUSE)
-    page.click("[data-nav='risks']")
-    expect(page.locator("#risks-coverage")).to_contain_text("not linked")
-    expect(page.locator("#risks-related")).to_contain_text("Unlinked control")
+    choose_clause_path(page)
+    page.fill("#paste-form textarea", CLAUSE)
+    page.click("#paste-submit")
+    finish_open(page)
+    page.click("#statements-continue")
+    expect(page.locator("#flow-step")).to_contain_text("This control is not linked to a risk.")
+    expect(page.locator("#legacy-risk-prompt")).to_contain_text("risk")

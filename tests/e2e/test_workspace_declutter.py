@@ -14,17 +14,7 @@ def test_workspace_hides_start_chrome_and_keeps_the_statement_hero(demo):
     expect(demo.get_by_placeholder("What could happen without this control")).to_be_hidden()
 
 
-def test_guide_stacks_practices_in_one_column(demo):
-    demo.click("[data-view='guide']")
-    expect(demo.locator("#guide:not([hidden])")).to_be_visible()
-    expect(demo.locator(".anatomy__key")).to_have_count(0)
-    expect(demo.locator(".guide-foot")).to_have_count(0)
-    expect(demo.locator("#guide-list .guide").first).to_be_visible()
-    expect(demo.locator("#guide-list")).to_contain_text("Weak")
-    expect(demo.locator("#guide-list")).to_contain_text("Strong")
-    expect(demo.get_by_text("How:", exact=False)).to_have_count(0)
-    first = demo.locator("#guide-list .guide").nth(0).bounding_box()
-    second = demo.locator("#guide-list .guide").nth(1).bounding_box()
-    assert first and second
-    assert second["y"] >= first["y"] + first["height"] - 8
-    assert abs(second["x"] - first["x"]) < 24
+def test_guide_stays_off_the_nav_and_step_guides_remain(demo):
+    expect(demo.locator("nav.sidebar__nav").get_by_role("button", name="Guide")).to_have_count(0)
+    expect(demo.locator("#guide")).to_be_hidden()
+    expect(demo.locator("#step-guide, #step-guide-open")).to_have_count(2)

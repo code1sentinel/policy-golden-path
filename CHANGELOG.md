@@ -25,11 +25,24 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   ([docs/prds/control-statements-page.md](docs/prds/control-statements-page.md),
   [ADR 0016](docs/adr/0016-control-statements-page.md)).
 
+- Authoring nav is three destinations: **Home**, **Risk Entry**, and
+  **Policy Clause**
+  ([docs/prds/three-tab-nav.md](docs/prds/three-tab-nav.md),
+  [ADR 0017](docs/adr/0017-three-tab-nav.md)). Catalog, Library, Risks,
+  Export, and Guide are no longer tabs; export, Insert from library, and
+  per-step guides stay in the flows. The three labels sit on one row at
+  390px. The landing hero uses two equal-weight start buttons: **Get
+  started with identified risks** (primary) and **Get started with an
+  existing policy clause** (visible secondary), with **Private by
+  design** next to them; they stack on a 390px screen. No GRC
+  Engineering Club branding. No new outbound calls.
+
 - First visit is a Base-style marketing landing
   ([docs/prds/marketing-landing.md](docs/prds/marketing-landing.md)):
   full-bleed `#0052FF` hero, centered risk → control → OSCAL → Rego mock,
-  **Get started** into Identify risks, **Start from a policy clause** as a
-  secondary button, How it works (Enact linked), feature cards, contribute
+  **Get started with identified risks** into Identify risks, **Get
+  started with an existing policy clause** as a visible secondary, How it
+  works (Enact linked), feature cards, contribute
   links, and a closing CTA. A saved project shows **Resume your project**.
   No GRC Engineering Club branding. No new outbound calls.
 
