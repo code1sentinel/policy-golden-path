@@ -72,7 +72,7 @@ const state = {
 
 const STEP_LABELS = {
   risks: "Identify risks",
-  controls: "Develop controls",
+  controls: "Control statements",
   clause: "Paste a clause",
   link: "Link to risks",
   review: "Review",
@@ -1479,7 +1479,9 @@ function statementBlock(item, control) {
   });
   remove.hidden = !control;
   remove.addEventListener("click", () => {
-    if (control) removeStatementControl(control);
+    const id = area.getAttribute("data-control-id");
+    const existing = id && controlById(id);
+    if (existing) removeStatementControl(existing);
     const wrap = $("#statements-blocks");
     const block = remove.closest(".statements-block");
     if (block) block.remove();
