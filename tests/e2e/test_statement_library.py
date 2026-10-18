@@ -74,8 +74,8 @@ def test_accept_lands_in_library_and_survives_another_project(page):
     page.click("#close-project")
     open_pasted(page, OTHER)
     page.click("#library-from")
-    expect(page.locator("#library-pick")).to_contain_text(statement[:40])
-    assert page.locator("#library-pick").inner_text().count(statement[:40]) == 1
+    expect(page.locator("#library-pick-detail")).to_contain_text(statement[:40])
+    assert len(library_store(page)["entries"]) == 1
 
 
 def test_use_from_library_then_accept_goes_into_the_current_catalog(page):
