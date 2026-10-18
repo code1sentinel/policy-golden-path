@@ -840,9 +840,22 @@ async function aiBulk() {
 // ---------------------------------------------------------------- views
 
 function navFor(view) {
-  if (view === "work" || view === "result" || view === "flow") return "clauses";
-  if (view === "workspace") return "workspace";
-  return view;
+  if (view === "workspace" && state.startPath === "clause") return "policy-clause";
+  if (view === "workspace") return "home";
+  if (state.project) {
+    return authoringPath(state.project) === "risks" ? "risk-entry" : "policy-clause";
+  }
+  if (state.startPath === "clause") return "policy-clause";
+  return "home";
+}
+
+function markNav(current) {
+  for (const b of $$("[data-nav]")) {
+    const on = b.dataset.nav === current;
+    b.setAttribute("aria-pressed", String(on));
+    if (on) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  }
 }
 
 function showView(view) {
@@ -852,14 +865,11 @@ function showView(view) {
   if (view === "flow" && state.flowStep === "review") view = "work";
   if (view !== "result") state.resultStep = false;
   state.view = view;
-  const nav = navFor(view);
-  for (const b of $$("[data-nav]")) {
-    if (b.dataset.nav === "export") continue;
-    b.setAttribute("aria-pressed", String(b.dataset.nav === nav));
-  }
+  markNav(navFor(view));
   $("#guide").hidden = view !== "guide";
   $("#start").hidden = view !== "workspace";
-  document.body.dataset.chrome = view === "workspace" ? "landing" : "app";
+  const landing = view === "workspace" && state.startPath !== "clause";
+  document.body.dataset.chrome = landing ? "landing" : "app";
   if ($("#result")) $("#result").hidden = view !== "result";
   const authoring = Boolean(state.project) && (view === "flow" || view === "work");
   if ($("#flow")) $("#flow").hidden = !authoring;
@@ -873,7 +883,7 @@ function showView(view) {
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
   if (view === "workspace") {
-    state.startPath = null;
+    if (state.startPath !== "clause") state.startPath = null;
     renderResume();
     renderStartChoice();
   }
@@ -897,7 +907,7 @@ function renderCrumb() {
   if (!crumb) return;
   const item = (text, last = false) => el("span", { class: last ? "crumb__item" : "crumb__item", text });
   const sep = () => el("span", { class: "crumb__sep", "aria-hidden": "true", text: "/" });
-  const parts = ["Workspace"];
+  const parts = ["Home"];
   if (state.view === "result" && state.project) {
     parts.push("Here's what we drafted");
   } else if ((state.view === "work" || state.view === "flow") && state.project) {
@@ -1144,15 +1154,37 @@ function startRiskPath() {
   showView("flow");
 }
 
+function goHome() {
+  state.startPath = null;
+  showView("workspace");
+}
+
+function openRiskEntry() {
+  if (state.project && authoringPath(state.project) === "risks") {
+    state.startPath = null;
+    state.flowStep = "risks";
+    showView("flow");
+    return;
+  }
+  startRiskPath();
+}
+
+function openPolicyClause() {
+  if (state.project && authoringPath(state.project) !== "clauses") {
+    if (!confirmReplace()) return;
+  }
+  showClausePath();
+}
+
 function showClausePath() {
   state.startPath = "clause";
-  renderStartChoice();
+  showView("workspace");
   $("#paste-form textarea")?.focus();
 }
 
 function hideClausePath() {
   state.startPath = null;
-  renderStartChoice();
+  showView("workspace");
   $("#start-from-risks")?.focus();
 }
 
@@ -3368,8 +3400,11 @@ function init() {
 
   for (const b of $$("[data-nav]")) {
     b.addEventListener("click", () => {
-      if (b.dataset.nav === "export") return openExportDialog();
-      showView(b.dataset.view || b.dataset.nav);
+      const dest = b.dataset.nav;
+      if (dest === "home") return goHome();
+      if (dest === "risk-entry") return openRiskEntry();
+      if (dest === "policy-clause") return openPolicyClause();
+      showView(b.dataset.view || dest);
     });
   }
 

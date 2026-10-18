@@ -100,7 +100,7 @@ def test_workspace_opens_start_and_pasted_title_is_not_pasted_text(page):
     page.fill("#work-title", "Need-to-know policy")
     page.locator("#work-title").blur()
     expect(page.locator("#crumb")).to_contain_text("Need-to-know policy")
-    page.click("[data-nav='workspace']")
+    page.click("[data-nav='home']")
     expect(page.locator("#start:not([hidden])")).to_be_visible()
     expect(page.locator("#resume:not([hidden])")).to_be_visible()
     expect(page.locator("#resume")).to_contain_text("Need-to-know policy")
@@ -114,13 +114,13 @@ def test_library_lists_a_statement_once(page):
     finish_open(page)
     goto_review(page)
     page.click("#accept-control")
-    page.click("[data-nav='library']")
     statement = "Grant access to systems on a need-to-know basis."
-    body = page.locator("#library").inner_text()
-    assert body.count(statement) == 1
-    expect(page.locator("#library-detail .library-detail__statement")).to_have_count(1)
-    expect(page.locator("#library-detail")).to_contain_text("OSCAL")
-    expect(page.locator("#catalog .view-head__lede, #library .view-head__lede").first).to_be_attached()
+    store = page.evaluate("localStorage.getItem('codify:statements')")
+    assert store.count(statement) == 1
+    page.click("#library-from")
+    expect(page.locator("#library-pick")).to_contain_text(statement)
+    expect(page.locator("#library-pick")).to_contain_text("OSCAL")
+    expect(page.locator("#library-pick .library-detail__statement")).to_have_count(1)
 
 
 def test_oscal_tab_has_a_visible_explanation(page):
@@ -129,6 +129,5 @@ def test_oscal_tab_has_a_visible_explanation(page):
     goto_review(page)
     page.get_by_role("tab", name="OSCAL JSON").click()
     expect(page.locator(".oscal-view__help")).to_contain_text("NIST")
-    page.click("[data-nav='catalog']")
-    expect(page.locator("#catalog")).to_contain_text("OSCAL")
-    expect(page.locator("#catalog")).to_contain_text("Library")
+    expect(page.locator("#catalog")).to_be_attached()
+    expect(page.locator("#library")).to_be_attached()

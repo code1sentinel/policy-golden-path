@@ -22,8 +22,9 @@ def test_shell_has_no_register_export():
     assert 'id="risk-dialog"' not in INDEX
     assert 'id="risk-import-dialog"' not in INDEX
     assert 'id="recommend-dialog"' not in INDEX
-    for nav in ("workspace", "clauses", "catalog", "library", "export", "guide"):
+    for nav in ("home", "risk-entry", "policy-clause"):
         assert f'data-nav="{nav}"' in INDEX
+    assert 'data-nav="risks"' not in INDEX
 
 
 def test_copy_has_no_leftover_register_mentions():

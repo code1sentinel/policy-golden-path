@@ -5,7 +5,9 @@ Date: 2026-10-06
 ## Status
 
 Accepted. The Risks sidebar destination named here was later removed
-([0011-no-risk-register.md](0011-no-risk-register.md)).
+([0011-no-risk-register.md](0011-no-risk-register.md)). Nav destinations
+are Home, Risk Entry, and Policy Clause
+([0017-three-tab-nav.md](0017-three-tab-nav.md)).
 
 ## Context
 

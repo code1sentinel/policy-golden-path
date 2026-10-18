@@ -62,8 +62,10 @@ They are a starting point to edit, not finished controls.
   After paste or Try an example, a short result step summarises the drafts
   before the 3-pane workspace. Review labels and the score have plain-language
   help; Accept is the single primary until the control is accepted, then
-  **Accepted ✓** and **Next control** lead. Sidebar **Workspace** returns
-  to the paste start. Pasted projects get a name from the first clause.
+  **Accepted ✓** and **Next control** lead. Nav **Home** returns to the
+  landing. **Risk Entry** and **Policy Clause** open each flow at step 1
+  ([three-tab-nav.md](prds/three-tab-nav.md)). Pasted projects get a name
+  from the first clause.
 - **Export:** **Send to Enact** downloads the **OSCAL catalog** (recommended,
   catalog 1.1.2) on this device; Excel, CSV (spreadsheet-safe), the Markdown
   report, and optional statement-library JSON/CSV. The web wizard blocks
@@ -162,7 +164,10 @@ See [docs/prds/workspace-guide-declutter.md](prds/workspace-guide-declutter.md).
 The 2026-10-06 authoring app shell rebuilt Workspace around a sidebar,
 writing column, and properties/review panel. See
 [docs/prds/ui-overhaul.md](prds/ui-overhaul.md) and
-[ADR 0007](adr/0007-authoring-app-shell.md).
+[ADR 0007](adr/0007-authoring-app-shell.md). The primary nav is three
+destinations: Home, Risk Entry, Policy Clause
+([three-tab-nav.md](prds/three-tab-nav.md),
+[ADR 0017](adr/0017-three-tab-nav.md)).
 
 Accepted statements also land in a device-wide Statement library, reusable
 across projects on this machine. See

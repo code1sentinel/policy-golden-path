@@ -8,11 +8,11 @@ The workspace is where you edit a draft next to the original clause, fill any bl
 
 The page is an authoring app:
 
-- **Sidebar** — Workspace, Clauses, Catalog, Library, Risks, Export, Guide
+- **Nav** — Home, Risk Entry, Policy Clause
 - **Writing column** — the control statement, with the legacy clause above it
 - **Right panel** — status, score, and review hints
 
-**Workspace** in the sidebar returns to the start (two paths: risks or a clause). **Clauses** is the open project. Identify risks is a capture page (three landing steps, back to the landing, Continue when at least one risk exists). Control statements is a split list + editor: write a statement for each risk or clause, then **Continue to policy as code** when every item is covered. Later steps still use a numbered stepper: Link to risks (clause path), then Review and Send to Enact, with a short guide you can hide and open again.
+**Home** returns to the landing. **Risk Entry** opens Identify risks (step 1). **Policy Clause** opens the clause paste step. Identify risks is a capture page (three landing steps, back to the landing, Continue when at least one risk exists). Control statements is a split list + editor: write a statement for each risk or clause, then **Continue to policy as code** when every item is covered. Later steps still use a numbered stepper: Link to risks (clause path), then Review and Send to Enact, with a short guide you can hide and open again. Catalog, library, and export stay inside those flows (OSCAL from step 3, Insert from library).
 
 A pasted project is named from the first clause. You can rename it at the top of the workspace.
 

@@ -25,6 +25,14 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   ([docs/prds/control-statements-page.md](docs/prds/control-statements-page.md),
   [ADR 0016](docs/adr/0016-control-statements-page.md)).
 
+- Authoring nav is three destinations: **Home**, **Risk Entry**, and
+  **Policy Clause**
+  ([docs/prds/three-tab-nav.md](docs/prds/three-tab-nav.md),
+  [ADR 0017](docs/adr/0017-three-tab-nav.md)). Catalog, Library, Risks,
+  Export, and Guide are no longer tabs; export, Insert from library, and
+  per-step guides stay in the flows. The three labels sit on one row at
+  390px. No GRC Engineering Club branding. No new outbound calls.
+
 - First visit is a Base-style marketing landing
   ([docs/prds/marketing-landing.md](docs/prds/marketing-landing.md)):
   full-bleed `#0052FF` hero, centered risk → control → OSCAL → Rego mock,

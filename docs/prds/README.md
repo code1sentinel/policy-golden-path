@@ -24,4 +24,5 @@ before implementation.
 - [risk-first-authoring-flow.md](risk-first-authoring-flow.md) — risk-first web flow with two start paths
 - [identify-risks-page.md](identify-risks-page.md) — Flow A step 1: capture identified risks
 - [control-statements-page.md](control-statements-page.md) — shared step 2: write a statement for each risk or clause
+- [three-tab-nav.md](three-tab-nav.md) — Home / Risk Entry / Policy Clause nav
 

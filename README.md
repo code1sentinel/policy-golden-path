@@ -180,10 +180,10 @@ the rule drafts never use AI.
 
 ## Reviewing
 
-The workspace is an authoring app: a collapsible sidebar (Workspace, Clauses,
-Catalog, Library, Export, Guide), a top bar with a breadcrumb, a centred writing
-column, and a right properties/review panel. **Workspace** is the paste start;
-**Clauses** is the open project. Select a control to edit the statement next to
+The workspace is an authoring app: a collapsible sidebar with three destinations
+(Home, Risk Entry, Policy Clause), a top bar with a breadcrumb, a centred writing
+column, and a right properties/review panel. **Home** is the landing;
+**Risk Entry** and **Policy Clause** open each flow at step 1. Select a control to edit the statement next to
 its legacy clause. Parts of the statement show as sub-items. **Accept** keeps
 it; the button becomes **Accepted ✓** with **Next control** as the primary
 (and **Undo accept**). Add the risk it treats (its purpose); guidance and who

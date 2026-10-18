@@ -163,6 +163,7 @@ body:has(#start[hidden]) .local-note { display: none !important; }
 .nav-btn:hover { color: var(--text); background: var(--surface-raised); }
 .nav-btn[aria-pressed="true"] { color: var(--text); background: var(--orange-dim); border-color: var(--orange-line); }
 .nav-btn__icon { width: 1.1em; text-align: center; flex: none; }
+.nav-btn__label { white-space: nowrap; }
 body.sidebar-collapsed .brand__text,
 body.sidebar-collapsed .nav-btn__label { display: none; }
 body.sidebar-collapsed .nav-btn { justify-content: center; padding: 8px; }
@@ -684,10 +685,12 @@ body[data-chrome="landing"] main { padding: 0; overflow: visible; min-height: 0;
   font-size: 13px;
 }
 .landing-footer a { color: var(--accent-text); }
-body[data-chrome="landing"] #drop:not([hidden]) {
+body[data-chrome="landing"] #drop:not([hidden]),
+#drop:not([hidden]) {
   max-width: 40rem;
-  margin: 48px auto;
+  margin: 24px auto;
 }
+body[data-chrome="landing"] #drop:not([hidden]) { margin: 48px auto; }
 .start__load { border-style: solid; }
 .start__load.is-over { border-color: var(--orange); background: var(--orange-dim); }
 .start__clause { min-height: 11em; font-size: 16px; line-height: 1.5; }
@@ -1077,10 +1080,23 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
 }
 @media (max-width: 980px) {
   body.app { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; width: 100%; }
-  .sidebar__nav { flex-direction: row; flex-wrap: wrap; }
-  .nav-btn { width: auto; }
+  .sidebar {
+    position: static; height: auto; flex-direction: row; flex-wrap: nowrap;
+    align-items: stretch; width: 100%; overflow: hidden; padding: 8px 6px;
+  }
+  .sidebar__brand { display: none; }
+  .sidebar__nav {
+    flex-direction: row; flex-wrap: nowrap; flex: 1; min-width: 0; gap: 2px;
+  }
+  .nav-btn {
+    flex: 1 1 0; width: auto; min-width: 0; justify-content: center;
+    padding: 8px 4px; font-size: 12px; gap: 0;
+  }
+  .nav-btn__icon { display: none; }
+  .nav-btn__label { overflow: hidden; text-overflow: ellipsis; }
   body.sidebar-collapsed { grid-template-columns: 1fr; }
+  body.sidebar-collapsed .nav-btn__label { display: block; }
+  body.sidebar-collapsed .nav-btn { justify-content: center; padding: 8px 4px; }
   body:has(#work:not([hidden])),
   body:has(#catalog:not([hidden])),
   body:has(#library:not([hidden])) { overflow: auto; height: auto; }

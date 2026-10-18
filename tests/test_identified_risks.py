@@ -247,8 +247,8 @@ def test_csv_and_report_still_include_the_purpose_field():
 
 
 def test_shell_has_risks_input_not_a_register():
-    assert 'data-nav="risks"' in INDEX
-    assert 'data-view="risks"' in INDEX
+    assert 'data-nav="risks"' not in INDEX
+    assert 'id="risks"' in INDEX
     assert 'id="risks"' in INDEX
     assert 'id="risk-suggest-dialog"' in INDEX
     assert "Risk register" not in INDEX
