@@ -12,6 +12,17 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- First visit is a short giga-style landing
+  ([docs/prds/giga-landing.md](docs/prds/giga-landing.md)): headline
+  **Controls you can test.**, one subline, two equal start buttons
+  (**Get started with identified risks** and **Get started with an
+  existing policy clause**) with **Private by design**, the risk →
+  control → OSCAL → Rego example, one factual how-it-works statement,
+  a trust strip (NIST 800-53, ISO 27001, OSCAL 1.1.2, runs in your
+  browser, no data leaves your device), contribute links, and a closing
+  CTA. No SOC 2 or ISO certification claims. No GRC Engineering Club
+  branding. No new outbound calls.
+
 - Control statements (shared step 2) is a split drafting page: **Write
   a control statement for each risk** (or **…for each clause**), one
   guidance sentence, a collapsible writing tip, a left list with
@@ -37,14 +48,9 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
   design** next to them; they stack on a 390px screen. No GRC
   Engineering Club branding. No new outbound calls.
 
-- First visit is a Base-style marketing landing
-  ([docs/prds/marketing-landing.md](docs/prds/marketing-landing.md)):
-  full-bleed `#0052FF` hero, centered risk → control → OSCAL → Rego mock,
-  **Get started with identified risks** into Identify risks, **Get
-  started with an existing policy clause** as a visible secondary, How it
-  works (Enact linked), feature cards, contribute
-  links, and a closing CTA. A saved project shows **Resume your project**.
-  No GRC Engineering Club branding. No new outbound calls.
+- First visit was a Base-style marketing landing
+  ([docs/prds/marketing-landing.md](docs/prds/marketing-landing.md)),
+  superseded by the giga-style restyle above.
 
 ### Added
 

@@ -117,14 +117,14 @@ The local app and Pages site use the system font stack and do not load
 Google Fonts. See
 [docs/prds/system-fonts-no-google.md](prds/system-fonts-no-google.md).
 
-A first visit is a marketing landing in the spirit of Base (Basenames):
-a full-bleed blue hero, a centered risk → control → OSCAL → Rego mock,
-and two equal-weight start buttons — **Get started with identified
-risks** (primary) and **Get started with an existing policy clause**
-(visible secondary). How it works, feature cards, a contribute
-section, and a closing CTA follow. A saved project shows **Resume your
-project**. See
-[docs/prds/marketing-landing.md](prds/marketing-landing.md) and
+A first visit is a short marketing landing in the spirit of giga.ai:
+a punchy headline, one subline, two equal-weight start buttons —
+**Get started with identified risks** (primary) and **Get started with
+an existing policy clause** (visible secondary) — **Private by
+design**, a risk → control → OSCAL → Rego example, one factual how-it-works
+statement, a trust-badge strip of honest claims, contribute links, and
+a closing CTA. A saved project shows **Resume your project**. See
+[docs/prds/giga-landing.md](prds/giga-landing.md) and
 [docs/prds/technical-policy-rego-label.md](prds/technical-policy-rego-label.md).
 Flow A step 1 is a calm capture page: title, one guidance sentence, a
 collapsible writing tip, an inline list of risks, and **Continue to
@@ -185,6 +185,10 @@ returned as input only
 
 | Screen / flow | Mobbin URL | What we take from it |
 | --- | --- | --- |
+| giga.ai (not on Mobbin) | https://giga.ai | Landing: short headline, whitespace, product visual, one proof, trust badges, closing CTA |
+| Railway landing | https://mobbin.com/screens/bc1febcc-0367-485b-8a9b-4f2df7d6e78a | Landing: short headline, two CTAs, product visual below |
+| Langdock landing | https://mobbin.com/screens/b3db08cc-9aa6-43a7-9beb-436148558a52 | Landing: whitespace-heavy structure |
+| Pin landing | https://mobbin.com/screens/815f7685-3c6a-4827-90dd-ca32d94119ab | Landing: short headline and product visual |
 | Sprig — start cards | https://mobbin.com/screens/77add735-ba8c-4f49-a512-fabd8b2e1826 | Landing: two large start cards, one recommended |
 | Klaviyo — headline + flow | https://mobbin.com/screens/88633529-5820-4f59-93e0-98d0806ad4fd | Landing: one headline, then a simple node flow |
 | Microsoft Copilot — How it works | https://mobbin.com/screens/ebac045b-3c68-4dd0-8811-1ce2a31aaf05 | Landing: generous whitespace, one idea |
