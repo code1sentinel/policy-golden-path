@@ -1115,7 +1115,7 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   .props { order: 2; max-height: none; }
   .fold__body { position: static; width: auto; box-shadow: none; }
   .how-grid, .feature-grid { grid-template-columns: 1fr; }
-  .landing-hero__center { padding: 80px 16px 88px; }
+  .landing-hero__center { padding: 72px 16px 40px; }
   .hero-chip--3, .hero-chip--4 { display: none; }
   .landing-cta { margin: 48px 16px 0; border-radius: 0; }
 }
@@ -1123,6 +1123,12 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   :root { --gutter: 16px; }
   .parts, .grid2 { grid-template-columns: 1fr; }
   .ctl { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .landing-hero__center {
+    justify-content: flex-start;
+    padding: 64px 16px 24px;
+  }
+  .landing-hero__subhead { margin-bottom: 16px; }
+  .landing-hero__actions { gap: 10px; }
   .landing-hero__cta-row {
     flex-direction: column;
     flex-wrap: nowrap;
