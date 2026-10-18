@@ -35,6 +35,7 @@ def test_first_open_is_a_marketing_landing(browser, base_url):
     expect(page.locator("#start:not([hidden])")).to_be_visible()
     expect(page.locator("#landing-flow")).to_have_count(0)
     expect(page.locator(".flow-card")).to_have_count(0)
+    expect(page.locator("#sidebar")).to_be_hidden()
     expect(page.locator("#landing-bar")).to_be_visible()
     expect(page.locator("#landing-docs")).to_be_visible()
     expect(page.locator("#landing-docs")).to_have_text("Docs")
