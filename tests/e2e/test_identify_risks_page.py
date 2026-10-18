@@ -103,8 +103,9 @@ def test_continue_opens_control_statements(page):
     expect(page.locator("#identify-continue")).to_be_disabled()
     add_flow_risk(page, UNLOCKED, note="From the workshop.")
     page.click("#identify-continue")
-    expect(page.locator("#flow-step")).to_contain_text("Develop control statements")
-    expect(page.locator("#flow-next")).to_be_visible()
+    expect(page.locator("#statements-title")).to_have_text(
+        "Write a control statement for each risk")
+    expect(page.locator("#flow-next")).to_be_hidden()
 
 
 def test_back_link_returns_to_the_landing(page):

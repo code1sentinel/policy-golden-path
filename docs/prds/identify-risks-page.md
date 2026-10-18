@@ -70,7 +70,7 @@ control statements.
   remove the last risk, Then the empty state returns, Continue is
   disabled, and focus returns to Add a risk.
 - Given at least one risk, When they activate Continue, Then they reach
-  Develop control statements. Given no risks, Continue stays disabled.
+  Write a control statement for each risk. Given no risks, Continue stays disabled.
 - Given the back link, When it is activated, Then the landing is shown.
 - Data model and OSCAL export stay `{id, statement, note?}` /
   ADR 0012 + 0014. No new outbound calls. No keys written.

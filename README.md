@@ -58,12 +58,15 @@ A saved project on this device shows **Resume your project**.
 
 Flow A's **Get started** opens a page that asks **What risks have you
 identified?** Type in **Add a risk** (Enter adds, Esc cancels), edit
-rows in place, then **Continue to control statements**.
+rows in place, then **Continue to control statements**. Write a statement
+for each risk (left list, right editor), then **Continue to policy as
+code**.
 
 To see the clause path, choose it, edit or replace the example, and press
 **Codify**, or choose **Try an example** to open the **Acme demo policy**.
-Codify then shows a short **here's what we drafted** step, then **Link to
-risks** before Review.
+Codify then shows a short **here's what we drafted** step, then the same
+control-statements page (one row per clause), then **Link to risks**
+before Review.
 ([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
 a fictional 2016 agency policy written with typical legacy problems.
 [`examples/acme-policy-key.md`](examples/acme-policy-key.md) explains what

@@ -1385,3 +1385,78 @@ body:has(#work:not([hidden])) .flow-view__body { flex: 0 1 auto; max-height: 220
   .identify-actions { justify-content: stretch; }
   .identify-actions .btn { width: 100%; }
 }
+
+/* Control statements page (ADR 0016 / shared step 2) ---------------------- */
+#flow.flow-view--statements .flow-view__body {
+  grid-template-columns: 1fr;
+}
+#flow.flow-view--statements #flow-step {
+  max-width: 72rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.statements-page { display: grid; gap: 14px; }
+.statements-title {
+  margin: 4px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2;
+  color: var(--text);
+}
+.statements-lede { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.statements-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  min-height: 20rem;
+}
+.statements-list {
+  display: grid; gap: 4px; align-content: start; margin: 0; padding: 8px;
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg); min-width: 0;
+}
+.statements-list:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+}
+.statements-item {
+  display: grid; grid-template-columns: 0.7rem minmax(0, 1fr); gap: 10px;
+  align-items: start; width: 100%; padding: 10px 12px; border: 0;
+  border-radius: var(--radius); background: transparent; color: var(--text);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.statements-item.is-selected, .statements-item[aria-selected="true"] {
+  background: var(--orange-dim);
+}
+.statements-item__text {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; font-size: 14px; line-height: 1.4;
+}
+.statements-dot {
+  width: 10px; height: 10px; margin-top: 5px; border-radius: 999px;
+  border: 1.5px solid var(--border); background: transparent;
+}
+.statements-dot.is-covered {
+  background: var(--ready); border-color: var(--ready);
+}
+.statements-editor {
+  display: grid; gap: 12px; min-width: 0;
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg); padding: 16px 18px;
+}
+.statements-source {
+  margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5;
+}
+.statements-blocks { display: grid; gap: 12px; }
+.statements-block { display: grid; gap: 6px; justify-items: start; }
+.statements-block textarea { width: 100%; min-height: 6.5em; }
+.statements-editor__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.statements-footer {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 12px; padding-top: 4px;
+}
+.statements-progress { margin: 0; color: var(--muted); font-size: 14px; }
+@media (max-width: 800px) {
+  .statements-title { font-size: 22px; }
+  .statements-layout { grid-template-columns: 1fr; min-height: 0; }
+  .statements-editor { order: 2; }
+  .statements-footer { flex-direction: column; align-items: stretch; }
+  .statements-footer .btn { width: 100%; }
+}

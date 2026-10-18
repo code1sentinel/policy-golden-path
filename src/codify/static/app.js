@@ -65,11 +65,14 @@ const state = {
   startPath: null,     // "clause" when the paste form is showing
   guideDismissed: {},
   identifyFocus: null, // selector to focus after the identify list re-renders
+  selectedStatementKey: null, // risk:<id> or clause:<id> on the statements page
+  statementFocus: null,
+  statementLibraryTarget: null,
 };
 
 const STEP_LABELS = {
   risks: "Identify risks",
-  controls: "Develop controls",
+  controls: "Control statements",
   clause: "Paste a clause",
   link: "Link to risks",
   review: "Review",
@@ -365,7 +368,7 @@ function authoringPath(project) {
 function flowSteps(project) {
   return authoringPath(project) === "risks"
     ? ["risks", "controls", "review", "enact"]
-    : ["clause", "link", "review", "enact"];
+    : ["clause", "controls", "link", "review", "enact"];
 }
 
 function nonemptyControls(project) {
@@ -397,7 +400,13 @@ function unacceptedRiskIds(project) {
 function stepComplete(project, step) {
   if (!project) return false;
   if (step === "risks") return identifiedRisks(project).length > 0;
-  if (step === "controls") return identifiedRisks(project).length > 0 && uncoveredRiskIds(project).length === 0;
+  if (step === "controls") {
+    if (authoringPath(project) === "clauses") {
+      const items = statementItemsFor(project);
+      return items.length > 0 && items.every((item) => item.covered);
+    }
+    return identifiedRisks(project).length > 0 && uncoveredRiskIds(project).length === 0;
+  }
   if (step === "clause") return nonemptyControls(project).length > 0 || (project.clauses || []).length > 0;
   if (step === "link") {
     return identifiedRisks(project).length > 0 && uncoveredRiskIds(project).length === 0 && unlinkedControlIds(project).length === 0;
@@ -413,6 +422,13 @@ function canAdvance(project, step) {
       : [false, "Add at least one identified risk to continue."];
   }
   if (step === "controls") {
+    if (authoringPath(project) === "clauses") {
+      const items = statementItemsFor(project);
+      if (!items.length || items.some((item) => !item.covered)) {
+        return [false, "Every clause needs at least one control statement."];
+      }
+      return [true, ""];
+    }
     if (!identifiedRisks(project).length || uncoveredRiskIds(project).length) {
       return [false, "Every risk needs at least one control statement."];
     }
@@ -975,12 +991,14 @@ function setFlowError(message) {
 
 function renderFlowChrome() {
   const identify = Boolean(state.project) && state.view === "flow" && state.flowStep === "risks";
+  const statements = Boolean(state.project) && state.view === "flow" && state.flowStep === "controls";
   $("#flow")?.classList.toggle("flow-view--identify", identify);
+  $("#flow")?.classList.toggle("flow-view--statements", statements);
   const head = $(".flow-view__head");
   const nav = $("#flow-nav");
   const guide = $("#step-guide");
   const reopen = $("#step-guide-open");
-  if (identify) {
+  if (identify || statements) {
     if (head) head.hidden = true;
     if (nav) nav.hidden = true;
     if (guide) {
@@ -1299,57 +1317,306 @@ function identifyRiskRow(risk) {
     remove);
 }
 
-function renderDevelopStep(box) {
-  ensureRisks();
-  const risks = identifiedRisks(state.project);
-  if (!risks.length) {
-    box.replaceChildren(el("p", { class: "field-error", text: "Add identified risks first." }));
+function statementItemsFor(project) {
+  if (authoringPath(project) === "clauses") {
+    const clauses = (project.clauses || []).filter((c) => !c.duplicate_of);
+    const reqs = clauses.filter((c) => c.type === "requirement");
+    const list = reqs.length ? reqs : clauses;
+    return list.map((clause) => {
+      const controls = (project.controls || []).filter((c) => c.clause === clause.id);
+      return {
+        key: `clause:${clause.id}`,
+        kind: "clause",
+        id: clause.id,
+        text: clause.text,
+        covered: controls.some((c) => String(c.text || "").trim()),
+        controls,
+        clause,
+      };
+    });
+  }
+  return identifiedRisks(project).map((risk) => {
+    const controls = linkedControlsFor(project, risk.id);
+    return {
+      key: `risk:${risk.id}`,
+      kind: "risk",
+      id: risk.id,
+      text: risk.statement,
+      covered: controls.length > 0,
+      controls,
+      risk,
+    };
+  });
+}
+
+function statementCoverageLabel(items) {
+  const n = items.filter((item) => item.covered).length;
+  const noun = items[0] && items[0].kind === "clause" ? "clause" : "risk";
+  return `${n} of ${plural(items.length, noun)} covered`;
+}
+
+function currentStatementItem() {
+  const items = statementItemsFor(state.project);
+  return items.find((item) => item.key === state.selectedStatementKey) || items[0] || null;
+}
+
+function refreshStatementsChrome() {
+  const items = statementItemsFor(state.project);
+  const progress = $("#statements-progress");
+  if (progress) progress.textContent = items.length ? statementCoverageLabel(items) : "";
+  const cont = $("#statements-continue");
+  if (cont) cont.disabled = !items.length || items.some((item) => !item.covered) ? true : null;
+  for (const btn of $$("#statements-list [data-statement-item]")) {
+    const item = items.find((row) => row.key === btn.getAttribute("data-statement-item"));
+    if (!item) continue;
+    btn.setAttribute("data-covered", item.covered ? "true" : "false");
+    const dot = btn.querySelector(".statements-dot");
+    if (dot) {
+      dot.classList.toggle("is-covered", item.covered);
+      dot.setAttribute("aria-label", item.covered ? "Covered" : "Not covered");
+    }
+  }
+}
+
+function persistStatement(item, area) {
+  const id = area.getAttribute("data-control-id");
+  const text = area.value;
+  if (id) {
+    const control = controlById(id);
+    if (!control) return;
+    control.text = text;
+    saveLocal();
     return;
   }
-  const cards = risks.map((risk) => {
-    const linked = linkedControlsFor(state.project, risk.id);
-    const missing = !linked.length;
-    const area = el("textarea", {
-      rows: "3",
-      "data-control-for": risk.id,
-      placeholder: "Write a control statement that treats this risk.",
-      "aria-label": `Control statement for ${risk.id}`,
-    });
-    const clause = el("textarea", {
-      rows: "2", class: "optional-clause",
-      placeholder: "Optional: attach a policy clause as context.",
-      "aria-label": `Optional clause for ${risk.id}`,
-    });
-    const add = el("button", { type: "button", class: "btn btn--primary", text: "Add statement" });
-    add.addEventListener("click", () => {
-      if (!String(area.value || "").trim()) {
-        setFlowError("Every risk needs at least one non-empty control statement.");
-        area.focus();
-        return;
-      }
-      setFlowError("");
-      addControlForRisk(risk, area.value, clause.value);
+  if (!String(text || "").trim()) return;
+  const control = item.kind === "risk"
+    ? addControlForRisk(item.risk, text, "")
+    : addControlForClause(item.clause, text);
+  if (control) area.setAttribute("data-control-id", control.id);
+}
+
+function removeStatementControl(control) {
+  state.project.controls = state.project.controls.filter((x) => x.id !== control.id);
+  delete state.scores[control.id];
+  state.checked.delete(control.id);
+  saveLocal();
+}
+
+function addControlForClause(clause, text) {
+  const statement = String(text || "").trim();
+  if (!statement) return null;
+  const used = new Set(state.project.controls.map((c) => c.id));
+  let n = controlsOf(clause.id).length + 1;
+  let id = `${String(clause.id).replace(/[^A-Za-z0-9.]+/g, "")}-${n}`;
+  while (used.has(id)) id = `${String(clause.id).replace(/[^A-Za-z0-9.]+/g, "")}-${++n}`;
+  const control = {
+    id, clause: clause.id, text: statement, guidance: "", risk: "", who: "", notes: [],
+    status: "draft", origin: "person", source_type: "clause", risk_ids: [],
+  };
+  const last = state.project.controls.map((c) => c.clause).lastIndexOf(clause.id);
+  state.project.controls.splice(last >= 0 ? last + 1 : insertionPoint(clause), 0, control);
+  saveLocal();
+  return control;
+}
+
+function moveStatementItem(delta) {
+  const items = statementItemsFor(state.project);
+  if (!items.length) return;
+  const current = currentStatementItem();
+  const index = Math.max(0, items.findIndex((item) => item.key === (current && current.key)));
+  const next = items[Math.min(items.length - 1, Math.max(0, index + delta))];
+  if (!next || next.key === (current && current.key)) return;
+  state.selectedStatementKey = next.key;
+  renderFlowStep();
+  renderFlowChrome();
+  $("#statements-list")?.focus();
+}
+
+function insertStatementFromLibrary(item) {
+  if (item.kind === "risk") {
+    openRiskSuggestDialog(item.risk);
+    return;
+  }
+  state.statementLibraryTarget = item;
+  openLibraryPick();
+}
+
+function continueFromStatements() {
+  const [ok] = canAdvance(state.project, "controls");
+  if (!ok) return;
+  const steps = flowSteps(state.project);
+  const i = steps.indexOf("controls");
+  goToStep(steps[i + 1] || "review");
+}
+
+function backFromStatements() {
+  if (authoringPath(state.project) === "risks") {
+    goToStep("risks");
+    return;
+  }
+  state.resultStep = true;
+  showView("result");
+}
+
+function statementBlock(item, control) {
+  const area = el("textarea", {
+    rows: "4",
+    class: "statements-area",
+    placeholder: "Write the control statement.",
+    "aria-label": control ? "Control statement" : "New control statement",
+    "data-control-for": item.kind === "risk" ? item.id : null,
+    "data-control-id": control ? control.id : null,
+  });
+  if (control) area.value = control.text || "";
+  area.addEventListener("input", () => {
+    persistStatement(item, area);
+    refreshStatementsChrome();
+  });
+  const remove = el("button", {
+    type: "button", class: "btn btn--quiet btn--small statements-remove",
+    text: "Remove",
+    "aria-label": "Remove statement",
+  });
+  remove.hidden = !control;
+  remove.addEventListener("click", () => {
+    const id = area.getAttribute("data-control-id");
+    const existing = id && controlById(id);
+    if (existing) removeStatementControl(existing);
+    const wrap = $("#statements-blocks");
+    const block = remove.closest(".statements-block");
+    if (block) block.remove();
+    if (wrap && !wrap.querySelector("textarea")) wrap.append(statementBlock(item, null));
+    refreshStatementsChrome();
+  });
+  area.addEventListener("input", () => {
+    if (area.getAttribute("data-control-id")) remove.hidden = false;
+  });
+  return el("div", { class: "statements-block" }, area, remove);
+}
+
+function statementEditor(item) {
+  const blocks = (item.controls || []).length
+    ? item.controls.map((control) => statementBlock(item, control))
+    : [statementBlock(item, null)];
+  const add = el("button", {
+    type: "button", class: "btn btn--quiet", id: "statements-add",
+    text: "Add another statement",
+  });
+  add.addEventListener("click", () => {
+    const wrap = $("#statements-blocks");
+    if (!wrap) return;
+    wrap.append(statementBlock(item, null));
+    wrap.querySelector(".statements-block:last-child textarea")?.focus();
+  });
+  const insert = el("button", {
+    type: "button", class: "btn btn--quiet", id: "statements-library",
+    text: "Insert from library",
+  });
+  insert.addEventListener("click", () => insertStatementFromLibrary(item));
+  return el("section", {
+    class: "statements-editor", id: "statements-editor",
+    "aria-label": "Control statement editor",
+  },
+    el("p", { class: "statements-source", id: "statements-source", text: item.text }),
+    el("div", { class: "statements-blocks", id: "statements-blocks" }, blocks),
+    el("div", { class: "statements-editor__actions" }, add, insert));
+}
+
+function renderDevelopStep(box) {
+  const clausePath = authoringPath(state.project) === "clauses";
+  if (!clausePath) ensureRisks();
+  const items = statementItemsFor(state.project);
+  if (!items.length) {
+    box.replaceChildren(el("p", { class: "field-error", text: clausePath
+      ? "Paste a policy clause first."
+      : "Add identified risks first." }));
+    return;
+  }
+  if (!items.some((item) => item.key === state.selectedStatementKey)) {
+    state.selectedStatementKey = items[0].key;
+  }
+  const selected = currentStatementItem();
+  const firstLabel = clausePath ? "Policy clause" : "Identify risks";
+  const back = el("button", {
+    type: "button", class: "btn btn--quiet identify-back", id: "statements-back",
+    text: "Back",
+  });
+  back.addEventListener("click", backFromStatements);
+  const steps = el("ol", {
+    class: "identify-steps", id: "statements-steps",
+    "aria-label": `${firstLabel}, then control statements, then policy as code (Rego)`,
+  },
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "1" }),
+      el("span", { class: "identify-steps__label", text: firstLabel })),
+    el("li", { "aria-current": "step" },
+      el("span", { class: "identify-steps__n", text: "2" }),
+      el("span", { class: "identify-steps__label", text: "Control statements" })),
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "3" }),
+      el("span", { class: "identify-steps__label", text: "Policy as code (Rego)" })),
+  );
+  const tip = el("details", { class: "identify-tip", id: "statements-tip" },
+    el("summary", { text: "What makes a good control statement" }),
+    el("p", { text: "Say who does what, how often, and the evidence produced. For example: “Customer data at rest is encrypted with AES-256 using managed keys; encryption is verified monthly by automated scan.”" }));
+  const list = el("div", {
+    class: "statements-list", id: "statements-list", role: "listbox",
+    tabindex: "0",
+    "aria-label": clausePath ? "Clauses" : "Identified risks",
+  }, items.map((item) => {
+    const selectedItem = item.key === state.selectedStatementKey;
+    const btn = el("button", {
+      type: "button",
+      class: `statements-item${selectedItem ? " is-selected" : ""}`,
+      role: "option",
+      "data-statement-item": item.key,
+      "data-covered": item.covered ? "true" : "false",
+      "aria-selected": selectedItem ? "true" : "false",
+    },
+      el("span", {
+        class: `statements-dot${item.covered ? " is-covered" : ""}`,
+        "aria-label": item.covered ? "Covered" : "Not covered",
+      }),
+      el("span", { class: "statements-item__text", text: item.text }));
+    btn.addEventListener("click", () => {
+      if (state.selectedStatementKey === item.key) return;
+      state.selectedStatementKey = item.key;
       renderFlowStep();
       renderFlowChrome();
     });
-    const suggest = el("button", { type: "button", class: "btn", "data-suggest": risk.id, text: "Suggest from library" });
-    suggest.addEventListener("click", () => openRiskSuggestDialog(risk));
-    const mapped = linked.map((c) => el("p", { class: "mapped-risk__statement" },
-      el("span", { class: "pill", text: c.status === "accepted" ? "Accepted" : "Draft" }),
-      " ", c.text));
-    return el("article", { class: "card risk-control-card", "data-risk-id": risk.id },
-      el("h3", {}, el("span", { class: "pill", text: risk.id }), " ", risk.statement),
-      missing ? el("p", { class: "field-error", text: "Required: add a control statement." }) : null,
-      ...mapped,
-      el("label", { class: "field" }, el("span", { text: "New control statement" }), area),
-      el("label", { class: "field" }, el("span", {}, "Policy clause ", el("em", { text: "optional" })), clause),
-      el("div", { class: "actions" }, add, suggest));
+    return btn;
+  }));
+  list.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); moveStatementItem(1); }
+    else if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); moveStatementItem(-1); }
   });
+  const covered = items.filter((item) => item.covered).length;
+  const cont = el("button", {
+    type: "button", class: "btn btn--primary", id: "statements-continue",
+    text: "Continue to policy as code",
+    disabled: covered === items.length ? null : true,
+  });
+  cont.addEventListener("click", continueFromStatements);
+  const title = clausePath
+    ? "Write a control statement for each clause"
+    : "Write a control statement for each risk";
+  const lede = clausePath
+    ? "Say who does what, how often, and what evidence is produced — one clear statement for each clause."
+    : "Say who does what, how often, and what evidence is produced — one clear statement for each risk.";
   box.replaceChildren(
-    el("h3", { class: "section-title", text: "Develop control statements" }),
-    el("p", { class: "start__lede", text: "Every risk needs at least one non-empty control statement before you review." }),
-    ...cards,
-  );
+    el("div", { class: "statements-page", id: "statements-page" },
+      back, steps,
+      el("h2", { class: "statements-title", id: "statements-title", text: title }),
+      el("p", { class: "statements-lede", id: "statements-lede", text: lede }),
+      tip,
+      el("div", { class: "statements-layout" }, list, statementEditor(selected)),
+      el("div", { class: "statements-footer" },
+        el("p", { class: "statements-progress", id: "statements-progress", "aria-live": "polite",
+          text: statementCoverageLabel(items) }),
+        cont)));
+  const focusSel = state.statementFocus || null;
+  state.statementFocus = null;
+  if (focusSel) queueMicrotask(() => $(focusSel)?.focus());
 }
 
 function renderLinkStep(box) {
@@ -1480,6 +1747,7 @@ function addControlForRisk(risk, text, clauseText) {
   call({ action: "score", project: state.project }).then((data) => {
     state.scores = data.scores || {};
   }).catch(() => {});
+  return control;
 }
 
 function clauseCounts(project) {
@@ -1530,7 +1798,7 @@ function renderResult() {
 
 function continueFromResult() {
   state.resultStep = false;
-  state.flowStep = "link";
+  state.flowStep = "controls";
   showView("flow");
 }
 
@@ -2787,6 +3055,18 @@ async function useLibraryEntry(entry, mode = "use") {
   } catch (err) { showError(err.message); return; }
   const dialog = $("#library-pick");
   if (dialog && dialog.open) dialog.close();
+  if (state.view === "flow" && state.flowStep === "controls" && state.statementLibraryTarget) {
+    const item = state.statementLibraryTarget;
+    state.statementLibraryTarget = null;
+    if (item.kind === "risk") {
+      addSuggestedStatement(item.risk, { statement: entry.statement, origin: "person", libraryId: entry.id });
+    } else {
+      addControlForClause(item.clause, entry.statement);
+    }
+    renderFlowStep();
+    renderFlowChrome();
+    return;
+  }
   const current = state.selected?.control && controlById(state.selected.control);
   if (mode === "add" || !current) {
     if (!state.project) {
@@ -3277,6 +3557,12 @@ function init() {
       $("#library-pick").close();
       e.preventDefault();
       return;
+    }
+    if (state.project && state.view === "flow" && state.flowStep === "controls"
+        && !e.metaKey && !e.ctrlKey && !e.altKey
+        && !e.target.closest("dialog, input, textarea, select, [contenteditable]")) {
+      if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); moveStatementItem(1); return; }
+      if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); moveStatementItem(-1); return; }
     }
     if (!state.project || $("#work").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target.closest("dialog, input, textarea, select, [contenteditable]")) return;

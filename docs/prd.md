@@ -127,6 +127,11 @@ Flow A step 1 is a calm capture page: title, one guidance sentence, a
 collapsible writing tip, an inline list of risks, and **Continue to
 control statements** disabled until at least one risk exists. See
 [docs/prds/identify-risks-page.md](prds/identify-risks-page.md).
+Shared step 2 is a split list + editor: write a control statement for
+each risk (or clause), with coverage dots, a progress line, and
+**Continue to policy as code** disabled until every item has a
+statement. See
+[docs/prds/control-statements-page.md](prds/control-statements-page.md).
 First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).

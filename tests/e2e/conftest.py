@@ -144,11 +144,14 @@ def finish_open(page, timeout=120_000):
 
 
 def goto_review(page, risk="Screens left unlocked at unattended desks."):
-    """Path B link step: add a risk, link remaining controls, open Review."""
+    """Path B: pass control statements, then link remaining controls, open Review."""
     work = page.locator("#work")
     if work.is_visible():
         return
     expect(page.locator("#flow")).to_be_visible()
+    statements = page.locator("#statements-continue")
+    if statements.count() and statements.is_visible() and statements.is_enabled():
+        statements.click()
     stmt = page.locator("#link-risk-statement")
     if stmt.count():
         stmt.fill(risk)

@@ -25,13 +25,12 @@ def test_path_a_risks_then_controls_then_review_then_enact(page):
     expect(page.locator("#identify-list .identify-row__statement")).to_have_value(
         "Screens left unlocked at unattended desks.")
     page.click("#identify-continue")
-    expect(page.locator("#flow-step")).to_contain_text("Develop control statements")
-    page.click("#flow-next")
-    expect(page.locator("#flow-error")).to_contain_text("control statement")
-    page.locator("textarea[data-control-for='R-001']").fill(
+    expect(page.locator("#statements-title")).to_contain_text("control statement for each risk")
+    expect(page.locator("#statements-continue")).to_be_disabled()
+    page.locator("#statements-editor textarea").first.fill(
         "Require users to lock screens when they leave their desk.")
-    page.get_by_role("button", name="Add statement").click()
-    page.click("#flow-next")
+    page.locator("#statements-editor textarea").first.blur()
+    page.click("#statements-continue")
     expect(page.locator("#work:not([hidden])")).to_be_visible()
     expect(page.locator("textarea.statement")).to_be_visible()
     page.locator(".editor__primary >> text=Accept").click()
@@ -56,6 +55,8 @@ def test_path_b_paste_clause_then_link_before_review(page):
     page.click("#paste-submit")
     finish_open(page)
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
+    expect(page.locator("#statements-title")).to_contain_text("for each clause")
+    page.click("#statements-continue")
     expect(page.locator("#legacy-risk-prompt")).to_contain_text("risk")
     page.click("#flow-next")
     expect(page.locator("#flow-error")).to_be_visible()

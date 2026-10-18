@@ -6,7 +6,7 @@ Date: 2026-10-14
 
 Accepted
 
-Refines [0012-identified-risks-as-input.md](0012-identified-risks-as-input.md): identified risks stay **input**, not a register. On the web they are no longer an optional side view — they are required for Review and export. Refines [0006-clause-only-input.md](0006-clause-only-input.md) for the **web start**: clause paste remains one of two paths, not the only entry. CLI and file ingest stay clause-in. Identify risks page chrome is refined by [0015-identify-risks-page.md](0015-identify-risks-page.md).
+Refines [0012-identified-risks-as-input.md](0012-identified-risks-as-input.md): identified risks stay **input**, not a register. On the web they are no longer an optional side view — they are required for Review and export. Refines [0006-clause-only-input.md](0006-clause-only-input.md) for the **web start**: clause paste remains one of two paths, not the only entry. CLI and file ingest stay clause-in. Identify risks page chrome is refined by [0015-identify-risks-page.md](0015-identify-risks-page.md). Control statements page chrome is refined by [0016-control-statements-page.md](0016-control-statements-page.md).
 
 Does not revive [0008-risk-input-and-oscal-tracing.md](0008-risk-input-and-oscal-tracing.md). [0011-no-risk-register.md](0011-no-risk-register.md) still holds.
 
