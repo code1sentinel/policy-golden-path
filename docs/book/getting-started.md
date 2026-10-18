@@ -14,7 +14,7 @@ The online site and the local web app look the same. Neither loads fonts or othe
 
 ## First visit
 
-The first open is a product landing: what Codify does, a mock of a risk becoming a control (then OSCAL and Rego), and two start buttons.
+The first open is a product landing: a short headline, a mock of a risk becoming a control (then OSCAL and Rego), and two start buttons.
 
 **Get started with identified risks** opens the risk-first flow (Identify risks). **Get started with an existing policy clause** opens the paste box. A saved project on this device shows **Resume your project** in the top bar.
 

@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Agreed |
+| Status | Superseded by [giga-landing.md](giga-landing.md) |
 | Slice issues | [COD-10](https://linear.app/code1sentinel/issue/COD-10/slice-marketing-landing-that-explains-codify-then-get-started) |
 | Supercedes / extends | [docs/prd.md](../prd.md), [landing-flow-cards.md](landing-flow-cards.md), [landing-start.md](landing-start.md), [technical-policy-rego-label.md](technical-policy-rego-label.md) |
 | Author | Product owner / this slice |

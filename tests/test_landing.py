@@ -1,4 +1,4 @@
-"""Marketing landing: Base-style hero, then Get started into the risk flow."""
+"""Marketing landing: short giga-style hero, then Get started into the risk flow."""
 
 from pathlib import Path
 
@@ -9,19 +9,16 @@ JS = (ROOT / "src/codify/static/app.js").read_text(encoding="utf-8")
 THEME = (ROOT / "src/codify/static/theme.js").read_text(encoding="utf-8")
 CONTRIBUTING = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
 
-HEADLINE = "Turn risks and policy into controls you can test."
+HEADLINE = "Controls you can test."
 SUBHEAD = (
-    "Draft control statements from risks or policy clauses, export OSCAL, "
-    "and ship them as policy as code."
+    "Identified risks and policy clauses become control statements. "
+    "Export OSCAL 1.1.2. Test them as Rego."
 )
-OLD_HEADLINE = (
-    "Codify turns what you need to address into clear control statements, "
-    "which you then test in Enact."
-)
+OLD_HEADLINE = "Turn risks and policy into controls you can test."
 BASE_BLUE = "#0052FF"
 
 
-def test_landing_is_a_marketing_page_not_two_flow_cards():
+def test_landing_is_a_short_giga_style_page():
     assert HEADLINE in INDEX
     assert 'id="start-title"' in INDEX
     assert SUBHEAD in INDEX
@@ -40,35 +37,22 @@ def test_landing_is_a_marketing_page_not_two_flow_cards():
     assert 'id="start-from-clause"' in INDEX
     clause = INDEX.split('id="start-from-clause"', 1)[1][:220]
     assert "Get started with an existing policy clause" in clause
-    assert "btn--on-hero" in INDEX.split('id="start-from-risks"', 1)[0][-80:] + risk
-    assert "btn--on-hero-secondary" in INDEX.split('id="start-from-clause"', 1)[0][-80:] + clause
-    hero_actions = INDEX.split('class="landing-hero__actions"', 1)[1].split("landing-hero__alt", 1)[0]
+    hero_actions = INDEX.split('class="landing-hero__actions"', 1)[1].split("landing-hero__stage", 1)[0]
     assert "Get started with identified risks" in hero_actions
     assert "Get started with an existing policy clause" in hero_actions
     assert "Private by design: runs in your browser" in hero_actions
     assert INDEX.count(">Get started<") == 1
     assert ">Get started<" in INDEX.split('id="landing-cta-start"', 1)[1][:80]
-    assert 'id="landing-how-link"' in INDEX
-    assert "See how it works" in INDEX
-    assert 'href="#how-it-works"' in INDEX
     assert 'id="how-it-works"' in INDEX
-    assert "Identify risks or pick a policy clause" in INDEX
-    assert "Draft control statements" in INDEX
-    assert "Export as OSCAL" in INDEX
-    assert "Policy as code (Rego)" in INDEX
-    assert 'id="landing-features"' in INDEX
-    assert "Risk-first or clause-first" in INDEX
-    assert "Plain-language guides" in INDEX
-    assert "Standards-based OSCAL export" in INDEX
-    assert "Private by design" in INDEX
-    assert "No AI keys stored" in INDEX
     assert 'id="landing-mock"' in INDEX
-    assert 'id="landing-chips"' in INDEX
-    assert "Scroll to explore" in INDEX
-    assert 'id="landing-scroll"' in INDEX
     assert 'id="landing-privacy-badge"' in INDEX
     assert "Private by design: runs in your browser" in INDEX
-    assert "Works with frameworks like ISO 27001, SOC 2 and NIST" in INDEX
+    assert 'id="landing-trust"' in INDEX
+    assert "NIST 800-53" in INDEX
+    assert "ISO 27001" in INDEX
+    assert "OSCAL 1.1.2" in INDEX
+    assert "Runs in your browser" in INDEX.split('id="landing-trust"', 1)[1]
+    assert "No data leaves your device" in INDEX
     assert 'id="landing-contribute"' in INDEX
     assert "Star or contribute on GitHub" in INDEX
     assert "Contribute a control template" in INDEX
@@ -81,17 +65,28 @@ def test_landing_is_a_marketing_page_not_two_flow_cards():
     assert 'id="start-choice"' not in INDEX
     assert OLD_HEADLINE not in INDEX
     assert "Identify risk → Control statement" not in INDEX
+    assert "Scroll to explore" not in INDEX
+    assert 'id="landing-scroll"' not in INDEX
+    assert 'id="landing-chips"' not in INDEX
+    assert 'id="landing-features"' not in INDEX
+    assert "Works with frameworks like ISO 27001, SOC 2 and NIST" not in INDEX
 
 
-def test_landing_hero_uses_base_blue_and_a_centered_mock():
-    assert BASE_BLUE in CSS
-    assert "--hero:" in CSS
-    assert ".landing-hero" in CSS
-    hero_css = CSS.split(".landing-hero", 1)[1][:2500]
-    assert "var(--hero)" in hero_css
-    assert 'id="landing-mock"' in INDEX
-    mock = INDEX.split('id="landing-mock"', 1)[1]
-    mock = mock.split("</figure>", 1)[0]
+def test_landing_does_not_claim_certifications_or_testimonials():
+    landing = INDEX.split('id="landing"', 1)[1].split('id="drop"', 1)[0]
+    assert "SOC 2" not in landing
+    assert "ISO 42001" not in landing
+    assert "PCI DSS" not in landing
+    assert "certified" not in landing.lower()
+    assert "Type II" not in landing
+    assert "Co-Founder" not in landing
+    assert "testimonial" not in landing.lower()
+
+
+def test_landing_hero_puts_the_example_below_the_start_buttons():
+    hero = INDEX.split('class="landing-hero"', 1)[1].split('id="how-it-works"', 1)[0]
+    assert hero.index('class="landing-hero__actions"') < hero.index('id="landing-mock"')
+    mock = INDEX.split('id="landing-mock"', 1)[1].split("</figure>", 1)[0]
     assert "<img" not in mock
     assert "http" not in mock
     assert "Identified risk" in mock
@@ -102,9 +97,17 @@ def test_landing_hero_uses_base_blue_and_a_centered_mock():
     assert '"id": "sc-28"' in mock
     assert "Policy as code (Rego)" in mock
     assert "deny contains msg if" in mock
-    chips = INDEX.split('id="landing-chips"', 1)[1].split("</ul>", 1)[0]
-    assert chips.count("<li") <= 6
-    assert chips.count("<li") >= 4
+
+
+def test_landing_has_one_factual_how_it_works_section():
+    how = INDEX.split('id="how-it-works"', 1)[1][:2000]
+    assert "How it works" in how
+    assert "OSCAL" in how
+    assert "Policy as code (Rego)" in how or "Rego" in how
+    assert "github.com/code1sentinel/enact" in how
+    assert "Enact" in how
+    assert 'id="landing-enact"' in how
+    assert how.lower().count("<blockquote") == 0 or "testimonial" not in how.lower()
 
 
 def test_landing_has_no_splash_or_checklist_clutter():
@@ -143,12 +146,15 @@ def test_landing_uses_existing_tokens_and_system_fonts():
     assert "Inter" not in landing_css
     assert "fonts.googleapis" not in CSS
     assert 'href="#main"' in INDEX
+    hero_css = CSS.split(".landing-hero", 1)[1][:1800]
+    assert "var(--hero)" not in hero_css
+    assert BASE_BLUE not in hero_css
 
 
 def test_landing_explains_oscal_and_enact():
     how = INDEX.split('id="how-it-works"', 1)[1][:2500]
     assert "OSCAL" in how
-    assert "Policy as code (Rego)" in how
+    assert "Rego" in how
     assert "github.com/code1sentinel/enact" in how
     assert "Enact" in how
     assert 'id="landing-enact"' in how
