@@ -46,7 +46,8 @@ def test_risk_entry_opens_identify_risks_and_stays_current(page):
     expect(current).to_have_attribute("aria-pressed", "true")
     add_flow_risk(page, "Screens left unlocked at unattended desks.")
     page.click("#identify-continue")
-    expect(page.locator("#statements-steps, #flow-step")).to_be_visible()
+    expect(page.locator("#flow-step")).to_be_visible()
+    expect(page.get_by_role("heading", name="Write a control statement for each risk")).to_be_visible()
     expect(_current_nav_label(page)).to_have_text("Risk Entry")
 
 

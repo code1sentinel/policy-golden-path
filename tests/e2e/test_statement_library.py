@@ -121,16 +121,18 @@ def test_export_library_downloads_locally(page, tmp_path):
     open_pasted(page, CLAUSE)
     statement = page.locator("textarea.statement").input_value()
     accept_current(page)
-    page.click("#export-open-top")
-    page.locator("#export-dialog .export-more summary").click()
+    def open_library_exports():
+        page.click("#export-open-top")
+        page.locator("#export-dialog .export-more").evaluate("el => { el.open = true; }")
+
+    open_library_exports()
     with page.expect_download() as dl:
         page.click("#export-dialog [data-export='library-json']")
     path = tmp_path / "library.json"
     dl.value.save_as(path)
     payload = json.loads(path.read_text())
     assert payload[0]["statement"] == statement
-    page.click("#export-open-top")
-    page.locator("#export-dialog .export-more summary").click()
+    open_library_exports()
     with page.expect_download() as csv_dl:
         page.click("#export-dialog [data-export='library-csv']")
     csv_path = tmp_path / "library.csv"
