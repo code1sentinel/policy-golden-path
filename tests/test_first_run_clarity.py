@@ -12,10 +12,12 @@ def test_paste_box_has_real_editable_example_text():
     assert 'id="result"' in INDEX
     assert 'id="result-continue"' in INDEX
     assert "Here's what we drafted" in INDEX or "Here’s what we drafted" in INDEX
-    assert "Example clause" in INDEX
-    # Real starter text lives in the textarea, not only a grey placeholder.
-    start = INDEX.split('name="text"', 1)[1]
-    assert "Access to systems shall be granted on a need-to-know basis." in start.split("</textarea>", 1)[0]
+    assert "Example clause" not in INDEX
+    assert 'name="text"' not in INDEX
+    clause = JS.split("function renderClauseStep", 1)[1].split("function renderIdentifyStep", 1)[0]
+    assert "A good clause" in clause
+    assert "Access to systems shall be granted on a need-to-know basis." in clause
+    assert "blank line" in clause
 
 
 def test_export_marks_oscal_recommended_with_use_when_lines():
