@@ -2,7 +2,7 @@
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish_open
+from conftest import add_flow_clauses, add_flow_risk, choose_clause_path, choose_risk_path
 
 NAV = "nav.sidebar__nav"
 GONE = ("Workspace", "Clauses", "Catalog", "Library", "Export", "Guide", "Risks")
@@ -54,15 +54,14 @@ def test_risk_entry_opens_identify_risks_and_stays_current(page):
 def test_policy_clause_opens_paste_step_and_stays_current(page):
     choose_risk_path(page)
     page.click("[data-nav='policy-clause']")
-    expect(page.locator("#paste-form")).to_be_visible()
+    expect(page.locator("#clause-page")).to_be_visible()
     expect(page.locator("#landing")).to_be_hidden()
     expect(nav(page)).to_be_visible()
     current = nav(page).locator("[aria-current='page']")
     expect(_current_nav_label(page)).to_have_text("Policy Clause")
     expect(current).to_have_attribute("aria-pressed", "true")
-    page.fill("#paste-form textarea", "Users shall lock screens when they leave their desk.")
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, "Users shall lock screens when they leave their desk.")
+    page.click("#clause-continue")
     expect(_current_nav_label(page)).to_have_text("Policy Clause")
 
 

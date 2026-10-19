@@ -4,7 +4,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, finish_open, goto_review
+from conftest import add_flow_clauses, choose_clause_path, finish_open, goto_review, open_acme_demo
 
 
 EXAMPLE = (
@@ -15,14 +15,18 @@ EXAMPLE = (
 
 def open_example(page):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", EXAMPLE)
-    page.click("#paste-submit")
-    page.wait_for_selector("#result:not([hidden])", timeout=120_000)
+    add_flow_clauses(page, *EXAMPLE.split("\n\n"))
+    page.click("#clause-continue")
+    items = page.locator("#statements-list [data-statement-item]")
+    for i in range(items.count()):
+        items.nth(i).click()
+        area = page.locator("#statements-editor textarea").first
+        area.fill("Grant access to systems on a need-to-know basis.")
+        area.blur()
 
 
 def test_first_look_card_shows_and_more_for_acme(page):
-    choose_clause_path(page)
-    page.click("#demo")
+    open_acme_demo(page)
     page.wait_for_selector("#result:not([hidden])", timeout=120_000)
     expect(page.locator("#result-drafts")).to_contain_text("Draft 1")
     expect(page.locator("#result-drafts")).to_contain_text("Draft 3")

@@ -105,11 +105,24 @@ def page(browser, base_url, provider):
 
 
 def choose_clause_path(page):
-    """Path B on the start screen: paste / Try an example."""
+    """Path B on the start screen: Policy clause capture page."""
     choice = page.locator("#start-from-clause")
     if choice.is_visible():
         choice.click()
-    expect(page.locator("#paste-form")).to_be_visible()
+    expect(page.locator("#clause-page")).to_be_visible()
+    expect(page.locator("#flow:not([hidden])")).to_be_visible()
+
+
+def add_flow_clauses(page, *texts):
+    """Policy-clause page: paste one or more clauses (blank line separates), then Add."""
+    page.fill("#clause-paste", "\n\n".join(texts))
+    page.click("#clause-add")
+    expect(page.locator("#clause-list .clause-row")).to_have_count(len(texts))
+
+
+def open_acme_demo(page):
+    """Load the built-in Acme policy without the removed Try an example chip."""
+    page.evaluate("async () => { await window.__codifyOpenAcme(); }")
 
 
 def choose_risk_path(page):
@@ -155,9 +168,19 @@ def goto_review(page, risk="Screens left unlocked at unattended desks."):
         expect(work).to_be_visible()
         return
     expect(page.locator("#flow")).to_be_visible()
+    clause = page.locator("#clause-continue")
+    if clause.count() and clause.is_visible() and clause.is_enabled():
+        clause.click()
     statements = page.locator("#statements-continue")
-    if statements.count() and statements.is_visible() and statements.is_enabled():
-        statements.click()
+    if statements.count() and statements.is_visible():
+        if statements.is_disabled():
+            area = page.locator("#statements-editor textarea").first
+            if area.count() and area.is_visible():
+                if not (area.input_value() or "").strip():
+                    area.fill("Require users to lock screens when they leave their desk.")
+                    area.blur()
+        if statements.is_enabled():
+            statements.click()
     stmt = page.locator("#link-risk-statement")
     if stmt.count():
         stmt.fill(risk)
@@ -175,8 +198,7 @@ def goto_review(page, risk="Screens left unlocked at unattended desks."):
 @pytest.fixture
 def demo(page):
     """The Acme demo policy, covered and open on Review."""
-    choose_clause_path(page)
-    page.click("#demo")
+    open_acme_demo(page)
     finish_open(page)  # Pyodide's first load can be slow
     goto_review(page)
     return page

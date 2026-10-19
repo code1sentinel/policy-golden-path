@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, finish_open, goto_review
+from conftest import add_flow_clauses, choose_clause_path, goto_review
 
 
 CLAUSE = (
@@ -21,9 +21,13 @@ def library_store(page):
 
 def open_pasted(page, text):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", text)
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, text)
+    page.click("#clause-continue")
+    area = page.locator("#statements-editor textarea").first
+    area.fill(
+        "Grant access to systems on a need-to-know basis to limit what a "
+        "compromised account can reach.")
+    area.blur()
     goto_review(page)
     page.wait_for_selector("#work:not([hidden]) textarea.statement", timeout=30_000)
 

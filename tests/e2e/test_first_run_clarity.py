@@ -2,7 +2,7 @@
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, finish_open, goto_review
+from conftest import add_flow_clauses, choose_clause_path, goto_review
 
 
 def test_demo_header_has_no_null_and_explains_counts(demo):
@@ -20,19 +20,14 @@ def test_sidebar_has_identified_risks_not_a_register(page):
     expect(page.locator("#export-dialog")).not_to_contain_text("Risk register")
 
 
-def test_example_text_is_editable_and_codify_opens_a_result_step(page):
+def test_clause_page_pastes_into_control_statements(page):
     choose_clause_path(page)
-    box = page.locator("#paste-form textarea[name='text']")
-    expect(box).not_to_have_attribute("placeholder", box.input_value())
-    text = box.input_value()
-    assert "Access to systems shall be granted" in text
-    expect(page.locator("#paste-form")).to_contain_text("Example clause")
-    page.click("#paste-submit")
-    page.wait_for_selector("#result:not([hidden])", timeout=120_000)
-    expect(page.locator("#result-title")).to_contain_text("what we drafted")
-    expect(page.locator("#result-drafts")).to_contain_text("Grant access")
-    page.click("#result-continue")
+    expect(page.locator("#clause-paste")).to_have_attribute("placeholder", "Type or paste a clause")
+    expect(page.locator("#clause-example")).to_contain_text("need-to-know")
+    add_flow_clauses(page, "Access to systems shall be granted on a need-to-know basis.")
+    page.click("#clause-continue")
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
+    expect(page.locator("#statements-title")).to_contain_text("for each clause")
     goto_review(page)
     expect(page.locator("#work:not([hidden]) textarea.statement")).to_be_visible()
 
@@ -48,9 +43,8 @@ def test_review_has_one_primary_accept_and_plain_language(demo):
 
 def test_access_control_purpose_hint_is_not_brute_force(page):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", "Access to systems shall be granted on a need-to-know basis.")
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, "Access to systems shall be granted on a need-to-know basis.")
+    page.click("#clause-continue")
     goto_review(page)
     expect(page.locator("#editor")).not_to_contain_text("brute-force")
     expect(page.locator("#props")).not_to_contain_text("brute-force")

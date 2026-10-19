@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish_open
+from conftest import add_flow_clauses, add_flow_risk, choose_clause_path, choose_risk_path
 
 UNLOCKED = "Screens left unlocked at unattended desks."
 SHARED = "Shared admin accounts on customer systems."
@@ -114,16 +114,15 @@ def test_continue_disabled_until_full_coverage_then_opens_next_step(page):
 
 def test_clause_flow_uses_clause_label(page):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", CLAUSE)
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, CLAUSE)
+    page.click("#clause-continue")
     expect(page.locator("#statements-title")).to_have_text(
         "Write a control statement for each clause")
     expect(page.locator("#statements-steps")).to_contain_text("Policy clause")
     expect(page.locator("#statements-list [data-statement-item]")).to_have_count(1)
     expect(page.locator("#statements-source")).to_contain_text("lock screens")
-    expect(page.locator("#statements-editor textarea").first).not_to_have_value("")
-    expect(page.locator("#statements-continue")).to_be_enabled()
+    expect(page.locator("#statements-editor textarea").first).to_have_value("")
+    expect(page.locator("#statements-continue")).to_be_disabled()
 
 
 def test_back_link_returns_to_identify_risks(page):

@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, choose_risk_path, finish_open, goto_review
+from conftest import choose_clause_path, choose_risk_path, finish_open, goto_review, open_acme_demo
 
 HEADLINE = "Controls you can test."
 SUBHEAD = (
@@ -97,9 +97,9 @@ def test_cta_get_started_opens_the_risk_flow(page):
 def test_start_from_clause_link_opens_path_b(page):
     expect(page.locator("#start-from-clause")).to_have_text("Get started with an existing policy clause")
     choose_clause_path(page)
-    expect(page.locator("#paste-form")).to_be_visible()
-    expect(page.locator("#paste-submit")).to_have_text("Codify")
-    expect(page.locator("#demo")).to_be_visible()
+    expect(page.locator("#clause-page")).to_be_visible()
+    expect(page.locator("#clause-continue")).to_have_text("Continue to control statements")
+    expect(page.locator("#clause-paste")).to_be_visible()
 
 
 def test_resume_your_project_opens_the_saved_project(browser, base_url):
@@ -184,8 +184,7 @@ def test_landing_uses_theme_tokens_in_light_and_dark(browser, base_url):
 
 
 def test_try_an_example_still_works_from_the_clause_link(page):
-    choose_clause_path(page)
-    page.click("#demo")
+    open_acme_demo(page)
     finish_open(page)
     goto_review(page)
     expect(page.locator("#work-summary")).to_contain_text("38 control drafts")

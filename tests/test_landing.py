@@ -73,7 +73,7 @@ def test_landing_is_a_short_giga_style_page():
 
 
 def test_landing_does_not_claim_certifications_or_testimonials():
-    landing = INDEX.split('id="landing"', 1)[1].split('id="drop"', 1)[0]
+    landing = INDEX.split('id="landing"', 1)[1].split('id="flow"', 1)[0]
     assert "SOC 2" not in landing
     assert "ISO 42001" not in landing
     assert "PCI DSS" not in landing

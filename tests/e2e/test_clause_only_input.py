@@ -2,21 +2,20 @@
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, finish_open, goto_review
+from conftest import add_flow_clauses, choose_clause_path, goto_review
 
 
 def test_start_form_has_no_title_field(page):
     choose_clause_path(page)
-    expect(page.locator("#paste-form")).to_be_visible()
-    expect(page.locator("#paste-form input[name='title']")).to_have_count(0)
-    expect(page.locator("#paste-form textarea[name='text']")).to_be_visible()
+    expect(page.locator("#clause-page")).to_be_visible()
+    expect(page.locator("#clause-page input[name='title']")).to_have_count(0)
+    expect(page.locator("#clause-paste")).to_be_visible()
 
 
 def test_unnumbered_paste_opens_a_control(page):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", "Users shall lock screens when they leave their desk.")
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, "Users shall lock screens when they leave their desk.")
+    page.click("#clause-continue")
     goto_review(page)
     expect(page.locator(".clause__text")).to_contain_text("Users shall lock screens")
     expect(page.locator(".clause__id")).to_have_count(0)

@@ -11,19 +11,15 @@ JS = (ROOT / "src/codify/static/app.js").read_text(encoding="utf-8")
 def test_start_hero_is_the_clause_textarea_with_one_primary():
     assert 'id="start-from-risks"' in INDEX
     assert "Get started" in INDEX
-    assert 'id="demo"' in INDEX
-    assert "Try an example" in INDEX
+    assert 'id="start-from-clause"' in INDEX
     assert "Try the Acme demo" not in INDEX
     assert 'class="start__cta"' not in INDEX
     assert "Or load your policy" not in INDEX
-    assert 'id="paste-submit"' in INDEX and "Codify" in INDEX
-    submit = INDEX.split('id="paste-submit"', 1)[0][-120:]
-    assert "btn--primary" in submit
-    demo_chunk = INDEX.split('id="demo"', 1)[0][-160:]
-    assert "btn--primary" not in demo_chunk
-    assert "example-chip" in demo_chunk
-    assert "Open a file" in INDEX
+    assert 'id="paste-submit"' not in INDEX
+    assert "Open a file" not in INDEX
     assert 'name="title"' not in INDEX
+    assert "function renderClauseStep" in JS
+    assert "Paste your policy clause" in JS
 
 
 def test_start_chrome_has_no_club_or_version_line():
