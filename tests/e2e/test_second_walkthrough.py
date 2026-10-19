@@ -17,11 +17,15 @@ def open_example(page):
     choose_clause_path(page)
     add_flow_clauses(page, *EXAMPLE.split("\n\n"))
     page.click("#clause-continue")
+    statements = [
+        "Grant access to systems on a need-to-know basis.",
+        "Review user accounts at least every [N] days.",
+    ]
     items = page.locator("#statements-list [data-statement-item]")
     for i in range(items.count()):
         items.nth(i).click()
         area = page.locator("#statements-editor textarea").first
-        area.fill("Grant access to systems on a need-to-know basis.")
+        area.fill(statements[i] if i < len(statements) else statements[0])
         area.blur()
 
 

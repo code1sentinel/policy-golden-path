@@ -24,9 +24,12 @@ def open_pasted(page, text):
     add_flow_clauses(page, text)
     page.click("#clause-continue")
     area = page.locator("#statements-editor textarea").first
-    area.fill(
-        "Grant access to systems on a need-to-know basis to limit what a "
-        "compromised account can reach.")
+    if "need-to-know" in text:
+        area.fill(
+            "Grant access to systems on a need-to-know basis to limit what a "
+            "compromised account can reach.")
+    else:
+        area.fill("Require users to lock screens when they leave their desk.")
     area.blur()
     goto_review(page)
     page.wait_for_selector("#work:not([hidden]) textarea.statement", timeout=30_000)
