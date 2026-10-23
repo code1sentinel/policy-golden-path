@@ -21,7 +21,7 @@ The web wizard blocks the download until every identified risk has an accepted c
 
 You do not need the statement library, Excel, or the conversion report for Enact. Enact reads `catalog.groups[].controls[]` statements. It never sees the on-device library.
 
-If a control has a purpose or “risk it treats” line, that travels in the catalog as a property. Identified-risk links travel as `treats-risk` properties and `rel=related` links to back-matter resources. Enact can ignore fields it does not use.
+If a control has a purpose or “risk it treats” line, that travels in the catalog as a property. Identified-risk links travel as `treats-risk` properties and `rel=related` links to back-matter resources. A **Generate Rego starter** action on this step can attach a local template file (`rel=policy-as-code`, back-matter `base64`). That file is a starter to review, not a finished policy. Enact can ignore fields it does not use.
 
 ## Typical path
 

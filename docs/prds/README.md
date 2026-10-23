@@ -27,4 +27,5 @@ before implementation.
 - [control-statements-page.md](control-statements-page.md) — shared step 2: write a statement for each risk or clause
 - [policy-clause-page.md](policy-clause-page.md) — Flow B step 1: paste existing policy clauses
 - [three-tab-nav.md](three-tab-nav.md) — Home / Risk Entry / Policy Clause nav
+- [rego-starter.md](rego-starter.md) — Generate Rego starter on step 3
 

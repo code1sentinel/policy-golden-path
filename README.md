@@ -240,7 +240,8 @@ schema). One group per policy section and one control per statement:
 | `props`: `legacy-clause`, `status`, `origin`, `source-type`, `risk-statement`, `responsible-role`, `treats-risk` | traceability, review state, and identified-risk links |
 | `links[rel=derived-from]` | the legacy clause, kept in `back-matter` |
 | `links[rel=related]` | an identified-risk back-matter resource, when the control treats that risk |
-| `back-matter.resources` | every legacy clause (with its type), plus one resource per identified risk |
+| `links[rel=policy-as-code]` | a generated Rego/Sentinel/Checkov starter, when the person generated one |
+| `back-matter.resources` | every legacy clause (with its type), plus one resource per identified risk, plus any policy-as-code starters (`base64` file) |
 
 Codify's own names are in the namespace `https://grcengineering.club/ns/codify`.
 

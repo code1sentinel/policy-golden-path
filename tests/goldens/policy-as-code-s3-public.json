@@ -1,0 +1,177 @@
+{
+  "catalog": {
+    "uuid": "00000000-0000-4000-8000-000000000000",
+    "metadata": {
+      "title": "Policy: control statements",
+      "last-modified": "2026-10-23T00:00:00+00:00",
+      "version": "draft",
+      "oscal-version": "1.1.2"
+    },
+    "groups": [
+      {
+        "id": "s-0",
+        "title": "Policy",
+        "controls": [
+          {
+            "id": "c-c1",
+            "title": "Block public access on all object-storage buckets",
+            "props": [
+              {
+                "name": "label",
+                "value": "c1"
+              },
+              {
+                "name": "legacy-clause",
+                "value": "c1",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "status",
+                "value": "draft",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "origin",
+                "value": "rules",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "source-type",
+                "value": "clause",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "treats-risk",
+                "value": "R-001",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "risk-statement",
+                "value": "Public buckets expose customer data.",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "policy-as-code-format",
+                "value": "rego",
+                "ns": "https://grcengineering.club/ns/codify"
+              },
+              {
+                "name": "policy-as-code-pattern",
+                "value": "storage_public",
+                "ns": "https://grcengineering.club/ns/codify"
+              }
+            ],
+            "parts": [
+              {
+                "id": "c-c1_smt",
+                "name": "statement",
+                "prose": "Block public access on all object-storage buckets."
+              },
+              {
+                "id": "c-c1_legacy",
+                "name": "legacy-text",
+                "ns": "https://grcengineering.club/ns/codify",
+                "prose": "S3 buckets shall not be public."
+              }
+            ],
+            "links": [
+              {
+                "href": "#11111111-1111-4111-8111-111111111111",
+                "rel": "derived-from"
+              },
+              {
+                "href": "#30f6434c-00bc-5c45-af92-f7b974415c6e",
+                "rel": "related"
+              },
+              {
+                "href": "#ddb15451-0618-57cc-a2f5-1fc77581b0eb",
+                "rel": "policy-as-code",
+                "media-type": "text/x-rego"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "11111111-1111-4111-8111-111111111111",
+          "title": "c1",
+          "description": "S3 buckets shall not be public.",
+          "props": [
+            {
+              "name": "clause-id",
+              "value": "c1",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "clause-type",
+              "value": "requirement",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "reason",
+              "value": "'shall' sets a requirement",
+              "ns": "https://grcengineering.club/ns/codify"
+            }
+          ]
+        },
+        {
+          "uuid": "30f6434c-00bc-5c45-af92-f7b974415c6e",
+          "title": "Public buckets expose customer data",
+          "description": "Public buckets expose customer data.",
+          "props": [
+            {
+              "name": "identified-risk-id",
+              "value": "R-001",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "statement",
+              "value": "Public buckets expose customer data.",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "status",
+              "value": "open",
+              "ns": "https://grcengineering.club/ns/codify"
+            }
+          ]
+        },
+        {
+          "uuid": "ddb15451-0618-57cc-a2f5-1fc77581b0eb",
+          "title": "c1 rego starter",
+          "description": "Starter policy-as-code. Review before use. Not a finished policy.",
+          "props": [
+            {
+              "name": "policy-as-code-control",
+              "value": "c1",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "policy-as-code-format",
+              "value": "rego",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "policy-as-code-pattern",
+              "value": "storage_public",
+              "ns": "https://grcengineering.club/ns/codify"
+            },
+            {
+              "name": "policy-as-code-starter",
+              "value": "true",
+              "ns": "https://grcengineering.club/ns/codify"
+            }
+          ],
+          "base64": {
+            "filename": "c-c1.rego",
+            "media-type": "text/x-rego",
+            "value": "IyBTdGFydGVyIOKAlCByZXZpZXcgYmVmb3JlIHVzZS4gTm90IGEgZmluaXNoZWQgcG9saWN5LgojIENvbnRyb2wgc3RhdGVtZW50OiBCbG9jayBwdWJsaWMgYWNjZXNzIG9uIGFsbCBvYmplY3Qtc3RvcmFnZSBidWNrZXRzLgojIExpbmtlZCByaXNrIG9yIGNsYXVzZTogUHVibGljIGJ1Y2tldHMgZXhwb3NlIGN1c3RvbWVyIGRhdGEuCiMgT1NDQUwgY29udHJvbCBpZDogYy1jMQojIEVuYWN0IGV2YWx1YXRlcyByZXN1bHQucGFzc2VkIGFuZCByZXN1bHQubWVzc2FnZSBhZ2FpbnN0IGlucHV0LnBheWxvYWQuCiMgVE9ETzogYmluZCB0aGUgcGF5bG9hZCBmaWVsZHMgYmVsb3cgdG8gdGhlIGV2aWRlbmNlIHRoaXMgY29udHJvbCB3aWxsIHRlc3QuCgpwYWNrYWdlIGNvZGlmeS5zdGFydGVyLmNfYzEKCmltcG9ydCByZWdvLnYxCgpkZW55IGNvbnRhaW5zIG1zZyBpZiB7CiAgc29tZSBidWNrZXQgaW4gb2JqZWN0LmdldChpbnB1dC5wYXlsb2FkLCAiYnVja2V0cyIsIFtdKQogIG9iamVjdC5nZXQoYnVja2V0LCAicHVibGljIiwgZmFsc2UpID09IHRydWUKICBtc2cgOj0gIm9iamVjdCBzdG9yYWdlIG11c3Qgbm90IGJlIHB1YmxpYyIKfQoKZGVueSBjb250YWlucyBtc2cgaWYgewogIHNvbWUgYnVja2V0IGluIG9iamVjdC5nZXQoaW5wdXQucGF5bG9hZCwgImJ1Y2tldHMiLCBbXSkKICBub3Qgb2JqZWN0LmdldChidWNrZXQsICJwdWJsaWNfYWNjZXNzX2Jsb2NrIiwgZmFsc2UpCiAgbXNnIDo9ICJvYmplY3Qgc3RvcmFnZSBtdXN0IGhhdmUgcHVibGljIGFjY2VzcyBibG9ja2VkIgp9CgpyZXN1bHQgOj0gewogICJwYXNzZWQiOiBjb3VudChkZW55KSA9PSAwLAogICJtZXNzYWdlIjogY29uY2F0KCI7ICIsIFttc2cgfCBzb21lIG1zZyBpbiBkZW55XSksCn0K"
+          }
+        }
+      ]
+    }
+  }
+}

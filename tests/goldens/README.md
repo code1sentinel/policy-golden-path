@@ -24,6 +24,11 @@ risk linked on the control (`treats-risk`, `rel=related`, back-matter
 frozen in the test. This is not a risk register
 ([ADR 0012](../../docs/adr/0012-identified-risks-as-input.md)).
 
+`policy-as-code-s3-public.json` is a public-access control with a generated
+Rego starter in back-matter (`base64` plus `rel=policy-as-code`). Last-modified
+and the clause resource uuid are frozen in the test
+([ADR 0019](../../docs/adr/0019-local-policy-as-code-starters.md)).
+
 Older Codify catalogs that still carry a risk register live under
 `tests/fixtures/` (`legacy-risk-only.json`, `legacy-mixed-clause-risk.json`)
 and are opened only to prove leftover register fields are dropped

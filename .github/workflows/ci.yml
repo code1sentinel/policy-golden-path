@@ -74,6 +74,13 @@ jobs:
           project['risks'] = [{'id': 'R-001', 'statement': 'Screens left unlocked.', 'note': 'Optional note.'}]
           project['controls'][0]['risk_ids'] = ['R-001']
           Path('out/identified-risks.json').write_text(json.dumps(to_oscal(project), indent=2) + '\n')
+          from codify.policy_as_code import generate_policy
+          starter = generate_policy('Block public access on all object-storage buckets.', 'rego', control_id=project['controls'][0]['id'])
+          project['controls'][0]['policy_as_code'] = {
+              'format': starter['format'], 'pattern': starter['pattern'],
+              'code': starter['code'], 'filename': starter['filename'],
+          }
+          Path('out/policy-as-code.json').write_text(json.dumps(to_oscal(project), indent=2) + '\n')
           "
       - name: Validate against the OSCAL ${{ env.OSCAL_VERSION }} catalog schema
         run: |
@@ -82,7 +89,26 @@ jobs:
           npm install --no-save --silent ajv@8 ajv-formats@3
           node scripts/validate_oscal.mjs out/schema.json \
             out/acme-md.json out/acme-docx.json out/acme-reopened.json \
-            out/identified-risks.json tests/goldens/identified-risk-lock-screens.json
+            out/identified-risks.json             tests/goldens/identified-risk-lock-screens.json \
+            tests/goldens/policy-as-code-s3-public.json out/policy-as-code.json
+
+  opa-check:
+    # Generated Rego starters must compile with OPA v1 (Enact's engine).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Install OPA 1.8.0
+        run: |
+          curl -sSLf -o /tmp/opa \
+            https://github.com/open-policy-agent/opa/releases/download/v1.8.0/opa_linux_amd64_static
+          chmod +x /tmp/opa
+          sudo mv /tmp/opa /usr/local/bin/opa
+          opa version
+      - run: python scripts/check_rego_starters.py
 
   lint:
     runs-on: ubuntu-latest

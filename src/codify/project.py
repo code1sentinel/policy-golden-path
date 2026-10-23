@@ -29,6 +29,14 @@ from . import __version__
 from .classify import REQUIREMENT, SCOPE, TYPE_LABELS, TYPES, sort_clauses
 from .clauses import Clause, Policy
 from .draft import draft
+from .policy_as_code import (
+    MEDIA_TYPES,
+    POLICY_REL,
+    clean_policy_as_code,
+    decode_policy_code,
+    encode_policy_file,
+    policy_resource_uuid,
+)
 from .risks import clean_risks, normalize_project, risk_resource_uuid
 
 NS = "https://grcengineering.club/ns/codify"
@@ -214,6 +222,8 @@ def to_oscal(project: dict) -> dict:
             parts.append({"id": f"{cid}_notes", "name": "drafting-notes", "ns": NS,
                           "prose": "\n".join(f"- {n}" for n in control["notes"])})
         treats = [_prop("treats-risk", rid) for rid in control.get("risk_ids") or [] if rid in risk_uuid]
+        starter = clean_policy_as_code(control.get("policy_as_code"))
+        pac_uuid = (policy_resource_uuid(pid, control["id"], starter["format"]) if starter else "")
         entry = {
             "id": cid,
             "title": _title(control["text"]),
@@ -223,7 +233,9 @@ def to_oscal(project: dict) -> dict:
                             _prop("source-type", "clause"),
                             *treats,
                             _prop("risk-statement", control.get("risk")),
-                            _prop("responsible-role", control.get("who"))),
+                            _prop("responsible-role", control.get("who")),
+                            _prop("policy-as-code-format", starter["format"] if starter else ""),
+                            _prop("policy-as-code-pattern", starter["pattern"] if starter else "")),
             "parts": parts,
         }
         if params:
@@ -234,6 +246,9 @@ def to_oscal(project: dict) -> dict:
         for rid in control.get("risk_ids") or []:
             if rid in risk_uuid:
                 links.append({"href": "#" + risk_uuid[rid], "rel": IDENTIFIED_RISK_REL})
+        if starter:
+            links.append({"href": "#" + pac_uuid, "rel": POLICY_REL,
+                          "media-type": MEDIA_TYPES[starter["format"]]})
         if links:
             entry["links"] = links
         group["controls"].append(entry)
@@ -267,6 +282,21 @@ def to_oscal(project: dict) -> dict:
             "description": statement,
             "props": _props(_prop("identified-risk-id", risk["id"]), _prop("statement", statement),
                             _prop("status", "open"), _prop("note", risk.get("note"))),
+        })
+    for control in project["controls"]:
+        starter = clean_policy_as_code(control.get("policy_as_code"))
+        if not starter:
+            continue
+        blob = encode_policy_file(starter["code"], starter["filename"], starter["format"])
+        resources.append({
+            "uuid": policy_resource_uuid(pid, control["id"], starter["format"]),
+            "title": f"{control['id']} {starter['format']} starter",
+            "description": "Starter policy-as-code. Review before use. Not a finished policy.",
+            "props": _props(_prop("policy-as-code-control", control["id"]),
+                            _prop("policy-as-code-format", starter["format"]),
+                            _prop("policy-as-code-pattern", starter["pattern"]),
+                            _prop("policy-as-code-starter", "true")),
+            "base64": blob,
         })
     catalog = {"uuid": pid, "metadata": metadata}
     if groups:
@@ -390,6 +420,21 @@ def from_oscal(data: dict) -> dict:
             clauses.append({"id": clause_id or label, "text": text, "section": group.get("id", ""),
                             "heading": group.get("title", ""), "type": REQUIREMENT,
                             "reason": "a control in the catalog opened", "duplicate_of": None})
+    by_id = {c["id"]: c for c in controls}
+    for resource in resources:
+        props = _ns_props(resource)
+        control_id = props.get("policy-as-code-control")
+        if not control_id or control_id not in by_id:
+            continue
+        code = decode_policy_code(resource)
+        starter = clean_policy_as_code({
+            "format": props.get("policy-as-code-format") or "rego",
+            "pattern": props.get("policy-as-code-pattern") or "generic",
+            "code": code,
+            "filename": (resource.get("base64") or {}).get("filename") or "",
+        })
+        if starter:
+            by_id[control_id]["policy_as_code"] = starter
     if not clauses and not controls:
         raise ValueError("this catalog has no controls with statements")
     return drop_legacy_register({
