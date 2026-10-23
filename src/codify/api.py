@@ -12,6 +12,7 @@ the project lives in the page: each call is given what it needs.
     library_upsert / library_remove / library_search / library_export
                   a device-wide statement library (entries in, entries out; never stored here)
     control_oscal one control in a project -> that control's OSCAL 1.1.2 object
+    generate_policy one statement -> a local Rego/Sentinel/Checkov starter (no AI)
     ai_prompt     one clause -> the prompt the page sends to the person's AI provider
     ai_reply      the provider's reply -> control drafts marked as drafted by AI, with scores
 """
@@ -35,6 +36,7 @@ from .library import to_csv as library_to_csv
 from .library import to_json as library_to_json
 from .library import upsert as upsert_library
 from .models import Statement
+from .policy_as_code import clean_policy_as_code, generate_policy
 from .project import (
     ORIGINS, STATUSES, control_oscal, draft_controls, drop_legacy_register, from_oscal,
     new_project, summary, to_csv, to_oscal, to_report, to_xlsx,
@@ -132,7 +134,7 @@ def _clean_project(value) -> dict:
         if not isinstance(notes, list):
             raise BadRequest("'notes' must be a list")
         risk_ids = c.get("risk_ids") if isinstance(c.get("risk_ids"), list) else []
-        out["controls"].append({
+        entry = {
             "id": _text(c.get("id"), "control id", 64) or "?", "clause": _text(c.get("clause"), "clause", 64),
             "text": _text(c.get("text"), "text"), "guidance": _text(c.get("guidance"), "guidance"),
             "risk": _text(c.get("risk"), "risk"), "who": _text(c.get("who"), "who", 500),
@@ -141,7 +143,11 @@ def _clean_project(value) -> dict:
             "origin": c.get("origin") if c.get("origin") in ORIGINS else "person",
             "source_type": "clause",
             "risk_ids": [_text(i, "risk_ids", 64) for i in risk_ids[:50] if i],
-        })
+        }
+        starter = clean_policy_as_code(c.get("policy_as_code"))
+        if starter:
+            entry["policy_as_code"] = starter
+        out["controls"].append(entry)
     return drop_legacy_register(out)
 
 
@@ -260,6 +266,24 @@ def library_export(body: dict) -> dict:
     raise BadRequest("'format' must be csv or json")
 
 
+def generate_policy_action(body: dict) -> dict:
+    """A local starter policy from one control statement. No AI, no network."""
+    text = _text(body.get("text"), "text")
+    if not text:
+        raise BadRequest("enter a control statement to generate from")
+    fmt = _text(body.get("format"), "format", 32) or "rego"
+    try:
+        return generate_policy(
+            text, fmt,
+            control_id=_text(body.get("control_id"), "control_id", 64),
+            oscal_id=_text(body.get("oscal_id"), "oscal_id", 64),
+            risk=_text(body.get("risk"), "risk"),
+            clause=_text(body.get("clause"), "clause"),
+        )
+    except ValueError as exc:
+        raise BadRequest(str(exc)) from None
+
+
 def control_oscal_action(body: dict) -> dict:
     project = _clean_project(body.get("project"))
     control_id = _text(body.get("control_id"), "control_id", 64)
@@ -301,7 +325,8 @@ def guide() -> dict:
 
 
 ACTIONS = {"open": open_policy, "check": check, "score": score, "redraft": redraft, "export": export,
-           "control_oscal": control_oscal_action, "ai_prompt": ai_prompt, "ai_reply": ai_reply,
+           "control_oscal": control_oscal_action, "generate_policy": generate_policy_action,
+           "ai_prompt": ai_prompt, "ai_reply": ai_reply,
            "library_upsert": library_upsert, "library_remove": library_remove,
            "library_search": library_search, "library_export": library_export}
 

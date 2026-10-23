@@ -67,6 +67,14 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Added
 
+- **Generate Rego starter** on step 3 (Policy as code / Send to Enact): a
+  local, deterministic template for each control statement (Rego default;
+  Sentinel and Checkov optional). Keyword matching, no AI and no network.
+  Read-only code view with Copy and Download. Starters attach to the OSCAL
+  catalog as back-matter files. Starter to review, not a finished policy
+  ([docs/prds/rego-starter.md](docs/prds/rego-starter.md),
+  [ADR 0019](docs/adr/0019-local-policy-as-code-starters.md)).
+
 - Risk-first authoring flow ([ADR 0013](docs/adr/0013-risk-first-authoring-flow.md)):
   two start paths — **Start from risks** (recommended) or
   **Start from a policy clause**. Both share Review and **Send to Enact**.

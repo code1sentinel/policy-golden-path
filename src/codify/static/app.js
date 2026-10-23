@@ -118,10 +118,10 @@ const STEP_GUIDES = {
   },
   enact: {
     title: "Send to Enact",
-    what: "Download the OSCAL catalog on this device, then open it in Enact. This turns control statements into testable Rego policy.",
-    why: "Codify writes the catalog. Enact runs the checks as Rego. They share a file, not a server.",
-    example: "Save catalog.json, open Enact, load that file.",
-    mistakes: "Codify does not upload the catalog. If download is blocked, accept coverage first.",
+    what: "Download the OSCAL catalog on this device, then open it in Enact. Generate a Rego starter for each control if you want a first policy file to review.",
+    why: "Codify writes the catalog. Enact runs the checks as Rego. Starters are keyword templates on this device, not finished policies.",
+    example: "Generate a Rego starter, copy or download it, then save catalog.json and open Enact.",
+    mistakes: "Treating a starter as production policy. Codify does not upload the catalog.",
   },
 };
 
@@ -2015,6 +2015,7 @@ function renderEnactStep(box) {
   const download = el("button", { type: "button", class: "btn btn--primary btn--lg", id: "enact-download", text: "Download OSCAL catalog" });
   download.disabled = !ok;
   download.addEventListener("click", () => openExportDialog());
+  const controls = nonemptyControls(state.project);
   box.replaceChildren(
     el("div", { class: "card enact-panel", id: "enact-step" },
       el("h3", { class: "section-title", text: "Send to Enact" }),
@@ -2024,11 +2025,108 @@ function renderEnactStep(box) {
         el("li", {}, "Open ", el("a", { href: ENACT_APP, target: "_blank", rel: "noopener noreferrer", text: "Enact" }), " (Pages app)."),
         el("li", {}, "Load that JSON as the catalog. See ",
           el("a", { href: ENACT_DOC, target: "_blank", rel: "noopener noreferrer", text: "Using Codify with Enact" }), ".")),
+      el("section", { class: "rego-starters", id: "rego-starters" },
+        el("h4", { class: "rego-starters__title", text: "Policy as code starters" }),
+        el("p", { class: "rego-starter__disclaimer",
+          text: "Starter to review — not a finished policy. Keyword matching on this device; no AI." }),
+        controls.length
+          ? el("div", { class: "rego-starters__list" }, ...controls.map(regoStarterCard))
+          : el("p", { class: "muted", text: "No control statements yet." })),
       ok ? null : el("p", { class: "field-error", id: "enact-gate", text: message }),
       el("div", { class: "actions" }, download,
         el("button", { type: "button", class: "btn", id: "enact-other", text: "Other formats" }))),
   );
   $("#enact-other")?.addEventListener("click", () => openExportDialog());
+}
+
+const STARTER_FORMATS = [
+  { id: "rego", label: "Rego", action: "Generate Rego starter" },
+  { id: "sentinel", label: "Sentinel", action: "Generate Sentinel starter" },
+  { id: "checkov", label: "Checkov", action: "Generate Checkov starter" },
+];
+
+function starterFormatLabel(id) {
+  return STARTER_FORMATS.find((f) => f.id === id) || STARTER_FORMATS[0];
+}
+
+function regoStarterCard(control) {
+  const stored = control.policy_as_code && control.policy_as_code.code ? control.policy_as_code : null;
+  let format = stored && stored.format ? stored.format : "rego";
+  const generate = el("button", {
+    type: "button", class: "btn", "data-generate": "1",
+    text: starterFormatLabel(format).action,
+  });
+  const tabs = el("div", { class: "editor-tabs rego-starter__formats", role: "tablist", "aria-label": "Starter format" });
+  for (const item of STARTER_FORMATS) {
+    const tab = el("button", {
+      type: "button", class: "editor-tab", role: "tab",
+      "aria-selected": String(item.id === format), text: item.label, "data-format": item.id,
+    });
+    tab.addEventListener("click", () => {
+      format = item.id;
+      generate.textContent = item.action;
+      for (const other of tabs.querySelectorAll("[role='tab']")) {
+        other.setAttribute("aria-selected", String(other.dataset.format === format));
+      }
+    });
+    tabs.append(tab);
+  }
+  generate.addEventListener("click", () => generateStarter(control, format, generate));
+  const head = el("div", { class: "rego-starter__head" },
+    el("p", { class: "rego-starter__statement" },
+      el("span", { class: "rego-starter__id", text: control.id }),
+      control.text),
+    tabs,
+    generate);
+  const body = stored ? starterCodeView(stored) : null;
+  return el("article", { class: "rego-starter", "data-control-id": control.id }, head, body);
+}
+
+function starterCodeView(stored) {
+  const pre = el("pre", {
+    class: "oscal-pre rego-starter__code", tabindex: "0",
+    "aria-label": `${stored.format} starter for this control`,
+  });
+  pre.dataset.raw = stored.code;
+  pre.replaceChildren(...numberedJson(stored.code));
+  const status = el("span", { class: "oscal-copy-status", "aria-live": "polite", "data-copy-status": "1" });
+  const copy = el("button", { type: "button", class: "btn btn--small", "data-copy": "1", text: "Copy" });
+  copy.addEventListener("click", async () => {
+    status.textContent = (await copyText(stored.code)) ? "Copied" : "Copy failed";
+  });
+  const save = el("button", { type: "button", class: "btn btn--small", "data-download": "1", text: "Download" });
+  save.addEventListener("click", () => {
+    const mime = stored.format === "checkov" ? "text/yaml" : "text/plain";
+    download(stored.filename || `starter.${stored.format}`, mime, stored.code);
+  });
+  return el("div", { class: "rego-starter__view" },
+    el("p", { class: "rego-starter__note", text: "Starter to review — not a finished policy." }),
+    el("div", { class: "oscal-view__bar" },
+      el("span", { class: "oscal-view__label", text: stored.filename || "starter" }),
+      copy, save, status),
+    pre);
+}
+
+async function generateStarter(control, format, button) {
+  const clause = clauseById(control.clause);
+  await busy(button, "Generating…", async () => {
+    const data = await call({
+      action: "generate_policy",
+      text: control.text,
+      format,
+      control_id: control.id,
+      risk: control.risk || purposeFromRisks(state.project, control.risk_ids || []),
+      clause: (clause && clause.text) || "",
+    });
+    control.policy_as_code = {
+      format: data.format,
+      pattern: data.pattern,
+      code: data.code,
+      filename: data.filename,
+    };
+    saveLocal();
+  });
+  renderFlowStep();
 }
 
 function addControlForRisk(risk, text, clauseText) {

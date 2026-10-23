@@ -68,7 +68,9 @@ They are a starting point to edit, not finished controls.
   from the first clause.
 - **Export:** **Send to Enact** downloads the **OSCAL catalog** (recommended,
   catalog 1.1.2) on this device; Excel, CSV (spreadsheet-safe), the Markdown
-  report, and optional statement-library JSON/CSV. The web wizard blocks
+  report, and optional statement-library JSON/CSV. Step 3 can **Generate
+  Rego starter** for each control (local templates; Sentinel/Checkov
+  optional) and attach the file to the catalog. The web wizard blocks
   project formats until every identified risk has an accepted control
   statement. No upload.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's

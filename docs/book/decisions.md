@@ -24,5 +24,6 @@ Status is taken from each file. An accepted ADR is binding until a later one sup
 | [0016. Control statements page is a drafting surface](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0016-control-statements-page.md) | Accepted | Shared step 2 is a list + editor for writing statements, not a wizard form. |
 | [0017. Three-tab primary nav](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0017-three-tab-nav.md) | Accepted | Primary nav is Home, Risk Entry, and Policy Clause. |
 | [0018. Policy clause page is a capture surface](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0018-policy-clause-page.md) | Accepted | Flow B step 1 is a paste capture page, not a Codify submit card. |
+| [0019. Local policy-as-code starters](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0019-local-policy-as-code-starters.md) | Accepted | Step 3 can generate local Rego/Sentinel/Checkov starters; they attach as catalog back-matter files. |
 
 New decisions go in `docs/adr/NNNN-title.md`, numbered from the next free integer. Follow [0001](https://github.com/code1sentinel/policy-golden-path/blob/main/docs/adr/0001-record-architecture-decisions.md).

@@ -1247,6 +1247,21 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   padding: 12px 0; border-bottom: 1px solid var(--border-soft);
 }
 .enact-panel { display: grid; gap: 12px; }
+.rego-starters { display: grid; gap: 12px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+.rego-starters__title { margin: 0; font-size: 14px; color: var(--text); }
+.rego-starters__list { display: grid; gap: 12px; }
+.rego-starter {
+  display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border-soft);
+  border-radius: 10px; background: var(--bg);
+}
+.rego-starter__head { display: grid; gap: 10px; }
+.rego-starter__statement { margin: 0; font-size: 14px; line-height: 1.45; }
+.rego-starter__id { font: 600 12px var(--mono); color: var(--accent-text); margin-right: 6px; }
+.rego-starter__disclaimer, .rego-starter__note {
+  margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45;
+}
+.rego-starter__view { display: grid; gap: 8px; min-width: 0; }
+.rego-starter__formats { width: fit-content; }
 .enact-handoff { margin: 0 0 14px; font-size: 13px; color: var(--notice-text); }
 .enact-handoff p { margin: 0 0 8px; }
 .enact-handoff__steps { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
