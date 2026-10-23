@@ -12,6 +12,19 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Policy clause (Flow B step 1) is a calm capture page: **Paste your
+  policy clause**, one guidance sentence, a large paste textarea, a
+  small side example of a good clause and how to separate several with a
+  blank line, a preview list (edit / remove), optional **Add details**
+  for a source policy name, and **Continue to control statements**
+  disabled until at least one clause exists. The same small three-step
+  indicator as Identify risks (Policy clause current). Codify, Try an
+  example, Open a file, pre-filled example text, and the result step are
+  gone from this page. Old clause-first projects open here. Control
+  statements still uses **…for each clause**. OSCAL export is unchanged
+  ([docs/prds/policy-clause-page.md](docs/prds/policy-clause-page.md),
+  [ADR 0018](docs/adr/0018-policy-clause-page.md)).
+
 - First visit is a short giga-style landing
   ([docs/prds/giga-landing.md](docs/prds/giga-landing.md)): headline
   **Controls you can test.**, one subline, two equal start buttons

@@ -16,54 +16,22 @@ The online site and the local web app look the same. Neither loads fonts or othe
 
 The first open is a product landing: a short headline, a mock of a risk becoming a control (then OSCAL and Rego), and two start buttons.
 
-**Get started with identified risks** opens the risk-first flow (Identify risks). **Get started with an existing policy clause** opens the paste box. A saved project on this device shows **Resume your project** in the top bar.
+**Get started with identified risks** opens the risk-first flow (Identify risks). **Get started with an existing policy clause** opens **Paste your policy clause**. A saved project on this device shows **Resume your project** in the top bar.
 
 ## Choose how to start
 
 - **Get started with identified risks** — opens **What risks have you identified?** Type each risk in **Add a risk** (Enter adds), then **Continue to control statements**. Write a statement for each risk, then **Continue to policy as code**.
-- **Get started with an existing policy clause** — paste a clause (or try the example). Codify drafts as before; then you review each clause’s statement and link each draft to a risk.
+- **Get started with an existing policy clause** — opens **Paste your policy clause**. Paste a clause from your existing policy (a blank line separates several). **Continue to control statements**, then write a statement for each clause and link each draft to a risk.
+
+![Paste your policy clause: large paste box, small example, empty state, Continue disabled.](assets/policy-clause.png)
 
 Both flows end at **Policy as code (Rego)** in [Enact](enact.md).
 
 Both paths share **Review** and **Send to Enact**. Every risk needs a control statement; every control must be linked to a risk.
 
-![Paste start: example clause in the box, Codify button, and Try an example.](assets/paste-box.png)
+On the clause path there is no Title field, and clause numbers are optional. PDF is not read: copy the text and paste it.
 
-On the clause path, the box already contains a real example you can edit or replace:
-
-```
-Access to systems shall be granted on a need-to-know basis.
-
-User accounts shall be reviewed regularly.
-```
-
-Press **Codify**. There is no Title field, and clause numbers are optional.
-
-You can also:
-
-- Choose **Open a file** for Word (`.docx`), CSV or Excel (`.xlsx`), Markdown or text, or a saved OSCAL catalog (`.json`).
-- Choose **Try an example** to load the fictional **Acme demo policy** (a 2016-style agency policy written with typical legacy problems).
-
-PDF is not read: copy the text and paste it.
-
-{% hint style="info" %}
-**Try an example** uses only the built-in Acme demo. It never sends the policy anywhere.
-{% endhint %}
-
-## Here's what we drafted
-
-After paste or **Try an example**, Codify shows a short result step before the full workspace.
-
-![Result step titled Here's what we drafted, with the first few drafts and Review the drafts.](assets/drafted-step.png)
-
-You will see:
-
-- How many **control drafts** came from how many **requirements**
-- A breakdown of other clauses (duplicates, context, not controls)
-- The first few drafts (Draft 1–3), then **and N more** when there are more
-- **Review the drafts** — opens the workspace
-
-The drafts are a first pass. Edit them in the next step.
+The command line still reads Word, CSV, Excel, Markdown, and saved OSCAL catalogs (`codify POLICY`).
 
 ## What happens to a clause
 

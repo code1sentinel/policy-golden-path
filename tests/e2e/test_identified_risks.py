@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish_open, goto_review
+from conftest import add_flow_clauses, add_flow_risk, choose_clause_path, choose_risk_path, goto_review
 from test_statement_library import CLAUSE, accept_current, open_pasted, wait_for_library_entries
 
 
@@ -45,9 +45,11 @@ def test_suggest_dialog_adds_library_statement_and_clears_coverage(page):
 
 def test_unlinked_control_is_flagged_in_related_table(page):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", CLAUSE)
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, CLAUSE)
+    page.click("#clause-continue")
+    page.locator("#statements-editor textarea").first.fill(
+        "Grant access to systems on a need-to-know basis.")
+    page.locator("#statements-editor textarea").first.blur()
     page.click("#statements-continue")
     expect(page.locator("#flow-step")).to_contain_text("This control is not linked to a risk.")
     expect(page.locator("#legacy-risk-prompt")).to_contain_text("risk")

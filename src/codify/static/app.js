@@ -65,6 +65,7 @@ const state = {
   startPath: null,     // "clause" when the paste form is showing
   guideDismissed: {},
   identifyFocus: null, // selector to focus after the identify list re-renders
+  clauseFocus: null,   // selector to focus after the clause list re-renders
   selectedStatementKey: null, // risk:<id> or clause:<id> on the statements page
   statementFocus: null,
   statementLibraryTarget: null,
@@ -73,7 +74,7 @@ const state = {
 const STEP_LABELS = {
   risks: "Identify risks",
   controls: "Control statements",
-  clause: "Paste a clause",
+  clause: "Policy clause",
   link: "Link to risks",
   review: "Review",
   enact: "Send to Enact",
@@ -868,7 +869,7 @@ function showView(view) {
   markNav(navFor(view));
   $("#guide").hidden = view !== "guide";
   $("#start").hidden = view !== "workspace";
-  const landing = view === "workspace" && state.startPath !== "clause";
+  const landing = view === "workspace";
   document.body.dataset.chrome = landing ? "landing" : "app";
   if ($("#result")) $("#result").hidden = view !== "result";
   const authoring = Boolean(state.project) && (view === "flow" || view === "work");
@@ -883,7 +884,7 @@ function showView(view) {
   if (exportTop) exportTop.hidden = !state.project;
   if (closeBtn) closeBtn.hidden = !state.project;
   if (view === "workspace") {
-    if (state.startPath !== "clause") state.startPath = null;
+    state.startPath = null;
     renderResume();
     renderStartChoice();
   }
@@ -985,11 +986,7 @@ function openFlow() {
 
 function renderStartChoice() {
   const landing = $("#landing");
-  const drop = $("#drop");
-  if (!drop) return;
-  const clause = state.startPath === "clause";
-  if (landing) landing.hidden = clause;
-  drop.hidden = !clause;
+  if (landing) landing.hidden = false;
 }
 
 function setFlowError(message) {
@@ -1002,13 +999,15 @@ function setFlowError(message) {
 function renderFlowChrome() {
   const identify = Boolean(state.project) && state.view === "flow" && state.flowStep === "risks";
   const statements = Boolean(state.project) && state.view === "flow" && state.flowStep === "controls";
+  const clause = Boolean(state.project) && state.view === "flow" && state.flowStep === "clause";
   $("#flow")?.classList.toggle("flow-view--identify", identify);
   $("#flow")?.classList.toggle("flow-view--statements", statements);
+  $("#flow")?.classList.toggle("flow-view--clause", clause);
   const head = $(".flow-view__head");
   const nav = $("#flow-nav");
   const guide = $("#step-guide");
   const reopen = $("#step-guide-open");
-  if (identify || statements) {
+  if (identify || statements || clause) {
     if (head) head.hidden = true;
     if (nav) nav.hidden = true;
     if (guide) {
@@ -1170,22 +1169,34 @@ function openRiskEntry() {
 }
 
 function openPolicyClause() {
-  if (state.project && authoringPath(state.project) !== "clauses") {
-    if (!confirmReplace()) return;
-  }
-  showClausePath();
+  startClausePath();
 }
 
 function showClausePath() {
-  state.startPath = "clause";
-  showView("workspace");
-  $("#paste-form textarea")?.focus();
+  startClausePath();
 }
 
-function hideClausePath() {
+function startClausePath() {
+  if (state.project && authoringPath(state.project) === "clauses") {
+    state.startPath = null;
+    state.flowStep = "clause";
+    state.clauseFocus = "#clause-paste";
+    showView("flow");
+    return;
+  }
+  if (!confirmReplace()) return;
+  const uuid = (crypto.randomUUID && crypto.randomUUID()) || `00000000-0000-4000-8000-${String(Date.now()).slice(-12)}`;
+  state.project = {
+    uuid, title: "Untitled policy", source: "", version: "", clauses: [], controls: [],
+    risks: [],
+  };
+  state.scores = {};
+  state.selected = null;
+  state.flowStep = "clause";
   state.startPath = null;
-  showView("workspace");
-  $("#start-from-risks")?.focus();
+  state.clauseFocus = "#clause-paste";
+  saveLocal();
+  showView("flow");
 }
 
 function renderFlowStep() {
@@ -1193,11 +1204,286 @@ function renderFlowStep() {
   if (!box || !state.project) return;
   box.hidden = false;
   const step = state.flowStep;
+  if (step === "clause") return renderClauseStep(box);
   if (step === "risks") return renderIdentifyStep(box);
   if (step === "controls") return renderDevelopStep(box);
   if (step === "link") return renderLinkStep(box);
   if (step === "enact") return renderEnactStep(box);
   box.replaceChildren();
+}
+
+function listedClauses(project = state.project) {
+  return (project && project.clauses || []).filter((c) => String(c.text || "").trim());
+}
+
+function nextClauseId(clauses) {
+  let n = 0;
+  for (const clause of clauses || []) {
+    const match = /^c(\d+)$/.exec(clause.id || "");
+    if (match) n = Math.max(n, parseInt(match[1], 10));
+  }
+  return `c${n + 1}`;
+}
+
+function splitClauseText(text) {
+  const raw = String(text || "").replace(/\r\n/g, "\n").trim();
+  if (!raw) return [];
+  const blankBlocks = raw.split(/\n[ \t]*\n/).map((block) => (
+    block.split("\n").map((line) => line.trim()).filter(Boolean).join(" ")
+  )).filter(Boolean);
+  if (blankBlocks.length > 1) return blankBlocks;
+  const lines = raw.split("\n").map((line) => line.trim()).filter(Boolean);
+  const numbered = /^\d{1,2}(?:\.\d{1,3}){1,3}\.?\s+\S/;
+  const hits = lines.filter((line) => numbered.test(line));
+  if (hits.length > 1 && hits.length === lines.length) return lines;
+  return [lines.join(" ")];
+}
+
+function titleFromFirstClause(text) {
+  const first = String(text || "").trim().split("\n", 1)[0].trim();
+  if (!first) return "Untitled policy";
+  const sentence = first.split(/(?<=[.!?])\s+/, 1)[0];
+  if (sentence.length > 80) {
+    const cut = sentence.slice(0, 80).replace(/\s+\S*$/, "");
+    return `${cut || sentence.slice(0, 80)}…`;
+  }
+  return sentence;
+}
+
+function clauseIdFor(body, clauses) {
+  const match = /^(\d{1,2}(?:\.\d{1,3}){1,3})\.?\s+\S/.exec(body);
+  const used = new Set((clauses || []).map((item) => item.id));
+  if (match && !used.has(match[1])) return match[1];
+  return nextClauseId(clauses);
+}
+
+function addClausesFromText(text) {
+  const parts = splitClauseText(text);
+  if (!parts.length) return 0;
+  if (!state.project.clauses) state.project.clauses = [];
+  const before = state.project.clauses.length;
+  for (const body of parts) {
+    const id = clauseIdFor(body, state.project.clauses);
+    state.project.clauses.push({
+      id, text: body, section: "", heading: "",
+      type: "requirement", reason: "", duplicate_of: null,
+    });
+  }
+  const untitled = !state.project.title || state.project.title === "Untitled policy";
+  if (untitled && state.project.clauses[0]) {
+    state.project.title = titleFromFirstClause(state.project.clauses[0].text);
+  }
+  saveLocal();
+  return state.project.clauses.length - before;
+}
+
+function updateClauseText(id, text) {
+  const clause = (state.project.clauses || []).find((item) => item.id === id);
+  if (!clause) return;
+  const body = String(text || "").trim();
+  if (!body) return;
+  clause.text = body;
+  saveLocal();
+}
+
+function removeClause(id) {
+  const clauses = state.project.clauses || [];
+  state.project.clauses = clauses.filter((item) => item.id !== id);
+  state.project.controls = (state.project.controls || []).filter((control) => control.clause !== id);
+  if (!listedClauses().length) state.project.title = "Untitled policy";
+  saveLocal();
+}
+
+function commitPasteBox() {
+  const box = $("#clause-paste");
+  if (!box) return 0;
+  const added = addClausesFromText(box.value);
+  if (added) box.value = "";
+  return added;
+}
+
+function pendingClauseText() {
+  return String($("#clause-paste")?.value || "").trim();
+}
+
+function refreshClauseChrome() {
+  const clauses = listedClauses();
+  const pending = pendingClauseText();
+  const ready = Boolean(clauses.length || pending);
+  const cont = $("#clause-continue");
+  if (cont) {
+    cont.disabled = !ready;
+    if (ready) cont.removeAttribute("title");
+    else cont.title = "Paste a clause first.";
+  }
+  const empty = $("#clause-empty");
+  if (empty) empty.hidden = ready;
+  const add = $("#clause-add");
+  if (add) add.disabled = !pending;
+}
+
+function renderClauseStep(box) {
+  const clauses = listedClauses();
+  const back = el("button", {
+    type: "button", class: "btn btn--quiet identify-back", id: "clause-back",
+    text: "Back to the landing",
+  });
+  back.addEventListener("click", () => {
+    saveLocal();
+    showView("workspace");
+    $("#start-from-clause")?.focus();
+  });
+  const steps = el("ol", {
+    class: "identify-steps", id: "clause-steps",
+    "aria-label": "Policy clause, then control statements, then policy as code (Rego)",
+  },
+    el("li", { "aria-current": "step" },
+      el("span", { class: "identify-steps__n", text: "1" }),
+      el("span", { class: "identify-steps__label", text: "Policy clause" })),
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "2" }),
+      el("span", { class: "identify-steps__label", text: "Control statements" })),
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "3" }),
+      el("span", { class: "identify-steps__label", text: "Policy as code (Rego)" })),
+  );
+  const paste = el("textarea", {
+    class: "clause-paste", id: "clause-paste", rows: "10",
+    placeholder: "Type or paste a clause",
+    "aria-label": "Policy clause text",
+    "aria-describedby": "clause-lede",
+  });
+  const add = el("button", {
+    type: "button", class: "btn btn--quiet", id: "clause-add",
+    text: "Add clauses",
+    disabled: true,
+  });
+  const commitAndRender = () => {
+    if (!pendingClauseText()) return;
+    commitPasteBox();
+    state.clauseFocus = "#clause-paste";
+    renderFlowStep();
+    renderFlowChrome();
+  };
+  add.addEventListener("click", commitAndRender);
+  paste.addEventListener("input", refreshClauseChrome);
+  paste.addEventListener("paste", () => { queueMicrotask(commitAndRender); });
+  paste.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      commitAndRender();
+    }
+  });
+  const example = el("aside", {
+    class: "clause-example", id: "clause-example", "aria-label": "How to write a clause",
+  },
+    el("h3", { text: "A good clause" }),
+    el("p", { text: "One requirement, in the policy's own words:" }),
+    el("pre", { text: "Access to systems shall be granted on a need-to-know basis." }),
+    el("p", { text: "To add more than one, put a blank line between them:" }),
+    el("pre", { text: "Access to systems shall be granted on a need-to-know basis.\n\nUser accounts shall be reviewed regularly." }));
+  const list = clauses.length
+    ? el("ul", { class: "clause-list", id: "clause-list", "aria-label": "Policy clauses" },
+        clauses.map(clauseCaptureRow))
+    : el("ul", { class: "clause-list", id: "clause-list", "aria-label": "Policy clauses", hidden: true });
+  const source = el("input", {
+    type: "text", id: "clause-source", maxlength: "200", autocomplete: "off",
+    placeholder: "Information Security Policy 2016",
+  });
+  source.value = state.project.source || "";
+  source.addEventListener("blur", () => {
+    state.project.source = String(source.value || "").trim();
+    saveLocal();
+  });
+  const details = el("details", { class: "clause-details", id: "clause-details" },
+    el("summary", { text: "Add details" }),
+    el("label", { class: "field" },
+      el("span", { text: "Source policy name (optional)" }),
+      source));
+  const ready = Boolean(clauses.length || pendingClauseText());
+  const cont = el("button", {
+    type: "button", class: "btn btn--primary", id: "clause-continue",
+    text: "Continue to control statements",
+    disabled: ready ? null : true,
+    title: ready ? null : "Paste a clause first.",
+  });
+  cont.addEventListener("click", () => {
+    commitPasteBox();
+    if (!listedClauses().length) {
+      refreshClauseChrome();
+      return;
+    }
+    const [ok] = canAdvance(state.project, "clause");
+    if (!ok) return;
+    goToStep("controls");
+  });
+  const empty = clauses.length ? null : el("p", {
+    class: "identify-empty", id: "clause-empty", role: "status",
+    text: "Nothing here yet. Paste a clause in the box — one requirement in the policy's own words.",
+  });
+  const live = el("p", {
+    class: "visually-hidden", "aria-live": "polite",
+    text: clauses.length ? plural(clauses.length, "policy clause") : "No policy clauses yet",
+  });
+  box.replaceChildren(
+    el("div", { class: "clause-page", id: "clause-page" },
+      back, steps,
+      el("h2", { class: "clause-title", id: "clause-title", text: "Paste your policy clause" }),
+      el("p", {
+        class: "clause-lede", id: "clause-lede",
+        text: "Paste a clause from your existing policy. You'll write a control statement for each one next.",
+      }),
+      el("div", { class: "clause-layout" },
+        el("div", { class: "clause-paste-wrap" },
+          paste, add),
+        example),
+      live, empty, list, details,
+      el("div", { class: "identify-actions" }, cont)));
+  const focusSel = state.clauseFocus || null;
+  state.clauseFocus = null;
+  if (focusSel) queueMicrotask(() => $(focusSel)?.focus());
+}
+
+function clauseCaptureRow(clause) {
+  const text = el("textarea", {
+    class: "clause-row__text", rows: "3",
+    "aria-label": "Policy clause",
+  });
+  text.value = clause.text;
+  const remove = el("button", {
+    type: "button", class: "btn btn--quiet btn--small clause-row__remove",
+    text: "Remove", "aria-label": "Remove clause",
+  });
+  text.addEventListener("focus", () => { text.dataset.saved = text.value; });
+  text.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      text.value = text.dataset.saved || (listedClauses().find((item) => item.id === clause.id) || clause).text;
+      text.blur();
+    }
+  });
+  text.addEventListener("blur", () => {
+    const current = (state.project.clauses || []).find((item) => item.id === clause.id) || clause;
+    if (!String(text.value || "").trim()) {
+      text.value = current.text;
+      return;
+    }
+    updateClauseText(clause.id, text.value);
+    const saved = (state.project.clauses || []).find((item) => item.id === clause.id) || current;
+    text.value = saved.text;
+  });
+  remove.addEventListener("click", () => {
+    const list = listedClauses();
+    const i = list.findIndex((item) => item.id === clause.id);
+    const next = list[i + 1] || list[i - 1];
+    removeClause(clause.id);
+    state.clauseFocus = next
+      ? `#clause-list [data-clause-id="${next.id}"] .clause-row__text`
+      : "#clause-paste";
+    renderFlowStep();
+    renderFlowChrome();
+  });
+  return el("li", { class: "clause-row", "data-clause-id": clause.id }, text, remove);
 }
 
 function renderIdentifyStep(box) {
@@ -1486,8 +1772,7 @@ function backFromStatements() {
     goToStep("risks");
     return;
   }
-  state.resultStep = true;
-  showView("result");
+  goToStep("clause");
 }
 
 function statementBlock(item, control) {
@@ -3411,7 +3696,6 @@ function init() {
   $("#result-continue")?.addEventListener("click", continueFromResult);
   for (const b of $$("[data-start-risks]")) b.addEventListener("click", startRiskPath);
   $("#start-from-clause")?.addEventListener("click", showClausePath);
-  $("#start-clause-back")?.addEventListener("click", hideClausePath);
   $("#flow-next")?.addEventListener("click", flowNext);
   $("#flow-back")?.addEventListener("click", flowBack);
   $("#step-guide-open")?.addEventListener("click", () => {
@@ -3421,18 +3705,6 @@ function init() {
     renderStepGuide();
   });
 
-  $("#paste-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const text = form.elements.namedItem("text").value;
-    if (!text.trim()) return showError("Paste the policy clauses first.");
-    if (!confirmReplace()) return;
-    busy($("#paste-submit"), "Codifying…", async () => openProject(await call({
-      action: "open", name: "pasted text", text,
-    }), { resultStep: true, path: "clauses" }));
-  });
-
-  const drop = $("#drop");
   const bindFile = (input) => {
     if (!input) return;
     input.addEventListener("change", () => {
@@ -3443,20 +3715,17 @@ function init() {
     });
   };
   bindFile($("#file"));
-  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("is-over"); });
-  drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
-  drop.addEventListener("drop", (e) => {
-    e.preventDefault();
-    drop.classList.remove("is-over");
-    if (e.dataTransfer.files[0] && confirmReplace()) openFile(e.dataTransfer.files[0]);
-  });
 
-  $("#demo").addEventListener("click", (e) => {
+  const openAcmeDemo = () => busy($("#demo"), "Opening…", async () => {
+    const text = await (await fetch("acme-policy.md")).text();
+    openProject(await call({
+      action: "open", name: "acme-information-security-policy-2016.md", content: text,
+    }), { resultStep: true, path: "clauses" });
+  });
+  window.__codifyOpenAcme = openAcmeDemo;
+  $("#demo")?.addEventListener("click", () => {
     if (!confirmReplace()) return;
-    busy(e.currentTarget, "Opening…", async () => {
-      const text = await (await fetch("acme-policy.md")).text();
-      openProject(await call({ action: "open", name: "acme-information-security-policy-2016.md", content: text }), { resultStep: true, path: "clauses" });
-    });
+    openAcmeDemo();
   });
 
   $("#resume-open").addEventListener("click", () => {

@@ -22,7 +22,7 @@ The local web app and the Pages site share one **primary nav** of three destinat
 
 1. **Home** — the marketing landing (the former Workspace start).
 2. **Risk Entry** — risk-first flow, Identify risks (step 1). Stays current while that flow is open.
-3. **Policy Clause** — clause-first flow, step 1 (paste / Try an example / open a file). Stays current while that flow is open.
+3. **Policy Clause** — clause-first flow, step 1 (paste capture page). Stays current while that flow is open.
 
 On a 390px-wide screen the three labels sit on one row (no wrap, no overflow). The current item is exposed to assistive tech (`aria-pressed` and `aria-current="page"`).
 

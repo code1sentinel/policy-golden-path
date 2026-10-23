@@ -196,29 +196,8 @@
           </footer>
         </div>
 
-        <div class="card start__load" id="drop" hidden>
-          <p class="start-clause-back">
-            <button type="button" class="btn btn--quiet" id="start-clause-back">Back to the landing</button>
-          </p>
-          <form id="paste-form" novalidate>
-            <label class="field">
-              <span>Example clause <em>edit or replace, then press Codify</em></span>
-              <textarea class="start__clause" name="text" rows="8" placeholder="Paste a clause, or edit this example.">Access to systems shall be granted on a need-to-know basis.
-
-User accounts shall be reviewed regularly.</textarea>
-            </label>
-            <div class="actions">
-              <button type="submit" class="btn btn--primary btn--lg" id="paste-submit">Codify</button>
-              <label class="btn btn--file">
-                Open a file
-                <input type="file" id="file" accept=".docx,.csv,.xlsx,.json,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/json,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-              </label>
-            </div>
-          </form>
-          <p class="start__examples">
-            <button type="button" class="example-chip" id="demo">Try an example</button>
-          </p>
-        </div>
+        <button type="button" id="demo" hidden>Try an example</button>
+        <input type="file" id="file" hidden accept=".docx,.csv,.xlsx,.json,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/json,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
       </section>
 
       <section id="flow" class="flow-view" aria-labelledby="flow-title" hidden>

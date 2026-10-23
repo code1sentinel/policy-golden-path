@@ -22,6 +22,7 @@ SKIP_PREFIXES = ("http://", "https://", "mailto:", "#", "{{")
 REQUIRED_SCREENSHOTS = (
     "landing-start.png",
     "identify-risks.png",
+    "policy-clause.png",
     "paste-box.png",
     "drafted-step.png",
     "control-review.png",

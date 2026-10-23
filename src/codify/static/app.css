@@ -628,23 +628,7 @@ body[data-chrome="landing"] main { padding: 0; overflow: visible; min-height: 0;
   font-size: 13px;
 }
 .landing-footer a { color: var(--accent-text); }
-body[data-chrome="landing"] #drop:not([hidden]),
-#drop:not([hidden]) {
-  max-width: 40rem;
-  margin: 24px auto;
-}
-body[data-chrome="landing"] #drop:not([hidden]) { margin: 48px auto; }
-.start__load { border-style: solid; }
-.start__load.is-over { border-color: var(--orange); background: var(--orange-dim); }
 .start__clause { min-height: 11em; font-size: 16px; line-height: 1.5; }
-.start__examples { margin: 14px 0 0; }
-.example-chip {
-  appearance: none; background: transparent; cursor: pointer;
-  border: 1px solid var(--border-soft); color: var(--muted);
-  border-radius: 999px; padding: 5px 12px; font: 500 13px var(--font);
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
-}
-.example-chip:hover { color: var(--text); border-color: var(--border); }
 
 .empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1358,6 +1342,84 @@ body:has(#work:not([hidden])) .flow-view__body { flex: 0 1 auto; max-height: 220
   .identify-row__remove { grid-column: 2; justify-self: start; }
   .identify-actions { justify-content: stretch; }
   .identify-actions .btn { width: 100%; }
+}
+
+/* Policy clause page (ADR 0018 / Flow B step 1) --------------------------- */
+#flow.flow-view--clause .flow-view__body {
+  grid-template-columns: 1fr;
+}
+#flow.flow-view--clause #flow-step {
+  max-width: 56rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.clause-page { display: grid; gap: 14px; }
+.clause-title {
+  margin: 4px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2;
+  color: var(--text);
+}
+.clause-lede { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.clause-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
+  gap: 16px;
+  align-items: start;
+}
+.clause-paste-wrap { display: grid; gap: 8px; min-width: 0; }
+.clause-paste-wrap .btn { justify-self: start; }
+.clause-paste {
+  width: 100%; min-height: 14em; font-size: 16px; line-height: 1.55;
+  resize: vertical;
+}
+.clause-example {
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--radius); padding: 12px 14px;
+  color: var(--muted); font-size: 13px; line-height: 1.5;
+}
+.clause-example h3 {
+  margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+  text-transform: uppercase; color: var(--text);
+}
+.clause-example p { margin: 0 0 10px; }
+.clause-example p:last-child { margin-bottom: 0; }
+.clause-example pre {
+  margin: 0 0 10px; padding: 8px 10px; overflow-x: auto;
+  background: var(--bg); border-radius: 8px; color: var(--text);
+  font: 12px/1.45 var(--mono);
+  white-space: pre-wrap;
+}
+.clause-list {
+  list-style: none; margin: 0; padding: 0;
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.clause-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px;
+  align-items: start; padding: 10px 14px; border-bottom: 1px solid var(--border-soft);
+}
+.clause-row:last-child { border-bottom: 0; }
+.clause-row__text {
+  width: 100%; min-height: 4.5em; background: transparent; border: 0;
+  padding: 4px 0; box-shadow: none; resize: vertical;
+}
+.clause-row__text:focus { border-color: transparent; box-shadow: none; }
+.clause-row__text:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px;
+}
+.clause-details {
+  background: var(--surface); border: 1px solid var(--border-soft);
+  border-radius: var(--radius); padding: 8px 14px;
+  color: var(--muted); font-size: 13px;
+}
+.clause-details summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.clause-details .field { margin: 10px 0 6px; }
+@media (max-width: 800px) {
+  .clause-title { font-size: 22px; }
+  .clause-layout { grid-template-columns: 1fr; }
+  .clause-row { grid-template-columns: minmax(0, 1fr); }
+  .clause-row__remove { justify-self: start; }
+  .clause-page .identify-actions { justify-content: stretch; }
+  .clause-page .identify-actions .btn { width: 100%; }
 }
 
 /* Control statements page (ADR 0016 / shared step 2) ---------------------- */

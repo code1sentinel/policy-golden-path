@@ -66,7 +66,8 @@ def test_workspace_html_is_a_short_happy_path():
     assert 'id="start-from-risks"' in html
     assert 'id="start-from-clause"' in html
     assert 'name="title"' not in html
-    assert 'id="demo"' in html and "Try an example" in html
+    assert 'id="start-from-clause"' in html
+    assert "Get started with an existing policy clause" in html
     assert 'class="steps"' not in html
     assert "Start with a legacy policy" not in html
     assert 'id="work-more"' in html

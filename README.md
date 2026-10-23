@@ -63,13 +63,15 @@ rows in place, then **Continue to control statements**. Write a statement
 for each risk (left list, right editor), then **Continue to policy as
 code**.
 
-To see the clause path, choose it, edit or replace the example, and press
-**Codify**, or choose **Try an example** to open the **Acme demo policy**.
-Codify then shows a short **here's what we drafted** step, then the same
-control-statements page (one row per clause), then **Link to risks**
-before Review.
-([`examples/acme-information-security-policy-2016.md`](examples/acme-information-security-policy-2016.md)):
-a fictional 2016 agency policy written with typical legacy problems.
+To see the clause path, choose it and **Paste your policy clause**. A
+blank line splits several clauses into a list you can edit or remove.
+**Continue to control statements** opens the same control-statements
+page (one row per clause, **Write a control statement for each
+clause**), then **Link to risks** before Review.
+
+The [Acme demo policy](examples/acme-information-security-policy-2016.md)
+is a fictional 2016 agency policy written with typical legacy problems
+(used by the CLI and tests).
 [`examples/acme-policy-key.md`](examples/acme-policy-key.md) explains what
 each clause is there to show.
 

@@ -59,8 +59,8 @@ They are a starting point to edit, not finished controls.
   mark reviewed or accepted; filters and bulk actions under More; keyboard
   `j` / `k` / `r` / `a`. Accept also upserts the statement into a device-wide
   **Library** ([ADR 0009](adr/0009-device-wide-statement-library.md)).
-  After paste or Try an example, a short result step summarises the drafts
-  before the 3-pane workspace. Review labels and the score have plain-language
+  After a pasted clause, Control statements uses **…for each clause**.
+  Review labels and the score have plain-language
   help; Accept is the single primary until the control is accepted, then
   **Accepted ✓** and **Next control** lead. Nav **Home** returns to the
   landing. **Risk Entry** and **Policy Clause** open each flow at step 1
@@ -130,6 +130,11 @@ Flow A step 1 is a calm capture page: title, one guidance sentence, a
 collapsible writing tip, an inline list of risks, and **Continue to
 control statements** disabled until at least one risk exists. See
 [docs/prds/identify-risks-page.md](prds/identify-risks-page.md).
+Flow B step 1 is a matching capture page: **Paste your policy clause**,
+a large paste box, a small example panel, a preview list of clauses,
+and **Continue to control statements** disabled until at least one
+clause exists. See
+[docs/prds/policy-clause-page.md](prds/policy-clause-page.md).
 Shared step 2 is a split list + editor: write a control statement for
 each risk (or clause), with coverage dots, a progress line, and
 **Continue to policy as code** disabled until every item has a

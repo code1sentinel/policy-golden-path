@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_risk, choose_clause_path, choose_risk_path, finish_open, goto_review
+from conftest import add_flow_clauses, add_flow_risk, choose_clause_path, choose_risk_path, goto_review
 
 
 def test_start_offers_two_get_started_paths(page):
@@ -12,7 +12,7 @@ def test_start_offers_two_get_started_paths(page):
     expect(page.locator("#start-from-risks")).to_have_text("Get started with identified risks")
     expect(page.locator("#start-from-clause")).to_have_text("Get started with an existing policy clause")
     expect(page.locator("#start-from-clause")).to_be_visible()
-    expect(page.locator("#paste-form")).to_be_hidden()
+    expect(page.locator("#paste-form")).to_have_count(0)
     expect(page.locator("#stepper")).to_be_hidden()
 
 
@@ -49,13 +49,15 @@ def test_path_a_risks_then_controls_then_review_then_enact(page):
 
 def test_path_b_paste_clause_then_link_before_review(page):
     choose_clause_path(page)
-    expect(page.locator("#paste-form")).to_be_visible()
-    expect(page.locator("#paste-submit")).to_have_text("Codify")
-    page.fill("#paste-form textarea", "Users shall lock screens when they leave their desk.")
-    page.click("#paste-submit")
-    finish_open(page)
+    expect(page.locator("#clause-page")).to_be_visible()
+    expect(page.locator("#clause-continue")).to_have_text("Continue to control statements")
+    add_flow_clauses(page, "Users shall lock screens when they leave their desk.")
+    page.click("#clause-continue")
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
     expect(page.locator("#statements-title")).to_contain_text("for each clause")
+    page.locator("#statements-editor textarea").first.fill(
+        "Require users to lock screens when they leave their desk.")
+    page.locator("#statements-editor textarea").first.blur()
     page.click("#statements-continue")
     expect(page.locator("#legacy-risk-prompt")).to_contain_text("risk")
     page.click("#flow-next")

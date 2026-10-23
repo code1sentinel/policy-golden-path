@@ -5,7 +5,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, finish_open, goto_review
+from conftest import add_flow_clauses, choose_clause_path, finish_open, goto_review
 
 
 def ctl(cid):
@@ -70,8 +70,8 @@ def test_start_is_a_short_cta_not_a_wall(page):
     expect(page.locator("#start-from-clause")).to_be_visible()
     expect(page.locator(".steps")).to_have_count(0)
     choose_clause_path(page)
-    expect(page.locator("#demo")).to_be_visible()
-    expect(page.locator("#paste-form")).to_be_visible()
+    expect(page.locator("#clause-page")).to_be_visible()
+    expect(page.locator("#clause-paste")).to_be_visible()
     expect(page.locator("#file")).to_be_attached()
 
 
@@ -85,9 +85,8 @@ def test_happy_path_edit_accept_next(demo):
 
 def test_pasted_text_is_shown_as_text_never_as_html(page):
     choose_clause_path(page)
-    page.fill("#paste-form textarea", '1.1 Users shall not run <img src=x onerror="window.pwned=1"> scripts.')
-    page.click("#paste-submit")
-    finish_open(page)
+    add_flow_clauses(page, '1.1 Users shall not run <img src=x onerror="window.pwned=1"> scripts.')
+    page.click("#clause-continue")
     goto_review(page)
     expect(page.locator(clause("1.1") + " .clause__text")).to_contain_text("<img src=x")
     assert page.evaluate("window.pwned") is None
@@ -122,8 +121,8 @@ def test_oscal_export_opens_again(demo, tmp_path):
     assert sum(len(g["controls"]) for g in catalog["groups"]) == 38
     expect(demo.locator("#export-dialog")).to_be_hidden()
     demo.click("#close-project")
-    choose_clause_path(demo)
     demo.set_input_files("#file", str(path))
+    finish_open(demo)
     goto_review(demo)
     expect(demo.locator("#work-summary")).to_contain_text("38 control drafts")
 
@@ -273,6 +272,6 @@ def test_no_sideways_scroll_on_a_phone(demo):
     demo.click("[data-nav='home']")
     assert demo.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     demo.click("#start-from-clause")
-    expect(demo.locator("#paste-form")).to_be_visible()
+    expect(demo.locator("#clause-page")).to_be_visible()
     expect(demo.locator("nav.sidebar__nav")).to_be_visible()
     assert demo.evaluate("document.documentElement.scrollWidth <= window.innerWidth")

@@ -78,7 +78,7 @@ policy clause**. Resume if this device already has a project.
 - Given the landing, When **Get started with identified risks** is
   activated, Then the identify-risks step opens.
 - Given the landing, When **Get started with an existing policy
-  clause** is activated, Then the existing paste form is shown.
+  clause** is activated, Then the Policy clause capture page is shown.
 - Given a saved `codify:project`, When the page loads, Then **Resume
   your project** is shown.
 - Given a 390px-wide viewport, When the landing hero is shown, Then
