@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_clauses, add_flow_risk, choose_clause_path, choose_risk_path, goto_review
+from conftest import add_flow_clauses, add_flow_risk, choose_clause_path, choose_risk_path, goto_review, goto_workspace
 from test_statement_library import CLAUSE, accept_current, open_pasted, wait_for_library_entries
 
 
@@ -39,6 +39,7 @@ def test_suggest_dialog_adds_library_statement_and_clears_coverage(page):
     assert linked
     page.click("#statements-continue")
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator("#editor .mapped-risk").first).to_be_visible()
     expect(page.locator("#editor .mapped-risk").first).to_contain_text("R-001")
 

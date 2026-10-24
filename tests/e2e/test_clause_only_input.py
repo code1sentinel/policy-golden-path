@@ -2,7 +2,7 @@
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_clauses, choose_clause_path, goto_review
+from conftest import add_flow_clauses, choose_clause_path, goto_review, goto_workspace
 
 
 def test_start_form_has_no_title_field(page):
@@ -17,6 +17,7 @@ def test_unnumbered_paste_opens_a_control(page):
     add_flow_clauses(page, "Users shall lock screens when they leave their desk.")
     page.click("#clause-continue")
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator(".clause__text")).to_contain_text("Users shall lock screens")
     expect(page.locator(".clause__id")).to_have_count(0)
     expect(page.locator(".ctl__id")).to_have_count(0)

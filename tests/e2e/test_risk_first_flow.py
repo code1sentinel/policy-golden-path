@@ -31,19 +31,13 @@ def test_path_a_risks_then_controls_then_review_then_enact(page):
         "Require users to lock screens when they leave their desk.")
     page.locator("#statements-editor textarea").first.blur()
     page.click("#statements-continue")
-    expect(page.locator("#work:not([hidden])")).to_be_visible()
-    expect(page.locator("textarea.statement")).to_be_visible()
-    page.locator(".editor__primary >> text=Accept").click()
-    page.click("#flow-next")
-    expect(page.locator("#enact-step")).to_contain_text("Send to Enact")
-    expect(page.locator("#enact-step")).to_contain_text("testable Rego policy")
-    expect(page.locator("#stepper")).to_contain_text("Send to Enact")
-    expect(page.locator("#enact-download")).to_be_enabled()
+    expect(page.locator("#review-page")).to_be_visible()
+    expect(page.locator("#review-title")).to_have_text("Policy as code (Rego)")
+    expect(page.locator("#review-page")).to_contain_text("Starter to review")
+    expect(page.locator("#review-enact-caption")).to_contain_text("Opens in Enact")
+    expect(page.locator("#review-handoff")).to_be_enabled()
     with page.expect_download() as dl:
-        page.click("#enact-download")
-        oscal = page.locator("#export-dialog [data-export='oscal']")
-        if oscal.is_visible():
-            oscal.click()
+        page.click("#review-handoff")
     assert dl.value
 
 
@@ -63,8 +57,8 @@ def test_path_b_paste_clause_then_link_before_review(page):
     page.click("#flow-next")
     expect(page.locator("#flow-error")).to_be_visible()
     goto_review(page)
-    expect(page.locator("#work:not([hidden]) textarea.statement")).to_be_visible()
-    expect(page.locator("#stepper")).to_contain_text("Review")
+    expect(page.locator("#review-page")).to_be_visible()
+    expect(page.locator("#review-title")).to_have_text("Policy as code (Rego)")
 
 
 def test_old_clause_first_project_opens_on_path_b_and_prompts_for_risks(browser, base_url):

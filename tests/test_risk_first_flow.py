@@ -47,8 +47,8 @@ def test_missing_authoring_path_is_clause_first():
     assert authoring_path(project) == PATH_CLAUSES
     assert authoring_path(normalize_project(project)) == PATH_CLAUSES
     assert authoring_path({"controls": [], "clauses": [], "risks": []}) == PATH_CLAUSES
-    assert STEPS[PATH_RISKS] == ("risks", "controls", "review", "enact")
-    assert STEPS[PATH_CLAUSES] == ("clause", "link", "review", "enact")
+    assert STEPS[PATH_RISKS] == ("risks", "controls", "review")
+    assert STEPS[PATH_CLAUSES] == ("clause", "controls", "link", "review")
 
 
 def test_risk_path_requires_at_least_one_identified_risk():
@@ -101,20 +101,21 @@ def test_clause_path_link_step_requires_every_control_linked_and_every_risk_cove
     assert flags["unlinked_control_ids"] == []
 
 
-def test_export_blocked_until_every_risk_has_an_accepted_control():
+def test_export_blocked_until_every_risk_has_a_control_statement():
     project = empty_project(
         authoring_path=PATH_RISKS,
         risks=[_risk()],
-        controls=[_control(text=LOCK, risk_ids=["R-001"], status="draft")],
+        controls=[_control(text="  ", risk_ids=["R-001"], status="draft")],
     )
     ok, message = can_export(project)
     assert ok is False
-    assert "accept" in message.lower()
-    project["controls"][0]["status"] = "accepted"
+    assert "control statement" in message.lower()
+    assert "accept" not in message.lower()
+    project["controls"][0]["text"] = LOCK
     ok, message = can_export(project)
     assert ok is True
     assert message == ""
-    project["controls"].append(_control(cid="orphan", text="Encrypt laptops at rest.", risk_ids=[], status="accepted"))
+    project["controls"].append(_control(cid="orphan", text="Encrypt laptops at rest.", risk_ids=[], status="draft"))
     ok, message = can_export(project)
     assert ok is False
     assert "link" in message.lower() or "risk" in message.lower()
@@ -149,8 +150,9 @@ def test_shell_has_two_start_paths_stepper_guides_and_enact_handoff():
     assert 'id="stepper"' in INDEX
     assert 'id="step-guide"' in INDEX
     assert 'id="flow-next"' in INDEX
-    assert "Send to Enact" in INDEX
-    assert "enact-step" in JS
+    assert "Policy as code (Rego)" in JS
+    assert "review-page" in JS
+    assert "Opens in Enact" in JS
     assert "code1sentinel.github.io/enact" in INDEX
     assert "Using Codify with Enact" in INDEX or "enact.md" in INDEX
     assert "body:has(#work:not([hidden])) #flow" in CSS

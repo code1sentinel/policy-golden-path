@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_clauses, choose_clause_path, goto_review
+from conftest import add_flow_clauses, choose_clause_path, goto_review, goto_workspace
 
 
 CLAUSE = (
@@ -32,6 +32,7 @@ def open_pasted(page, text):
         area.fill("Require users to lock screens when they leave their desk.")
     area.blur()
     goto_review(page)
+    goto_workspace(page)
     page.wait_for_selector("#work:not([hidden]) textarea.statement", timeout=30_000)
 
 

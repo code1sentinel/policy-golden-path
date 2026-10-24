@@ -28,4 +28,5 @@ before implementation.
 - [policy-clause-page.md](policy-clause-page.md) — Flow B step 1: paste existing policy clauses
 - [three-tab-nav.md](three-tab-nav.md) — Home / Risk Entry / Policy Clause nav
 - [rego-starter.md](rego-starter.md) — Generate Rego starter on step 3
+- [review-policy-as-code.md](review-policy-as-code.md) — Review + Policy as code (Rego) handoff (step 3)
 

@@ -25,7 +25,9 @@ After the welcome splash (unchanged), the start screen offers:
 1. **Start from risks** (recommended, visually primary). Identify risks, then write control statements that treat them. Policy clauses are optional context attachable to a risk or control.
 2. **Start from a policy clause.** Paste (or open a file / Try an example) as today. Codify drafts from requirements. Then every control must be linked to an identified risk (the person may add risks inline) before Review.
 
-Both paths use the same **Review** and **Send to Enact** steps.
+Both paths use the same last step. [ADR 0020](0020-review-policy-as-code-page.md)
+makes that step **Policy as code (Rego)** (review summary, Rego starters,
+OSCAL download) and gates web export on coverage, not Accept.
 
 A project may store `authoring_path`: `"risks"` or `"clauses"`. Missing (older saves and catalogs) means `"clauses"`. The field lives on the in-memory project and `codify:project` autosave. It is not required on the OSCAL catalog (goldens and Enact stay as 0012).
 

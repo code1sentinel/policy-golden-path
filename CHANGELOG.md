@@ -12,6 +12,17 @@ There are no release tags; version numbers match `src/codify/__init__.py`.
 
 ### Changed
 
+- Step 3 is **Policy as code (Rego)**: a review summary (counts, coverage,
+  Edit back to Risk Entry / Policy Clause / Control statements), the
+  existing **Generate Rego starter** section, and a read-only OSCAL JSON
+  preview with Copy and Download. The primary action is **Download OSCAL
+  catalog**, disabled until every risk has a statement and every control
+  is linked. Enact is a supporting **Opens in Enact** caption, not the
+  page title. Accept is no longer required for the web export gate. No
+  GRC Engineering Club branding
+  ([docs/prds/review-policy-as-code.md](docs/prds/review-policy-as-code.md),
+  [ADR 0020](docs/adr/0020-review-policy-as-code-page.md)).
+
 - Policy clause (Flow B step 1) is a calm capture page: **Paste your
   policy clause**, one guidance sentence, a large paste textarea, a
   small side example of a good clause and how to separate several with a

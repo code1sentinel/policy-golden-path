@@ -4,7 +4,7 @@ import json
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, choose_risk_path, finish_open, goto_review, open_acme_demo
+from conftest import choose_clause_path, choose_risk_path, finish_open, goto_review, goto_workspace, open_acme_demo
 
 HEADLINE = "Controls you can test."
 SUBHEAD = (
@@ -187,4 +187,5 @@ def test_try_an_example_still_works_from_the_clause_link(page):
     open_acme_demo(page)
     finish_open(page)
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator("#work-summary")).to_contain_text("38 control drafts")

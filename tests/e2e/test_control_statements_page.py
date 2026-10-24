@@ -108,8 +108,8 @@ def test_continue_disabled_until_full_coverage_then_opens_next_step(page):
     page.locator("#statements-editor textarea").first.blur()
     expect(page.locator("#statements-continue")).to_be_enabled()
     page.click("#statements-continue")
-    expect(page.locator("#work:not([hidden])")).to_be_visible()
-    expect(page.locator("textarea.statement")).to_be_visible()
+    expect(page.locator("#review-page")).to_be_visible()
+    expect(page.locator("#review-title")).to_have_text("Policy as code (Rego)")
 
 
 def test_clause_flow_uses_clause_label(page):

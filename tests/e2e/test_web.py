@@ -5,7 +5,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_clauses, choose_clause_path, finish_open, goto_review
+from conftest import add_flow_clauses, choose_clause_path, finish_open, goto_review, goto_workspace
 
 
 def ctl(cid):
@@ -88,6 +88,7 @@ def test_pasted_text_is_shown_as_text_never_as_html(page):
     add_flow_clauses(page, '1.1 Users shall not run <img src=x onerror="window.pwned=1"> scripts.')
     page.click("#clause-continue")
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator(clause("1.1") + " .clause__text")).to_contain_text("<img src=x")
     assert page.evaluate("window.pwned") is None
 

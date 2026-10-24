@@ -65,14 +65,18 @@ They are a starting point to edit, not finished controls.
   **Accepted ✓** and **Next control** lead. Nav **Home** returns to the
   landing. **Risk Entry** and **Policy Clause** open each flow at step 1
   ([three-tab-nav.md](prds/three-tab-nav.md)). Pasted projects get a name
-  from the first clause.
-- **Export:** **Send to Enact** downloads the **OSCAL catalog** (recommended,
-  catalog 1.1.2) on this device; Excel, CSV (spreadsheet-safe), the Markdown
-  report, and optional statement-library JSON/CSV. Step 3 can **Generate
-  Rego starter** for each control (local templates; Sentinel/Checkov
-  optional) and attach the file to the catalog. The web wizard blocks
-  project formats until every identified risk has an accepted control
-  statement. No upload.
+  from the first clause. Both paths share step 3 **Policy as code (Rego)**:
+  a review summary with Edit back to earlier steps, Generate Rego starter,
+  and an OSCAL JSON preview
+  ([review-policy-as-code.md](prds/review-policy-as-code.md)).
+- **Export:** Step 3 **Download OSCAL catalog** (recommended, catalog 1.1.2)
+  on this device, with **Opens in Enact** as a supporting caption; Excel,
+  CSV (spreadsheet-safe), the Markdown report, and optional
+  statement-library JSON/CSV. Step 3 can **Generate Rego starter** for each
+  control (local templates; Sentinel/Checkov optional) and attach the file
+  to the catalog. The web wizard blocks project formats until every
+  identified risk has a control statement and every control is linked. No
+  upload.
 - **AI drafting (opt-in):** Anthropic, OpenAI, or Gemini with the person's
   key; or Ollama on localhost. One clause per request. Marked `origin: ai`.
   The CLI and rule drafts never use AI.
@@ -142,6 +146,9 @@ each risk (or clause), with coverage dots, a progress line, and
 **Continue to policy as code** disabled until every item has a
 statement. See
 [docs/prds/control-statements-page.md](prds/control-statements-page.md).
+Shared step 3 is **Policy as code (Rego)**: a review summary, Rego
+starters, and an OSCAL catalog preview with Copy / Download. See
+[docs/prds/review-policy-as-code.md](prds/review-policy-as-code.md).
 First-run copy,
 the result step, review help, and export defaults are in
 [docs/prds/first-run-clarity.md](prds/first-run-clarity.md).
