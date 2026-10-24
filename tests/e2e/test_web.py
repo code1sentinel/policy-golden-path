@@ -107,7 +107,8 @@ def test_close_and_resume(demo):
     demo.click("#close-project")
     expect(demo.locator("#resume")).to_be_visible()
     demo.click("#resume-open")
-    expect(demo.locator("#work-summary")).to_contain_text("38 control drafts")
+    expect(demo.locator("#review-page")).to_be_visible()
+    expect(demo.locator("#review-title")).to_have_text("Policy as code (Rego)")
 
 
 # --- Exports ---------------------------------------------------------------------------------------------

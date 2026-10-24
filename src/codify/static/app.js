@@ -2139,7 +2139,7 @@ function renderReviewStep(box) {
       sourceSection,
       statementSection,
       el("section", { class: "review-section", id: "rego-starters" },
-        el("h3", { class: "review-section__title", text: "Policy as code (Rego)" }),
+        el("h3", { class: "review-section__title", text: "Rego starter" }),
         el("p", { class: "rego-starter__disclaimer",
           text: "Starter to review — not a finished policy. Keyword matching on this device; no AI." }),
         controls.length

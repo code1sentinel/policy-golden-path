@@ -4,16 +4,17 @@ from playwright.sync_api import expect
 
 
 def test_oscal_tab_shows_this_control_and_copy_announces(demo):
-    expect(demo.locator(".editor-tabs")).to_contain_text("Statement")
-    expect(demo.locator(".editor-tabs")).to_contain_text("OSCAL JSON")
-    demo.click(".editor-tabs >> text=OSCAL JSON")
+    tabs = demo.locator("#editor .editor-tabs")
+    expect(tabs).to_contain_text("Statement")
+    expect(tabs).to_contain_text("OSCAL JSON")
+    demo.locator("#editor .editor-tabs >> text=OSCAL JSON").click()
     expect(demo.locator("#oscal-json")).to_be_visible()
     expect(demo.locator("#oscal-json")).to_contain_text('"id"')
     expect(demo.locator("#oscal-json .oscal-ln").first).to_be_visible()
     expect(demo.locator("textarea.statement")).to_have_count(0)
     demo.click("#oscal-copy")
     expect(demo.locator("#oscal-copy-status")).to_have_text("Copied")
-    demo.click(".editor-tabs >> text=Statement")
+    demo.locator("#editor .editor-tabs >> text=Statement").click()
     expect(demo.locator("textarea.statement")).to_be_visible()
 
 

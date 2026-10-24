@@ -119,7 +119,7 @@ def test_workspace_opens_start_and_pasted_title_is_not_pasted_text(page):
     expect(page.locator("#resume")).to_contain_text("Need-to-know policy")
     expect(page.locator("#work")).to_be_hidden()
     page.click("#resume-open")
-    expect(page.locator("#work:not([hidden])")).to_be_visible()
+    expect(page.locator("#review-page")).to_be_visible()
 
 
 def test_library_lists_a_statement_once(page):

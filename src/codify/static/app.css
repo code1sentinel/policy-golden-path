@@ -1308,7 +1308,8 @@ body:has(#library:not([hidden])) #library { flex: 1; min-height: 0; display: fle
   display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border-soft);
   border-radius: 10px; background: var(--bg);
 }
-.rego-starter__head { display: grid; gap: 10px; }
+.rego-starter__head { display: grid; gap: 10px; justify-items: start; }
+.rego-starter__head [data-generate] { width: fit-content; }
 .rego-starter__statement { margin: 0; font-size: 14px; line-height: 1.45; }
 .rego-starter__id { font: 600 12px var(--mono); color: var(--accent-text); margin-right: 6px; }
 .rego-starter__disclaimer, .rego-starter__note {
