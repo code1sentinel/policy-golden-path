@@ -76,8 +76,8 @@ const STEP_LABELS = {
   controls: "Control statements",
   clause: "Policy clause",
   link: "Link to risks",
-  review: "Review",
-  enact: "Send to Enact",
+  review: "Policy as code (Rego)",
+  enact: "Policy as code (Rego)",
 };
 
 const STEP_GUIDES = {
@@ -110,17 +110,17 @@ const STEP_GUIDES = {
     mistakes: "Leaving a control unlinked, or a risk with no control, blocks review.",
   },
   review: {
-    title: "Review",
-    what: "Check coverage, edit statements, and accept the wording you will keep.",
-    why: "Accept is what puts a statement in the catalog you send to Enact.",
-    example: "Every risk shows at least one accepted control. Unlinked rows are flagged.",
-    mistakes: "Export is blocked until every risk has an accepted control statement.",
+    title: "Policy as code (Rego)",
+    what: "Check coverage, generate a Rego starter, and download the OSCAL catalog.",
+    why: "The catalog is the file you keep and open in Enact. Starters are templates to review, not finished policy.",
+    example: "Every risk or clause shows a control statement. Download catalog.json.",
+    mistakes: "Treating a starter as production policy. Codify does not upload the catalog.",
   },
   enact: {
-    title: "Send to Enact",
-    what: "Download the OSCAL catalog on this device, then open it in Enact. Generate a Rego starter for each control if you want a first policy file to review.",
-    why: "Codify writes the catalog. Enact runs the checks as Rego. Starters are keyword templates on this device, not finished policies.",
-    example: "Generate a Rego starter, copy or download it, then save catalog.json and open Enact.",
+    title: "Policy as code (Rego)",
+    what: "Check coverage, generate a Rego starter, and download the OSCAL catalog.",
+    why: "The catalog is the file you keep and open in Enact. Starters are templates to review, not finished policy.",
+    example: "Every risk or clause shows a control statement. Download catalog.json.",
     mistakes: "Treating a starter as production policy. Codify does not upload the catalog.",
   },
 };
@@ -366,10 +366,14 @@ function authoringPath(project) {
   return project && project.authoring_path === "risks" ? "risks" : "clauses";
 }
 
+function canonicalFlowStep(step) {
+  return step === "enact" ? "review" : step;
+}
+
 function flowSteps(project) {
   return authoringPath(project) === "risks"
-    ? ["risks", "controls", "review", "enact"]
-    : ["clause", "controls", "link", "review", "enact"];
+    ? ["risks", "controls", "review"]
+    : ["clause", "controls", "link", "review"];
 }
 
 function nonemptyControls(project) {
@@ -412,7 +416,7 @@ function stepComplete(project, step) {
   if (step === "link") {
     return identifiedRisks(project).length > 0 && uncoveredRiskIds(project).length === 0 && unlinkedControlIds(project).length === 0;
   }
-  if (step === "review" || step === "enact") return canExport(project)[0];
+  if (canonicalFlowStep(step) === "review") return canExport(project)[0];
   return false;
 }
 
@@ -451,8 +455,12 @@ function canAdvance(project, step) {
     }
     return [true, ""];
   }
-  if (step === "review") return canExport(project);
+  if (canonicalFlowStep(step) === "review") return canExport(project);
   return [true, ""];
+}
+
+function reviewComplete(project) {
+  return canExport(project);
 }
 
 function canExport(project) {
@@ -462,8 +470,8 @@ function canExport(project) {
   if (unlinkedControlIds(project).length) {
     return [false, "Link every control statement to an identified risk before exporting."];
   }
-  if (unacceptedRiskIds(project).length) {
-    return [false, "Every risk needs an accepted control statement before you can send this to Enact."];
+  if (uncoveredRiskIds(project).length) {
+    return [false, "Every risk needs a control statement before you can download the catalog."];
   }
   return [true, ""];
 }
@@ -472,7 +480,7 @@ function firstIncompleteStep(project) {
   for (const step of flowSteps(project)) {
     if (!stepComplete(project, step)) return step;
   }
-  return "enact";
+  return "review";
 }
 
 function saveLocal() {
@@ -863,7 +871,6 @@ function showView(view) {
   if (view === "work" && !state.project) view = "workspace";
   if (view === "flow" && !state.project) view = "workspace";
   if (view === "work" && state.resultStep) view = "result";
-  if (view === "flow" && state.flowStep === "review") view = "work";
   if (view !== "result") state.resultStep = false;
   state.view = view;
   markNav(navFor(view));
@@ -961,7 +968,7 @@ function openProject(data, { resultStep = false, path = null, flowStep = null } 
   state.selected = first ? { control: first.id } : null;
   state.editorTab = "statement";
   state.resultStep = Boolean(resultStep && (state.project.controls || []).length);
-  const savedStep = flowStep || data.flowStep;
+  const savedStep = canonicalFlowStep(flowStep || data.flowStep);
   const allowed = new Set(flowSteps(state.project));
   state.flowStep = allowed.has(savedStep) ? savedStep : (state.resultStep ? "clause" : firstIncompleteStep(state.project));
   for (const b of $$("[data-filter]")) b.setAttribute("aria-pressed", String(b.dataset.filter === "all"));
@@ -977,11 +984,19 @@ function openProject(data, { resultStep = false, path = null, flowStep = null } 
 
 function openFlow() {
   if (!state.project) return showView("workspace");
-  if (!state.flowStep) state.flowStep = firstIncompleteStep(state.project);
-  if (state.flowStep === "review" && !state.selected && (state.project.controls || [])[0]) {
+  state.flowStep = canonicalFlowStep(state.flowStep) || firstIncompleteStep(state.project);
+  if (!flowSteps(state.project).includes(state.flowStep)) {
+    state.flowStep = firstIncompleteStep(state.project);
+  }
+  showView("flow");
+}
+
+function openWorkspace() {
+  if (!state.project) return;
+  if (!state.selected && (state.project.controls || [])[0]) {
     state.selected = { control: state.project.controls[0].id };
   }
-  showView(state.flowStep === "review" ? "work" : "flow");
+  showView("work");
 }
 
 function renderStartChoice() {
@@ -1000,14 +1015,16 @@ function renderFlowChrome() {
   const identify = Boolean(state.project) && state.view === "flow" && state.flowStep === "risks";
   const statements = Boolean(state.project) && state.view === "flow" && state.flowStep === "controls";
   const clause = Boolean(state.project) && state.view === "flow" && state.flowStep === "clause";
+  const review = Boolean(state.project) && state.view === "flow" && state.flowStep === "review";
   $("#flow")?.classList.toggle("flow-view--identify", identify);
   $("#flow")?.classList.toggle("flow-view--statements", statements);
   $("#flow")?.classList.toggle("flow-view--clause", clause);
+  $("#flow")?.classList.toggle("flow-view--review", review);
   const head = $(".flow-view__head");
   const nav = $("#flow-nav");
   const guide = $("#step-guide");
   const reopen = $("#step-guide-open");
-  if (identify || statements || clause) {
+  if (identify || statements || clause || review) {
     if (head) head.hidden = true;
     if (nav) nav.hidden = true;
     if (guide) {
@@ -1090,31 +1107,32 @@ function renderFlowNav() {
   nav.hidden = state.view === "result";
   if (back) back.disabled = i <= 0;
   if (next) {
-    next.textContent = state.flowStep === "review" ? "Send to Enact"
-      : state.flowStep === "enact" ? "Download catalog"
-      : "Next";
+    next.textContent = "Next";
     next.hidden = false;
-    next.disabled = last && state.flowStep !== "enact" ? true : false;
+    next.disabled = last ? true : false;
   }
 }
 
 function goToStep(step) {
   if (!state.project) return;
+  step = canonicalFlowStep(step);
   const steps = flowSteps(state.project);
   if (!steps.includes(step)) return;
   state.flowStep = step;
   setFlowError("");
-  if (step === "review" && !state.selected && (state.project.controls || [])[0]) {
-    state.selected = { control: state.project.controls[0].id };
-  }
   saveLocal();
-  showView(step === "review" ? "work" : "flow");
+  showView("flow");
 }
 
 function flowNext() {
   if (!state.project) return;
-  if (state.flowStep === "enact") {
-    openExportDialog();
+  if (state.flowStep === "review") {
+    const [ok, message] = canExport(state.project);
+    if (!ok) {
+      setFlowError(message);
+      return;
+    }
+    downloadOscalCatalog($("#review-handoff"));
     return;
   }
   const [ok, message] = canAdvance(state.project, state.flowStep);
@@ -1208,7 +1226,7 @@ function renderFlowStep() {
   if (step === "risks") return renderIdentifyStep(box);
   if (step === "controls") return renderDevelopStep(box);
   if (step === "link") return renderLinkStep(box);
-  if (step === "enact") return renderEnactStep(box);
+  if (step === "review") return renderReviewStep(box);
   box.replaceChildren();
 }
 
@@ -2010,33 +2028,173 @@ function renderLinkStep(box) {
   );
 }
 
-function renderEnactStep(box) {
-  const [ok, message] = canExport(state.project);
-  const download = el("button", { type: "button", class: "btn btn--primary btn--lg", id: "enact-download", text: "Download OSCAL catalog" });
-  download.disabled = !ok;
-  download.addEventListener("click", () => openExportDialog());
+function reviewSourceKind() {
+  return authoringPath(state.project) === "clauses" ? "clause" : "risk";
+}
+
+function reviewRows() {
+  return statementItemsFor(state.project);
+}
+
+function reviewEditButton(id, label, step) {
+  const btn = el("button", { type: "button", class: "btn btn--quiet btn--small review-edit", id, text: "Edit" });
+  btn.addEventListener("click", () => goToStep(step));
+  return btn;
+}
+
+function renderReviewStep(box) {
+  const [ok, message] = reviewComplete(state.project);
+  const clausePath = reviewSourceKind() === "clause";
+  const items = reviewRows();
   const controls = nonemptyControls(state.project);
+  const firstLabel = clausePath ? "Policy clause" : "Identify risks";
+  const back = el("button", {
+    type: "button", class: "btn btn--quiet identify-back", id: "review-back", text: "Back",
+  });
+  back.addEventListener("click", () => {
+    goToStep(clausePath ? "link" : "controls");
+  });
+  const steps = el("ol", {
+    class: "identify-steps", id: "review-steps",
+    "aria-label": `${firstLabel}, then control statements, then policy as code (Rego)`,
+  },
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "1" }),
+      el("span", { class: "identify-steps__label", text: firstLabel })),
+    el("li", {},
+      el("span", { class: "identify-steps__n", text: "2" }),
+      el("span", { class: "identify-steps__label", text: "Control statements" })),
+    el("li", { "aria-current": "step" },
+      el("span", { class: "identify-steps__n", text: "3" }),
+      el("span", { class: "identify-steps__label", text: "Policy as code (Rego)" })),
+  );
+  const covered = items.filter((item) => item.covered).length;
+  const noun = clausePath ? "clause" : "risk";
+  const banner = el("div", {
+    class: `review-banner${ok ? " is-ready" : " is-incomplete"}`,
+    id: "review-banner",
+    role: "status",
+  },
+    el("p", { class: "review-banner__status", text: ok ? "Review complete" : "Review incomplete" }),
+    el("p", { class: "review-banner__counts",
+      text: `${plural(items.length, noun)} · ${plural(controls.length, "control statement")} · ${covered} of ${items.length} covered` }),
+    ok ? null : el("p", { class: "review-banner__reason", text: message }));
+
+  const sourceRows = items.map((item) => {
+    const statements = (item.controls || []).filter((c) => String(c.text || "").trim());
+    return el("li", { class: "review-row", "data-covered": item.covered ? "true" : "false" },
+      el("span", {
+        class: `statements-dot${item.covered ? " is-covered" : ""}`,
+        "aria-label": item.covered ? "Covered" : "Not covered",
+      }),
+      el("div", { class: "review-row__body" },
+        el("p", { class: "review-row__source", text: item.text }),
+        statements.length
+          ? el("ul", { class: "review-row__statements" },
+            ...statements.map((c) => el("li", { text: c.text })))
+          : el("p", { class: "review-row__missing", text: "No control statement yet." }),
+        el("p", { class: "review-row__status", text: item.covered ? "Covered" : "Missing statement" })));
+  });
+
+  const sourceSection = el("section", { class: "review-section", id: "review-summary" },
+    el("div", { class: "review-section__head" },
+      el("h3", { class: "review-section__title", text: clausePath ? "Clauses" : "Identified risks" }),
+      reviewEditButton(
+        clausePath ? "review-edit-clauses" : "review-edit-risks",
+        "Edit",
+        clausePath ? "clause" : "risks",
+      )),
+    sourceRows.length
+      ? el("ul", { class: "review-list", id: "review-list" }, ...sourceRows)
+      : el("p", { class: "muted", text: clausePath ? "No clauses yet." : "No identified risks yet." }));
+
+  const statementSection = el("section", { class: "review-section", id: "review-statements" },
+    el("div", { class: "review-section__head" },
+      el("h3", { class: "review-section__title", text: "Control statements" }),
+      reviewEditButton("review-edit-statements", "Edit", "controls")),
+    el("p", { class: "review-section__lede",
+      text: clausePath
+        ? "Each clause needs a statement. Edit to change the wording."
+        : "Each risk needs a statement. Edit to change the wording." }));
+
+  const handoff = el("button", {
+    type: "button", class: "btn btn--primary btn--lg", id: "review-handoff",
+    text: "Download OSCAL catalog",
+    disabled: ok ? null : true,
+  });
+  handoff.addEventListener("click", () => downloadOscalCatalog(handoff));
+  const other = el("button", { type: "button", class: "btn", id: "review-other", text: "Other formats" });
+  other.addEventListener("click", () => openExportDialog());
+  const enactCaption = el("p", { class: "review-enact", id: "review-enact-caption" },
+    el("a", { href: ENACT_APP, target: "_blank", rel: "noopener noreferrer", text: "Opens in Enact" }),
+    " — load the downloaded catalog. Nothing is uploaded.");
+
   box.replaceChildren(
-    el("div", { class: "card enact-panel", id: "enact-step" },
-      el("h3", { class: "section-title", text: "Send to Enact" }),
-      el("p", { text: "Send to Enact turns control statements into testable Rego policy. Codify writes the catalog. Enact runs the checks. They share a file, not a server. Download only — nothing is uploaded." }),
-      el("ol", { class: "enact-handoff__steps" },
-        el("li", { text: "Download the OSCAL catalog on this device." }),
-        el("li", {}, "Open ", el("a", { href: ENACT_APP, target: "_blank", rel: "noopener noreferrer", text: "Enact" }), " (Pages app)."),
-        el("li", {}, "Load that JSON as the catalog. See ",
-          el("a", { href: ENACT_DOC, target: "_blank", rel: "noopener noreferrer", text: "Using Codify with Enact" }), ".")),
-      el("section", { class: "rego-starters", id: "rego-starters" },
-        el("h4", { class: "rego-starters__title", text: "Policy as code starters" }),
+    el("div", { class: "review-page", id: "review-page" },
+      back, steps,
+      el("h2", { class: "review-title", id: "review-title", text: "Policy as code (Rego)" }),
+      el("p", { class: "review-lede", id: "review-lede",
+        text: "Check every statement, generate a Rego starter to review, then download the OSCAL catalog." }),
+      banner,
+      sourceSection,
+      statementSection,
+      el("section", { class: "review-section", id: "rego-starters" },
+        el("h3", { class: "review-section__title", text: "Rego starter" }),
         el("p", { class: "rego-starter__disclaimer",
           text: "Starter to review — not a finished policy. Keyword matching on this device; no AI." }),
         controls.length
           ? el("div", { class: "rego-starters__list" }, ...controls.map(regoStarterCard))
           : el("p", { class: "muted", text: "No control statements yet." })),
-      ok ? null : el("p", { class: "field-error", id: "enact-gate", text: message }),
-      el("div", { class: "actions" }, download,
-        el("button", { type: "button", class: "btn", id: "enact-other", text: "Other formats" }))),
-  );
-  $("#enact-other")?.addEventListener("click", () => openExportDialog());
+      oscalCatalogPreview(ok),
+      el("div", { class: "review-actions identify-actions" }, handoff, other),
+      enactCaption));
+  fillOscalCatalogPreview();
+}
+
+function oscalCatalogPreview(ready) {
+  const pre = el("pre", {
+    class: "oscal-pre", id: "oscal-catalog-json", tabindex: "0",
+    "aria-label": "OSCAL catalog JSON",
+  });
+  pre.textContent = "Loading…";
+  const status = el("span", { class: "oscal-copy-status", "aria-live": "polite", id: "oscal-catalog-copy-status" });
+  const copy = el("button", { type: "button", class: "btn btn--small", id: "oscal-catalog-copy", text: "Copy" });
+  copy.addEventListener("click", async () => {
+    const raw = pre.dataset.raw || "";
+    status.textContent = (await copyText(raw)) ? "Copied" : "Copy failed";
+  });
+  const save = el("button", {
+    type: "button", class: "btn btn--small", id: "oscal-catalog-download", text: "Download",
+    disabled: ready ? null : true,
+  });
+  save.addEventListener("click", () => downloadOscalCatalog(save));
+  return el("section", { class: "review-section", id: "oscal-preview" },
+    el("h3", { class: "review-section__title", text: "OSCAL catalog" }),
+    el("p", { class: "review-section__lede", text: "Read-only preview of this project's catalog. Copy or download the JSON on this device." }),
+    el("div", { class: "oscal-view" },
+      el("div", { class: "oscal-view__bar" },
+        el("span", { class: "oscal-view__label", text: "catalog.json" }),
+        copy, save, status),
+      pre));
+}
+
+function fillOscalCatalogPreview() {
+  const pre = $("#oscal-catalog-json");
+  if (!pre || !state.project) return;
+  call({ action: "export", format: "oscal", project: state.project }).then((data) => {
+    const raw = data.content || "";
+    pre.dataset.raw = raw;
+    pre.replaceChildren(...numberedJson(raw));
+  }).catch((err) => { pre.textContent = err.message; });
+}
+
+async function downloadOscalCatalog(button) {
+  const [ok, message] = canExport(state.project);
+  if (!ok) {
+    setFlowError(message);
+    return;
+  }
+  await exportAs("oscal", button);
 }
 
 const STARTER_FORMATS = [
@@ -3821,6 +3979,7 @@ function init() {
     }), { resultStep: true, path: "clauses" });
   });
   window.__codifyOpenAcme = openAcmeDemo;
+  window.__codifyOpenWork = openWorkspace;
   $("#demo")?.addEventListener("click", () => {
     if (!confirmReplace()) return;
     openAcmeDemo();

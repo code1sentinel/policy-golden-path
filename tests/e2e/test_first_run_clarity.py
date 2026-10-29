@@ -2,7 +2,7 @@
 
 from playwright.sync_api import expect
 
-from conftest import add_flow_clauses, choose_clause_path, goto_review
+from conftest import add_flow_clauses, choose_clause_path, goto_review, goto_workspace
 
 
 def test_demo_header_has_no_null_and_explains_counts(demo):
@@ -29,6 +29,7 @@ def test_clause_page_pastes_into_control_statements(page):
     expect(page.locator("#flow:not([hidden])")).to_be_visible()
     expect(page.locator("#statements-title")).to_contain_text("for each clause")
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator("#work:not([hidden]) textarea.statement")).to_be_visible()
 
 
@@ -46,6 +47,7 @@ def test_access_control_purpose_hint_is_not_brute_force(page):
     add_flow_clauses(page, "Access to systems shall be granted on a need-to-know basis.")
     page.click("#clause-continue")
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator("#editor")).not_to_contain_text("brute-force")
     expect(page.locator("#props")).not_to_contain_text("brute-force")
 

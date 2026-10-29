@@ -160,12 +160,13 @@ def test_landing_explains_oscal_and_enact():
     assert 'id="landing-enact"' in how
 
 
-def test_send_to_enact_keeps_action_and_explains_rego():
-    assert "Send to Enact" in INDEX
+def test_policy_as_code_step_names_enact_only_as_support():
+    assert "Policy as code (Rego)" in JS
     assert "testable Rego policy" in INDEX
-    assert "testable Rego policy" in JS
-    assert 'enact: "Send to Enact"' in JS
-    assert 'title: "Send to Enact"' in JS
+    assert "Opens in Enact" in INDEX
+    assert "Opens in Enact" in JS
+    assert "Download catalog" in INDEX
+    assert 'id="export-title">Send to Enact' not in INDEX
     assert 'enact: "Enact"' not in JS
 
 

@@ -10,9 +10,9 @@ A tool for GRC professionals modernising a legacy policy. Codify:
    hand, or from a clause as today): the action first, no tools, testable.
 3. **Checks** each draft as you edit it, and shows its parts (action, scope,
    limit, purpose), so a missing one is easy to see.
-4. **Exports** an OSCAL catalog to **send to Enact** (download only), plus Excel, CSV
-   and a conversion report. The web wizard waits until every risk has an
-   accepted control statement.
+4. **Exports** an OSCAL catalog on **Policy as code (Rego)** (download only),
+   plus Excel, CSV and a conversion report. The web wizard waits until every
+   risk has a control statement and every control is linked.
 
 ```
 4.1 User accounts shall be reviewed regularly and access that is no longer
@@ -67,7 +67,7 @@ To see the clause path, choose it and **Paste your policy clause**. A
 blank line splits several clauses into a list you can edit or remove.
 **Continue to control statements** opens the same control-statements
 page (one row per clause, **Write a control statement for each
-clause**), then **Link to risks** before Review.
+clause**), then **Link to risks** before **Policy as code (Rego)**.
 
 The [Acme demo policy](examples/acme-information-security-policy-2016.md)
 is a fictional 2016 agency policy written with typical legacy problems

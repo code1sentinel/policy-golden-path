@@ -15,9 +15,9 @@ Enact's own walkthrough is: Catalog → Checks → Evidence → Run, then downlo
 
 ## What to hand to Enact
 
-In Codify, finish **Send to Enact** and download **OSCAL catalog** (the recommended download). Open that JSON in Enact as the catalog.
+In Codify, finish **Policy as code (Rego)** and **Download OSCAL catalog**. Open that JSON in Enact as the catalog.
 
-The web wizard blocks the download until every identified risk has an accepted control statement and every control is linked to a risk. That is a local check. Nothing is sent.
+The web wizard blocks the download until every identified risk has a control statement and every control is linked to a risk. That is a local check. Nothing is sent.
 
 You do not need the statement library, Excel, or the conversion report for Enact. Enact reads `catalog.groups[].controls[]` statements. It never sees the on-device library.
 
@@ -25,8 +25,8 @@ If a control has a purpose or “risk it treats” line, that travels in the cat
 
 ## Typical path
 
-1. In Codify, start from risks (recommended) or from a clause, cover every risk, review, and Accept.
-2. Open **Send to Enact** and download the OSCAL catalog.
+1. In Codify, start from risks (recommended) or from a clause, cover every risk, and review the statements.
+2. On **Policy as code (Rego)**, download the OSCAL catalog.
 3. Open [Enact](https://code1sentinel.github.io/enact/).
 4. Load the catalog JSON (or Enact's own example) and continue with checks and evidence.
 

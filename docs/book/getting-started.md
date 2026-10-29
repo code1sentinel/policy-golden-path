@@ -27,7 +27,7 @@ The first open is a product landing: a short headline, a mock of a risk becoming
 
 Both flows end at **Policy as code (Rego)** in [Enact](enact.md).
 
-Both paths share **Review** and **Send to Enact**. Every risk needs a control statement; every control must be linked to a risk.
+Both paths share **Policy as code (Rego)**. Every risk needs a control statement; every control must be linked to a risk.
 
 On the clause path there is no Title field, and clause numbers are optional. PDF is not read: copy the text and paste it.
 

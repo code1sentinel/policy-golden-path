@@ -56,4 +56,4 @@ The OSCAL catalog traces each link:
 
 Older catalogs that still carry a leftover **register** (`risk-id` resources, likelihood, scores) open with an empty identified-risks list. The [control statements](catalog-and-library.md) remain.
 
-See [Export formats](export.md) and [Using Codify with Enact](enact.md). The web wizard blocks catalog download until every risk has an accepted control statement.
+See [Export formats](export.md) and [Using Codify with Enact](enact.md). The web wizard blocks catalog download until every risk has a control statement and every control is linked.

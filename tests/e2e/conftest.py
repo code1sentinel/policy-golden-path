@@ -156,16 +156,22 @@ def finish_open(page, timeout=120_000):
     page.wait_for_selector("#flow:not([hidden]), #work:not([hidden]) .ctl", timeout=timeout)
 
 
+def goto_workspace(page):
+    """Open the three-pane editor for Accept / score tests."""
+    page.evaluate("() => window.__codifyOpenWork && window.__codifyOpenWork()")
+    expect(page.locator("#work:not([hidden])")).to_be_visible()
+
+
 def goto_review(page, risk="Screens left unlocked at unattended desks."):
-    """Path B: pass control statements, then link remaining controls, open Review."""
+    """Reach the Policy as code (Rego) step after covering statements and links."""
     page.wait_for_selector("#flow:not([hidden]), #work:not([hidden])", timeout=120_000)
-    work = page.locator("#work")
-    if work.is_visible():
+    review_page = page.locator("#review-page")
+    if review_page.count() and review_page.is_visible():
         return
     review = page.locator("#stepper [data-step='review']")
     if review.count() and review.is_visible() and review.is_enabled():
         review.click()
-        expect(work).to_be_visible()
+        expect(review_page).to_be_visible()
         return
     expect(page.locator("#flow")).to_be_visible()
     clause = page.locator("#clause-continue")
@@ -181,6 +187,8 @@ def goto_review(page, risk="Screens left unlocked at unattended desks."):
                     area.blur()
         if statements.is_enabled():
             statements.click()
+    if review_page.count() and review_page.is_visible():
+        return
     stmt = page.locator("#link-risk-statement")
     if stmt.count():
         stmt.fill(risk)
@@ -192,13 +200,14 @@ def goto_review(page, risk="Screens left unlocked at unattended desks."):
         error = page.locator("#flow-error")
         if error.is_visible():
             raise AssertionError(f"Could not open Review: {error.inner_text()}")
-    expect(work).to_be_visible()
+    expect(review_page).to_be_visible()
 
 
 @pytest.fixture
 def demo(page):
-    """The Acme demo policy, covered and open on Review."""
+    """The Acme demo policy, covered and open in the workspace editor."""
     open_acme_demo(page)
     finish_open(page)  # Pyodide's first load can be slow
     goto_review(page)
+    goto_workspace(page)
     return page

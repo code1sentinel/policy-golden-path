@@ -4,7 +4,7 @@ import re
 
 from playwright.sync_api import expect
 
-from conftest import choose_clause_path, finish_open, goto_review, open_acme_demo
+from conftest import choose_clause_path, finish_open, goto_review, goto_workspace, open_acme_demo
 
 
 def test_start_has_one_primary_and_a_quiet_example(page):
@@ -35,6 +35,7 @@ def test_example_chip_still_opens_the_acme_demo(page):
     open_acme_demo(page)
     finish_open(page)
     goto_review(page)
+    goto_workspace(page)
     expect(page.locator("#work-summary")).to_contain_text("38 control drafts")
 
 
